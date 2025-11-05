@@ -9,3 +9,14 @@ export async function fetch_all_menu_items(): Promise<MenuItem[]> {
 
     return result.rows;
 }
+
+/**
+ * Fetch login information from the database
+ * @returns Promise resolving to login information
+ */
+export async function fetch_login_information(pin: string): Promise<{ pin: string }[]> {
+    const query = 'SELECT is_manager, id, name FROM employees WHERE pin = $1;';
+    const result = await client.query<{ pin: string }>(query, [pin]);
+
+    return result.rows;
+}

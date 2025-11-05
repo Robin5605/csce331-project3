@@ -2,18 +2,39 @@
 
 import { useState } from "react";
 
+interface LoginResponse {
+  id: number;
+  name: string;
+  is_manager: boolean;
+}
+
+/**
+ * Login Page Component
+ * @returns 
+ */
 export default function LoginPage() {
   const [pin, setPin] = useState("");
+  const [loginResponse, setLoginResponse] = useState<LoginResponse | null>(null);
 
   const handleClick = (num: string) => {
     if (pin.length < 4) setPin(pin + num);
   };
 
   const handleClear = () => setPin("");
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     alert(`Entered PIN: ${pin}`);
-    // TODO: Call API or DB check here
+    const res = await fetch("/api/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ pin }),
+    });
+    if (!res.ok) {
+      throw Error(`POST /api/login ${res.status}`);
+    }
+    const data: LoginResponse = await res.json();
+    setLoginResponse(data);
     setPin("");
+    alert(`Login Successful! Welcome, ${data.name} ${data.is_manager ? "(Manager)" : ""}`);
   };
 
   const buttons = ["1","2","3","4","5","6","7","8","9","0"];
@@ -27,7 +48,7 @@ export default function LoginPage() {
 
         {/* Display entered PIN as dots */}
         <div className="text-3xl font-mono tracking-widest text-zinc-700 dark:text-zinc-200">
-          {pin.replace(/./g, "•") || "------"}
+          {pin.replace(/./g, "•") || "----"}
         </div>
 
         {/* Numeric keypad */}

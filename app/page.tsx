@@ -3,9 +3,9 @@ import ItemCard from "./ItemCard";
 export default function Home() {
     const Category = ({ name }: {name: string}) => {
        return(
-        <div className="w-[90%] h-15 flex justify-center items-center bg-gray-500 rounded-md">
-                {name}
-            </div>
+        <div className="shadow-lg w-[90%] h-15 flex justify-center items-center bg-gray-500 rounded-md transform transition-transform duration-100 hover:scale-105">
+            {name}
+        </div>
        )
     }
     return (
@@ -16,10 +16,10 @@ export default function Home() {
                 <Category name={"Drinks"}/>
                 <Category name={"Bubble"}/>
             </div>
-        </aside>
+        </aside>    
 
         <main className="flex-1 flex items-start justify-center mt-10">
-            <div className="flex flex-wrap gap-8">
+            <div className="flex flex-wrap gap-16">
             <ItemCard itemName="Strawberries" />
             <ItemCard itemName="Strawberries Muffins" />
             </div>

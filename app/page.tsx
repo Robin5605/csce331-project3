@@ -1,3 +1,4 @@
+import Link from "next/link";
 import Image from "next/image";
 import MenuBoard from "@/components/MenuBoard";
 
@@ -30,7 +31,5 @@ export default function Home() {
             Sign in with Google
           </button>
         </div>
-      </main>
-    </div>
-  );
+    );
 }

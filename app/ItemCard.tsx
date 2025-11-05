@@ -6,7 +6,7 @@ interface ItemCardProps {
 
 const ItemCard: React.FC<ItemCardProps> = memo(({ itemName }) => {
   return (
-    <div className="h-[100px] w-[100px] bg-gray-200 flex justify-center items-center shadow-lg p-2 text-center">
+    <div className="h-[150px] w-[150px] bg-gray-200 flex justify-center items-center shadow-lg p-2 text-center">
       <p className="whitespace-normal wrap-break-words">{itemName}</p>
     </div>
   );

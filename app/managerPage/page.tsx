@@ -2,13 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 
-type MenuItem = {
-  id: number;
-  name: string;
-  categoryId: number | null;
-  stock: number;
-  cost: number; // API returns cost::float8, so it's a number
-};
+import { MenuItem } from  "@/lib/models";
 
 const ToolbarButton: React.FC<React.ButtonHTMLAttributes<HTMLButtonElement>> = ({ children, className = "", ...props }) => (
   <button className={`px-3 py-2 text-sm rounded-md border border-gray-300 shadow-sm hover:bg-gray-50 active:scale-[.99] ${className}`} {...props}>
@@ -60,7 +54,7 @@ export default function MenuManagerPage() {
       !q ||
       r.name.toLowerCase().includes(q) ||
       String(r.id).includes(q) ||
-      String(r.categoryId ?? "").includes(q)
+      String(r.category_id ?? "").includes(q)
     );
   }, [rows, query]);
 
@@ -128,7 +122,7 @@ export default function MenuManagerPage() {
                   <tr key={r.id} className="border-b last:border-b-0 hover:bg-neutral-50">
                     <Td>{r.id}</Td>
                     <Td>{r.name}</Td>
-                    <Td>{r.categoryId ?? "—"}</Td>
+                    <Td>{r.category_id ?? "—"}</Td>
                     <Td>{r.stock}</Td>
                     <Td>${r.cost.toFixed(2)}</Td>
                   </tr>

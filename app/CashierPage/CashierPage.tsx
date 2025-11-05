@@ -13,11 +13,13 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
+import CustomizationCard from "@/components/CustomizationCard";
 
 export default function CashierPage() {
     //Serves as the state used for showing the Customization page
     const [isCustomizationOpen, setIsCustomizationOpen] = useState(false)
 
+    //Used as a button for each cateogry in the Cashier page
     const Category = ({ name }: {name: string}) => {
        return(
         <div className="shadow-lg w-[90%] h-15 flex justify-center items-center bg-gray-500 rounded-md transform transition-transform duration-100 hover:scale-105">
@@ -25,25 +27,39 @@ export default function CashierPage() {
         </div>
        )
     }
+
+    //Used as a button for each cateogry in the Customization page
+    const CustomizationCategory = ({ name }: {name: string}) => {
+        const [selection, setSelection] = useState("")
+
+        return(
+            <div className="w-full">
+                <h2 className="font-semibold text-xl mt-3 mb-2">{name}</h2>
+                <div className="flex gap-8">
+                    <CustomizationCard itemName="100%" whenClicked={setSelection} categorySelection={selection}/>
+                    <CustomizationCard itemName="50%" whenClicked={setSelection} categorySelection={selection}/>
+                    <CustomizationCard itemName="0%" whenClicked={setSelection} categorySelection={selection}/>
+                </div>
+            </div>
+       )
+    }
+
     return (
         <div className="flex min-h-screen bg-zinc-50 font-sans dark:bg-black gap-6 justify-between">
             <AlertDialog open={isCustomizationOpen} onOpenChange={setIsCustomizationOpen}>
-                <AlertDialogContent>
-                <AlertDialogHeader>
-                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                    This action cannot be undone. This will permanently delete your
-                    account and remove your data from our servers.
-                    </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                    <AlertDialogCancel onClick={() => setIsCustomizationOpen(false)}>
-                        Cancel
-                    </AlertDialogCancel>
-                    <AlertDialogAction onClick={() => setIsCustomizationOpen(false)}>
-                        Continue
-                    </AlertDialogAction>
-                </AlertDialogFooter>
+                {/* The reason we override small is because that's the only way we can adjust the width of the AlertDialog */}
+                <AlertDialogContent className="w-[90vw] max-w-none sm:max-w-2xl p-8 "> 
+                    <AlertDialogTitle className="font-semibold text-3xl">Customize Order</AlertDialogTitle>
+                        <CustomizationCategory name={"Ice"}/>
+                        <CustomizationCategory name={"Toppings"}/>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel onClick={() => setIsCustomizationOpen(false)}>
+                            Cancel
+                        </AlertDialogCancel>
+                        <AlertDialogAction onClick={() => setIsCustomizationOpen(false)}>
+                            Continue
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
         <aside className="w-[300px] h-screen bg-zinc-400 flex-col justify-center">

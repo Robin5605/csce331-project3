@@ -1,7 +1,11 @@
 import { Client } from 'pg';
 import { MenuItem } from './models';
+import { connection } from 'next/server';
 
-const client = new Client();
+const client = new Client({
+    connectionString: process.env.DATABASE_URL,
+}
+);
 await client.connect();
 
 export async function fetch_all_menu_items(): Promise<MenuItem[]> {

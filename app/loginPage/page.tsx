@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 
+
+// TODO: replcae with models.ts definitions
 interface LoginResponse {
   id: number;
   name: string;
@@ -22,7 +24,6 @@ export default function LoginPage() {
 
   const handleClear = () => setPin("");
   const handleSubmit = async () => {
-    alert(`Entered PIN: ${pin}`);
     const res = await fetch("/api/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -35,6 +36,7 @@ export default function LoginPage() {
     setLoginResponse(data);
     setPin("");
     alert(`Login Successful! Welcome, ${data.name} ${data.is_manager ? "(Manager)" : ""}`);
+    // TODO: Redirect to correct application page
   };
 
   const buttons = ["1","2","3","4","5","6","7","8","9","0"];

@@ -32,12 +32,69 @@ const Td: React.FC<{ children: React.ReactNode }> = ({ children }) => (
     </td>
 );
 
+function Dialog({
+    open,
+    onClose,
+    title,
+    children,
+}: {
+    open: boolean;
+    onClose: () => void;
+    title: string;
+    children: React.ReactNode;
+}) {
+    if(!open) return null;
+    return (
+        <div
+            className="fixed inset-0 z-50 flex items-center justify-center"
+            aria-modal="true"
+            role="dialog"
+            onKeyDown={(e) => { if (e.key === "Escape") onClose(); }}
+        >
+        {/* Backdrop - so that if someone clicks off of the dialog pane then it closes. */}
+        <button
+            className="absolute inset-0 bg-black/30"
+            onClick={onClose}
+            aria-label="Close dialog backdrop"
+        />
+
+        {/* Panel */}
+        <div className="relative w-full max-w-md rounded-x1 bg-white shadow-x1 border p-4">
+            <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
+                <button
+                    onClick={onClose}
+                    className="rounded-md px-2 py-1 text-sm text-gray-600 hover:bg-gray-100"
+                    aria-label="Close dialog"
+                >
+                    x
+                </button>
+            </div>
+            <div className="mt-3">{children}</div>
+        </div>
+        </div>
+    );
+}
+
 export default function MenuManagerPage() {
     const [rows, setRows] = useState<MenuItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [query, setQuery] = useState("");
     const [error, setError] = useState<string | null>(null);
 
+    // dialog visibility
+    const [addOpen, setAddOpen] = useState(false);
+
+    // set the form to have these variables but initially as strings as it is more lightweight. will convert on "submit"
+    const [form, setForm] = useState({
+        name: "",
+        categoryId: "",
+        stock: "0",
+        cost: "0",
+    });
+
+    const [submitting, setSubmitting] = useState(false);
+    const [formError, setFormError] = useState<string | null>(null);
     const fetchMenu = async () => {
         try {
             setLoading(true);
@@ -69,27 +126,81 @@ export default function MenuManagerPage() {
     }, [rows, query]);
 
     // Add → POST /api/menu
-    const onAdd = async () => {
+
+    // trigger dialog to open by changing the addOpen to true which causes UI to refresh dialog component.
+    const openAddDialog = () => {
+        setForm({ name: "", categoryId: "", stock: "0", cost: "0"});
+        setFormError(null);
+        setAddOpen(true);
+    }
+
+    // validate -> convert types -> POST -> updateTable -> close
+    const onSubmitNewItem: React.FormEventHandler<HTMLFormElement> = async (e) => {
+        e.preventDefault();
+        setFormError(null);
+
+        // Validate UI Strings
+        if (!form.name.trim()) {
+            setFormError("Name is required.");
+            return;
+        }
+        const stockNum = Number(form.stock);
+        const costNum = Number(form.cost);
+        if (!Number.isFinite(stockNum) || stockNum < 0) {
+            setFormError("Stock must be a non-negative number.");
+            return;
+        }
+        if (!Number.isFinite(costNum) || costNum < 0) {
+            setFormError("Cost must be a non-negative number.");
+            return;
+        }
+
+        // Convert categoryId to either null or parse number
+        let categoryId: number | null = null;
+        if (form.categoryId.trim() !== "") {
+            const cid = Number(form.categoryId);
+            if (!Number.isFinite(cid)) {
+            setFormError("Category ID must be a number (or leave blank).");
+            return;
+            }
+            categoryId = cid;
+        }
+
+        // now lets post to API that will add to database
         try {
+            setSubmitting(true);
             setError(null);
+
             const body = {
-                name: "New Item",
-                categoryId: null,
-                stock: 0,
-                cost: 0,
+                name: form.name.trim(),
+                categoryId,
+                stock: stockNum,
+                cost: costNum,
             };
+
             const res = await fetch("/api/menu", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: { "Content-Type" : "application/json"},
                 body: JSON.stringify(body),
             });
-            if (!res.ok) throw new Error(`POST /api/menu ${res.status}`);
+
+            if(!res.ok) throw new Error('POST /api/menu ${res.status}');
+
             const created: MenuItem = await res.json();
+
+            // Append to table
             setRows((prev) => [...prev, created]);
+
+            // close Dialog
+            setAddOpen(false);
         } catch (e: any) {
-            setError(e?.message ?? "Failed to add item");
+            setFormError(e?.message ?? "Failed to add item.");
+        } finally {
+            setSubmitting(false);
         }
-    };
+
+    }
+
 
     return (
         <div className="min-h-screen bg-neutral-100 text-gray-900">
@@ -107,7 +218,8 @@ export default function MenuManagerPage() {
                         className="flex-1 min-w-[220px] px-3 py-2 rounded-md border focus:outline-none focus:ring-2 focus:ring-neutral-300"
                     />
                     <ToolbarButton onClick={fetchMenu}>Refresh</ToolbarButton>
-                    <ToolbarButton onClick={onAdd}>Add Item</ToolbarButton>
+                    <ToolbarButton onClick={openAddDialog}>Add Item</ToolbarButton>
+                    <ToolbarButton>Delete Item</ToolbarButton>
                     {/* Edit/Delete can be added after you implement PUT/DELETE */}
                 </div>
                 {error && (
@@ -171,6 +283,81 @@ export default function MenuManagerPage() {
                     <Tag>{rows.length} total</Tag>
                 </div>
             </div>
+
+            {/* Use Dialog component to add dialog pane */}
+            <Dialog open={addOpen} onClose={() => setAddOpen(false)} title="Add New Menu Item">
+            <form onSubmit={onSubmitNewItem} className="space-y-3">
+                <div>
+                <label className="block text-sm text-gray-700 mb-1">Name *</label>
+                <input
+                    value={form.name}
+                    onChange={(e) => setForm({ ...form, name: e.target.value })}
+                    className="w-full rounded-md border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-neutral-300"
+                    placeholder="e.g., Thai Milk Tea"
+                    autoFocus
+                    required
+                />
+                </div>
+
+                <div>
+                <label className="block text-sm text-gray-700 mb-1">Category ID (optional)</label>
+                <input
+                    value={form.categoryId}
+                    onChange={(e) => setForm({ ...form, categoryId: e.target.value })}
+                    className="w-full rounded-md border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-neutral-300"
+                    placeholder="e.g., 3 (leave blank for none)"
+                    inputMode="numeric"
+                />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                <div>
+                    <label className="block text-sm text-gray-700 mb-1">Stock *</label>
+                    <input
+                    value={form.stock}
+                    onChange={(e) => setForm({ ...form, stock: e.target.value })}
+                    className="w-full rounded-md border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-neutral-300"
+                    placeholder="e.g., 24"
+                    inputMode="numeric"
+                    required
+                    />
+                </div>
+                <div>
+                    <label className="block text-sm text-gray-700 mb-1">Cost *</label>
+                    <input
+                    value={form.cost}
+                    onChange={(e) => setForm({ ...form, cost: e.target.value })}
+                    className="w-full rounded-md border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-neutral-300"
+                    placeholder="e.g., 4.50"
+                    inputMode="decimal"
+                    required
+                    />
+                </div>
+                </div>
+
+                {formError && (
+                <p className="text-xs text-red-600 mt-1">Error: {formError}</p>
+                )}
+
+                <div className="flex justify-end gap-2 pt-2">
+                <button
+                    type="button"
+                    onClick={() => setAddOpen(false)}
+                    className="px-3 py-2 text-sm rounded-md border border-gray-300 hover:bg-gray-50"
+                >
+                    Cancel
+                </button>
+                <button
+                    type="submit"
+                    disabled={submitting}
+                    className="px-3 py-2 text-sm rounded-md bg-neutral-900 text-white hover:bg-neutral-800 disabled:opacity-50"
+                >
+                    {submitting ? "Adding..." : "Add Item"}
+                </button>
+                </div>
+            </form>
+            </Dialog>
+
         </div>
     );
 }

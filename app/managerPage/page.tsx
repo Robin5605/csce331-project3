@@ -82,7 +82,7 @@ export default function MenuManagerPage() {
     const [query, setQuery] = useState("");
     const [error, setError] = useState<string | null>(null);
 
-    // dialog visibility
+    // dialog visibility for adding an item
     const [addOpen, setAddOpen] = useState(false);
 
     // set the form to have these variables but initially as strings as it is more lightweight. will convert on "submit"
@@ -95,6 +95,10 @@ export default function MenuManagerPage() {
 
     const [submitting, setSubmitting] = useState(false);
     const [formError, setFormError] = useState<string | null>(null);
+
+    // dialog visibility for deleting an item
+    const [deleteOpen, setDeleteOpen] = useState(false);
+
     const fetchMenu = async () => {
         try {
             setLoading(true);

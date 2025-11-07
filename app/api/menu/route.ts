@@ -67,12 +67,12 @@ export async function DELETE(req: Request){
         const id = b?.id;
         const idNum = Number(id);
 
-        if(Number.isFinite(idNum) || idNum < 0){
+        if(!Number.isFinite(idNum) || idNum < 0){
             return NextResponse.json({ error : "ID not valid."}, {status: 400});
         }
 
         const row = await delete_from_menu_management_table(idNum); 
-        return NextResponse.json(row, { status : 201});
+        return NextResponse.json(row, { status : 200});
 
     } catch(e : any){
             if (e.message?.includes("not found")) {

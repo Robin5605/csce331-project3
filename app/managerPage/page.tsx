@@ -98,6 +98,9 @@ export default function MenuManagerPage() {
 
     // dialog visibility for deleting an item
     const [deleteOpen, setDeleteOpen] = useState(false);
+    const [deleteSubmitting, setDeleteSubmitting] = useState(false);
+    const [deleteFormError, setDeleteFormError] = useState<string | null>(null);
+    const [deleteForm, setDeleteForm] = useState({ id : "0"});
 
     const fetchMenu = async () => {
         try {
@@ -205,6 +208,52 @@ export default function MenuManagerPage() {
 
     }
 
+    const openDeleteDialog = () => {
+        setDeleteForm({ id : "0" });
+        setDeleteFormError(null);
+        setDeleteOpen(true);
+    }
+
+    const onSubmitDeleteItem: React.FormEventHandler<HTMLFormElement> = async (e) => {
+        e.preventDefault();
+        setDeleteFormError(null);
+
+        const idNum = Number(deleteForm.id);
+        
+        if(!Number.isFinite(idNum) || idNum < 0){
+            setDeleteFormError("Please enter a valid non-negative numeric ID.");
+            return;
+        }
+
+        // now lets post to API that will add to database
+        try {
+            setDeleteSubmitting(true);
+            setDeleteFormError(null);
+
+            const body = {
+                id: idNum
+            };
+
+            const res = await fetch("/api/menu", {
+                method: "DELETE",
+                headers: { "Content-Type" : "application/json"},
+                body: JSON.stringify(body),
+            });
+
+            if(!res.ok) throw new Error(`DELETE /api/menu ${res.status}`);
+
+            // ser the rows in the table
+            setRows((prev) => prev.filter((x) => x.id !== idNum));
+
+            // close Dialog
+            setDeleteOpen(false);
+        } catch (e: any) {
+            setDeleteFormError(e?.message ?? "Failed to delete item.");
+        } finally {
+            setDeleteSubmitting(false);
+        }
+    }
+
 
     return (
         <div className="min-h-screen bg-neutral-100 text-gray-900">
@@ -223,7 +272,7 @@ export default function MenuManagerPage() {
                     />
                     <ToolbarButton onClick={fetchMenu}>Refresh</ToolbarButton>
                     <ToolbarButton onClick={openAddDialog}>Add Item</ToolbarButton>
-                    <ToolbarButton>Delete Item</ToolbarButton>
+                    <ToolbarButton onClick={openDeleteDialog}>Delete Item</ToolbarButton>
                     {/* Edit/Delete can be added after you implement PUT/DELETE */}
                 </div>
                 {error && (
@@ -288,78 +337,116 @@ export default function MenuManagerPage() {
                 </div>
             </div>
 
-            {/* Use Dialog component to add dialog pane */}
+            {/* ADD ITEM DIALOG PANE */}
             <Dialog open={addOpen} onClose={() => setAddOpen(false)} title="Add New Menu Item">
-            <form onSubmit={onSubmitNewItem} className="space-y-3">
-                <div>
-                <label className="block text-sm text-gray-700 mb-1">Name *</label>
-                <input
-                    value={form.name}
-                    onChange={(e) => setForm({ ...form, name: e.target.value })}
-                    className="w-full rounded-md border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-neutral-300"
-                    placeholder="e.g., Thai Milk Tea"
-                    autoFocus
-                    required
-                />
-                </div>
-
-                <div>
-                <label className="block text-sm text-gray-700 mb-1">Category ID (optional)</label>
-                <input
-                    value={form.categoryId}
-                    onChange={(e) => setForm({ ...form, categoryId: e.target.value })}
-                    className="w-full rounded-md border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-neutral-300"
-                    placeholder="e.g., 3 (leave blank for none)"
-                    inputMode="numeric"
-                />
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                <div>
-                    <label className="block text-sm text-gray-700 mb-1">Stock *</label>
+                <form onSubmit={onSubmitNewItem} className="space-y-3">
+                    <div>
+                    <label className="block text-sm text-gray-700 mb-1">Name *</label>
                     <input
-                    value={form.stock}
-                    onChange={(e) => setForm({ ...form, stock: e.target.value })}
-                    className="w-full rounded-md border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-neutral-300"
-                    placeholder="e.g., 24"
-                    inputMode="numeric"
-                    required
+                        value={form.name}
+                        onChange={(e) => setForm({ ...form, name: e.target.value })}
+                        className="w-full rounded-md border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-neutral-300"
+                        placeholder="e.g., Thai Milk Tea"
+                        autoFocus
+                        required
                     />
-                </div>
-                <div>
-                    <label className="block text-sm text-gray-700 mb-1">Cost *</label>
+                    </div>
+
+                    <div>
+                    <label className="block text-sm text-gray-700 mb-1">Category ID (optional)</label>
                     <input
-                    value={form.cost}
-                    onChange={(e) => setForm({ ...form, cost: e.target.value })}
-                    className="w-full rounded-md border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-neutral-300"
-                    placeholder="e.g., 4.50"
-                    inputMode="decimal"
-                    required
+                        value={form.categoryId}
+                        onChange={(e) => setForm({ ...form, categoryId: e.target.value })}
+                        className="w-full rounded-md border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-neutral-300"
+                        placeholder="e.g., 3 (leave blank for none)"
+                        inputMode="numeric"
                     />
-                </div>
-                </div>
+                    </div>
 
-                {formError && (
-                <p className="text-xs text-red-600 mt-1">Error: {formError}</p>
-                )}
+                    <div className="grid grid-cols-2 gap-3">
+                    <div>
+                        <label className="block text-sm text-gray-700 mb-1">Stock *</label>
+                        <input
+                        value={form.stock}
+                        onChange={(e) => setForm({ ...form, stock: e.target.value })}
+                        className="w-full rounded-md border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-neutral-300"
+                        placeholder="e.g., 24"
+                        inputMode="numeric"
+                        required
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm text-gray-700 mb-1">Cost *</label>
+                        <input
+                        value={form.cost}
+                        onChange={(e) => setForm({ ...form, cost: e.target.value })}
+                        className="w-full rounded-md border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-neutral-300"
+                        placeholder="e.g., 4.50"
+                        inputMode="decimal"
+                        required
+                        />
+                    </div>
+                    </div>
 
-                <div className="flex justify-end gap-2 pt-2">
-                <button
-                    type="button"
-                    onClick={() => setAddOpen(false)}
-                    className="px-3 py-2 text-sm rounded-md border border-gray-300 hover:bg-gray-50"
-                >
-                    Cancel
-                </button>
-                <button
-                    type="submit"
-                    disabled={submitting}
-                    className="px-3 py-2 text-sm rounded-md bg-neutral-900 text-white hover:bg-neutral-800 disabled:opacity-50"
-                >
-                    {submitting ? "Adding..." : "Add Item"}
-                </button>
-                </div>
-            </form>
+                    {formError && (
+                    <p className="text-xs text-red-600 mt-1">Error: {formError}</p>
+                    )}
+
+                    <div className="flex justify-end gap-2 pt-2">
+                    <button
+                        type="button"
+                        onClick={() => setAddOpen(false)}
+                        className="px-3 py-2 text-sm rounded-md border border-gray-300 hover:bg-gray-50"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        type="submit"
+                        disabled={submitting}
+                        className="px-3 py-2 text-sm rounded-md bg-neutral-900 text-white hover:bg-neutral-800 disabled:opacity-50"
+                    >
+                        {submitting ? "Adding..." : "Add Item"}
+                    </button>
+                    </div>
+                </form>
+            </Dialog>
+
+            {/* DELETE ITEM DIALOG PANE */}
+            <Dialog open={deleteOpen} onClose={() => setDeleteOpen(false)} title="Remove Menu Item">
+                <form onSubmit={onSubmitDeleteItem} className="space-y-3">
+                    <div>
+                    <label className="block text-sm text-gray-700 mb-1">ID *</label>
+                    <input
+                        value={deleteForm.id}
+                        onChange={(e) => setDeleteForm({ ...deleteForm, id: e.target.value })}
+                        className="w-full rounded-md border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-neutral-300"
+                        placeholder="0"
+                        autoFocus
+                        required
+                    />
+                    </div>
+
+                    {deleteFormError && (
+                    <p className="text-xs text-red-600 mt-1">Error: {deleteFormError}</p>
+                    )}
+
+                    <div className="flex justify-end gap-2 pt-2">
+                    <button
+                        type="button"
+                        onClick={() => setDeleteOpen(false)}
+                        className="px-3 py-2 text-sm rounded-md border border-gray-300 hover:bg-gray-50"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        type="submit"
+                        disabled={submitting}
+                        className="px-3 py-2 text-sm rounded-md bg-neutral-900 text-white hover:bg-neutral-800 disabled:opacity-50"
+                    >
+                        {submitting ? "Deleting..." : "Delete Item"}
+                    </button>
+                    </div>
+                </form>
             </Dialog>
 
         </div>

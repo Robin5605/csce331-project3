@@ -65,6 +65,7 @@ export async function delete_from_menu_management_table(
 
     return rows[0];
 }
+
 export async function populate_ingredient_management_table(){
     const { rows } = await client.query<Ingredient>(
         `
@@ -91,4 +92,23 @@ export async function insert_into_ingredient_management_table(
     );
 
     return rows;
+}
+
+
+export async function delete_from_ingredient_management_table(
+    id: number,
+) {
+    const { rows, rowCount } = await client.query(
+        `
+        DELETE FROM ingredients WHERE id = $1
+        RETURNING id;
+        `,
+        [id]
+    );
+
+    if(rowCount == 0){
+        throw new Error(`Menu item with id=${id} not found`);
+    }
+
+    return rows[0];
 }

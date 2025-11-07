@@ -53,6 +53,7 @@ export type {
     Order,
     Employee,
     MenuItem,
+    Ingredient,
     DrinkIngredient,
     DrinkOrder,
 };

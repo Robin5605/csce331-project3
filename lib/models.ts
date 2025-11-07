@@ -28,6 +28,13 @@ interface MenuItem {
     cost: number;
 }
 
+interface Ingredient{
+    id: number;
+    name: string;
+    stock: number;
+    cost: number;
+}
+
 interface DrinkIngredient {
     id: number;
     drink_id: number;

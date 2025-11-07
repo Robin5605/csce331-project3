@@ -1,5 +1,5 @@
 import { Client } from "pg";
-import { MenuItem } from "./models";
+import { MenuItem, Ingredient } from "./models";
 
 const client = new Client({
     connectionString: process.env.DATABASE_URL,
@@ -64,4 +64,31 @@ export async function delete_from_menu_management_table(
     }
 
     return rows[0];
+}
+export async function populate_ingredient_management_table(){
+    const { rows } = await client.query<Ingredient>(
+        `
+        SELECT id, name, stock, cost::float8 AS cost FROM ingredients
+        ORDER by id
+        `
+    );
+
+    return rows;
+}
+
+export async function insert_into_ingredient_management_table(
+    name: string,
+    stock: number,
+    cost: number
+){
+    const { rows } = await client.query(
+        `
+        INSERT INTO ingredients (name, stock, cost)
+        VALUES ($1, $2, $3)
+        RETURNING id, name, stock, cost::float8 as cost
+        `,
+        [name, stock ?? 0, cost ?? 0],
+    );
+
+    return rows;
 }

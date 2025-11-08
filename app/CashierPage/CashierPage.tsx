@@ -76,6 +76,37 @@ const menuData: MenuData = {
   ]
 };
 
+const inventory = [
+  { id: 9, name: "Red Bean", stock: 100, cost: 0.75 },
+  { id: 12, name: "Pudding", stock: 100, cost: 0.75 },
+  { id: 13, name: "Herb Jelly", stock: 100, cost: 0.75 },
+  { id: 14, name: "Alyu Jelly", stock: 100, cost: 0.75 },
+  { id: 15, name: "Coffee Jelly", stock: 100, cost: 0.75 },
+  { id: 16, name: "Honey Jelly", stock: 100, cost: 0.75 },
+  { id: 18, name: "Strawberry Popping Boba", stock: 100, cost: 1 },
+  { id: 19, name: "Peach Popping Boba", stock: 100, cost: 1 },
+  { id: 20, name: "Crystal Boba", stock: 100, cost: 1 },
+  { id: 21, name: "Napkins", stock: 2000, cost: 0 },
+  { id: 22, name: "Large Cups", stock: 1000, cost: 0 },
+  { id: 23, name: "Small Cups", stock: 1000, cost: 0 },
+  { id: 24, name: "Medium Cups", stock: 1000, cost: 0 },
+  { id: 25, name: "Straws", stock: 1000, cost: 0 },
+  { id: 26, name: "Seal", stock: 1000, cost: 0 },
+  { id: 27, name: "Bag", stock: 1000, cost: 0 },
+  { id: 7, name: "Lychee Jelly", stock: 40, cost: 0.75 },
+  { id: 1, name: "Black Tea", stock: 100, cost: 0 },
+  { id: 10, name: "Creama", stock: 94, cost: 1.25 },
+  { id: 17, name: "Mango Popping Boba", stock: 95, cost: 1 },
+  { id: 8, name: "Mini Pearl", stock: 51, cost: 0.75 },
+  { id: 2, name: "Green Tea", stock: 4, cost: 0 },
+  { id: 6, name: "Aloe Vera", stock: 94, cost: 0.75 },
+  { id: 28, name: "Ice", stock: 988, cost: 0.0 },
+  { id: 11, name: "Ice Cream", stock: 49, cost: 1.25 },
+  { id: 4, name: "Sugar", stock: 86, cost: 0 },
+  { id: 5, name: "Pearl", stock: 35, cost: 0.75 },
+  { id: 3, name: "Oolong Tea", stock: 20, cost: 0 },
+];
+
 
 export default function CashierPage() {
     //Serves as the state used for showing the Customization page

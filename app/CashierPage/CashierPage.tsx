@@ -1,6 +1,6 @@
 "use client"
 
-import { ReactNode, useState } from "react";
+import { ReactNode, useState, JSX } from "react";
 import Image from "next/image"
 
 import ItemCard from "../../components/ItemCard";
@@ -120,18 +120,19 @@ export default function CashierPage() {
     const defaultCustomizations = {
         Size: "Medium Cups",
         Ice: "100%",
-        Boba: "none",
-        Jelly: "none",
+        Boba: "None",
+        Jelly: "None",
         Tea: "Black Tea",
         Toppings: [],
     }
-
 
     //Serves as the state used for showing the Customization page
     const [isCustomizationOpen, setIsCustomizationOpen] = useState<boolean>(false);
     const [selectedCategory, setSelectedCateory] = useState<string>("Fruit Tea");
     const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
     const [selectedCustomizationOptions, setSelectedCustomizationOptions] = useState<Record<string, string | string[]>>(defaultCustomizations);
+    const [curOrders, setCurOrders] = useState<Record<string, string | string[] | MenuItem | null>[]>([])
+    let totalCost = 0;
 
     //Handles whenever a MenuItem is clicked to bring up the customization menu
     const menuItemClicked = (item: MenuItem) => {
@@ -165,6 +166,18 @@ export default function CashierPage() {
                 };
             });
     };
+
+    // Handles whenever an order is finalized on the customization side
+    const submitOrder = () => {
+        // Add the current selection into the total orders
+        const order = {
+            ...selectedCustomizationOptions,
+            Drink: selectedItem
+        }
+        setCurOrders([...curOrders, order]);
+        setIsCustomizationOpen(false);
+    };
+
 
     //Used as a button for each category in the Cashier page
     const Category = ({ name }: {name: string}) => {
@@ -214,6 +227,7 @@ export default function CashierPage() {
         
         const options: OptionItem[] = 
             //Checks if the category is for one item (ex: Ice) or multiple items (ex: Boba)
+            //When the API is implemented, we can associate each item with a category and remove all this
             isOneItem 
             ? ["0%", "25%", "50%", "75%", "100%"].map((label) => ({ //If it is just one item, we just have the customization be the amount of said item
                 name: label,
@@ -267,6 +281,7 @@ export default function CashierPage() {
     }
 
     console.log(selectedCustomizationOptions)
+    console.log(curOrders)
     return (
         <div className="flex min-h-screen bg-[#ffddd233] font-sans dark:bg-black gap-6 justify-between">
             <AlertDialog open={isCustomizationOpen} onOpenChange={setIsCustomizationOpen}>
@@ -305,7 +320,7 @@ export default function CashierPage() {
                         <AlertDialogCancel onClick={() => setIsCustomizationOpen(false)}>
                             Cancel
                         </AlertDialogCancel>
-                        <AlertDialogAction onClick={() => setIsCustomizationOpen(false)}>
+                        <AlertDialogAction onClick={() => submitOrder()}>
                             Continue
                         </AlertDialogAction>
                     </AlertDialogFooter>
@@ -335,8 +350,89 @@ export default function CashierPage() {
                 </div>
             </main>
 
-            <aside className="w-[300px] h-screen bg-gradient-to-b from-[#9d8189] to-[#ffe5d9] flex justify-center">
-                <h2 className="font-semibold text-3xl mt-3">Checkout</h2>
+            <aside className="w-[300px] h-screen bg-gradient-to-b from-[#9d8189] to-[#ffe5d9] flex flex-col justify-between p-4">
+            <div>
+                <h2 className="font-semibold text-3xl text-center mt-3 mb-4">Checkout</h2>
+                <div className="bg-white/40 rounded-xl p-3 shadow-inner max-h-[60vh] overflow-y-auto">
+                    {
+                        curOrders.map((order, orderIndex) => {
+                            let order_price = 0
+                            const itemsJSX: JSX.Element[] = [];
+                            Object.entries(order).forEach(([key, value]) => {
+                                //Doesn't show if not added
+                                if(value === 'None' || value === null || value.length === 0){
+                                    return
+                                } 
+
+                                //Handles drinks
+                                if(key.toLowerCase() === 'drink'){
+                                    order_price += value.cost
+                                    return
+                                }
+                                
+                                //Handles these differently since their values aren't items in the ingreidents table
+                                else if (key === "Ice" || key === "Sugar") {
+                                    itemsJSX.push(
+                                        <div key={`suborder-${key}-${value}-single`} className="bg-[#FFCAD4] px-2 py-1 rounded mb-2">
+                                            {key}: {value}
+                                        </div>
+                                    )
+                                } 
+                                
+                                //Makes sure to traverse the array and add each item
+                                else if (Array.isArray(value)){
+                                    value.forEach((o : string) => {
+                                        const item = inventory.find(
+                                            (item) => item.name.trim().toLowerCase() === o.trim().toLowerCase()
+                                        );
+
+                                        const price = item ? item.cost : 0; //Tenary is for handling null values
+                                        order_price += price
+                                        itemsJSX.push(
+                                            <div key={`suborder-${key}-${o}-single`} className="bg-[#FFCAD4] px-2 py-1 rounded mb-2">
+                                                {o} {price !== 0 ? `($${price.toFixed(2)})` : ""}
+                                            </div>
+                                        )
+                                    })
+                                } 
+                                
+                                //Default behavior
+                                else {
+                                    const item = inventory.find(
+                                        (item) => item.name.trim().toLowerCase() === value.trim().toLowerCase()
+                                    );
+
+                                    const price = item ? item.cost : 0; //Tenary is for handling null values
+                                    order_price += price
+
+                                    itemsJSX.push(
+                                        <div key={`suborder-${key}-${value}-single`} className="bg-[#FFCAD4] px-2 py-1 rounded mb-2">
+                                            {value} {price !== 0 ? `($${price.toFixed(2)})` : ""}
+                                        </div>
+                                    )
+                                }    
+                            })
+                            totalCost += order_price
+                            return(
+                                <div key={`order-${orderIndex}`} className="bg-[#fffaf8] rounded-xl p-3 mb-4 shadow flex-col">
+                                    <h3 className="font-semibold text-lg mb-2">Order {orderIndex + 1}: {order.Drink.name}</h3>
+                                    {itemsJSX}
+                                    Total: {order_price}$
+                                </div>
+                            )
+                        })
+                    }
+                </div>
+            </div>
+            <div className="bg-white/60 rounded-xl p-3 mt-4 shadow-md">
+                <div className="flex justify-between text-xl font-semibold mb-3">
+                <span>Total:</span>
+                <span>{totalCost.toFixed(2)}$</span>
+                </div>
+                <button className="w-full bg-[#6d6875] hover:bg-[#564f5a] text-white font-semibold py-2 rounded-xl transition">
+                    Checkout
+                </button>
+            </div>
             </aside>
         </div>
     );

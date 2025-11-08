@@ -371,7 +371,7 @@ export default function CashierPage() {
                                 //Handles these differently since their values aren't items in the ingreidents table
                                 else if (key === "Ice" || key === "Sugar") {
                                     itemsJSX.push(
-                                        <div key={`suborder-${key}-${value}-single`} className="bg-[#FFCAD4] px-2 py-1 rounded mb-2">
+                                        <div key={`suborder-${key}-${value}-single`} className="bg-[#ffe5ea] px-2 py-1 rounded mb-2">
                                             {key}: {value}
                                         </div>
                                     )
@@ -387,7 +387,7 @@ export default function CashierPage() {
                                         const price = item ? item.cost : 0; //Tenary is for handling null values
                                         order_price += price
                                         itemsJSX.push(
-                                            <div key={`suborder-${key}-${o}-single`} className="bg-[#FFCAD4] px-2 py-1 rounded mb-2">
+                                            <div key={`suborder-${key}-${o}-single`} className="bg-[#ffe5ea] px-2 py-1 rounded mb-2">
                                                 {o} {price !== 0 ? `($${price.toFixed(2)})` : ""}
                                             </div>
                                         )
@@ -404,7 +404,7 @@ export default function CashierPage() {
                                     order_price += price
 
                                     itemsJSX.push(
-                                        <div key={`suborder-${key}-${value}-single`} className="bg-[#FFCAD4] px-2 py-1 rounded mb-2">
+                                        <div key={`suborder-${key}-${value}-single`} className="bg-[#ffe5ea] px-2 py-1 rounded mb-2">
                                             {value} {price !== 0 ? `($${price.toFixed(2)})` : ""}
                                         </div>
                                     )

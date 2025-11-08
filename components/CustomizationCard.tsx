@@ -5,13 +5,12 @@ import React, { memo } from "react"
 interface CustomizationCardProps {
   itemName: string
   whenClicked?: (name: string) => void
-  categorySelection: string // current selection passed from parent
+  isSelected: boolean // current selection passed from parent
   isDisabled: boolean
 }
 
 const CustomizationCard: React.FC<CustomizationCardProps> = memo(
-  ({ itemName, whenClicked, categorySelection, isDisabled = false }) => {
-    const isSelected = itemName === categorySelection
+  ({ itemName, whenClicked, isSelected, isDisabled = false }) => {
     if(isDisabled){
       return(
         <div

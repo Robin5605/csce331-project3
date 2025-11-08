@@ -82,6 +82,7 @@ interface InventoryItem {
   stock: number;
   cost: number;
 }
+
 const inventory: InventoryItem[] = [
   { id: 9, name: "Red Bean", stock: 100, cost: 0.75 },
   { id: 12, name: "Pudding", stock: 100, cost: 0.75 },
@@ -122,7 +123,7 @@ export default function CashierPage() {
         Boba: "none",
         Jelly: "none",
         Tea: "Black Tea",
-        Topping: "none",
+        Toppings: [],
     }
 
 
@@ -130,7 +131,7 @@ export default function CashierPage() {
     const [isCustomizationOpen, setIsCustomizationOpen] = useState<boolean>(false);
     const [selectedCategory, setSelectedCateory] = useState<string>("Fruit Tea");
     const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
-    const [selectedCustomizationOptions, setSelectedCustomizationOptions] = useState<Record<string, string>>(defaultCustomizations);
+    const [selectedCustomizationOptions, setSelectedCustomizationOptions] = useState<Record<string, string | string[]>>(defaultCustomizations);
 
     //Handles whenever a MenuItem is clicked to bring up the customization menu
     const menuItemClicked = (item: MenuItem) => {
@@ -139,12 +140,30 @@ export default function CashierPage() {
         setIsCustomizationOpen(true);
     }
 
-    //Handles whenever a CustomizationCard is clicked in order to select it
+    //Handles whenever a CustomizationCard is clicked in order to select it for categories with single select
     const customizationCardClicked = (name: string, category: string) => {
     setSelectedCustomizationOptions({
         ...selectedCustomizationOptions,
         [category]: name,
     });
+    };
+
+    //Handles whenever a CustomizationCard is clicked in order to select it for categories with multi-select
+    const customizationCardClickedMultipleSelections = (
+        name: string,
+        category: string,
+        isSelected: boolean
+        ) => {
+            setSelectedCustomizationOptions((prev) => {
+                const currentValue = prev[category] as string[];
+
+                return {
+                    ...prev,
+                    [category]: isSelected
+                        ? currentValue.filter((item) => item !== name) // remove
+                        : [...currentValue, name],                    // add
+                };
+            });
     };
 
     //Used as a button for each category in the Cashier page
@@ -172,7 +191,19 @@ export default function CashierPage() {
     }
 
     //Used to contain items for each customization category and handle filtering
-    const CustomizationData = ({ isOneItem = true, toFilterBy = "", category} : { toFilterBy: string, isOneItem: boolean, category: string }) => {
+    const CustomizationData = (
+    {
+        isOneItem = true,
+        allowsMultipleSelections = false,
+        toFilterBy = "",
+        category,
+    }: {
+        isOneItem: boolean;
+        allowsMultipleSelections: boolean;
+        toFilterBy: string;
+        category: string;
+    }
+    ) => {
         const itemsToIgnore = ["napkins", "straws", "seal", "bag"];
 
         interface OptionItem {
@@ -180,27 +211,30 @@ export default function CashierPage() {
             is_disabled: boolean;
         }
 
-        const options: OptionItem[] = isOneItem
-            ? ["0%", "25%", "50%", "75%", "100%"].map((label) => ({
+        
+        const options: OptionItem[] = 
+            //Checks if the category is for one item (ex: Ice) or multiple items (ex: Boba)
+            isOneItem 
+            ? ["0%", "25%", "50%", "75%", "100%"].map((label) => ({ //If it is just one item, we just have the customization be the amount of said item
                 name: label,
                 is_disabled: false,
                 }))
-            : category === "Toppings"
+            : category === "Toppings" //The toppings category has every item that is not tea, boba, jelly, or ice/sugar
             ? inventory
                 .filter((i) => {
                     const n = i.name.trim().toLowerCase();
                     return (
-                    !["cups", "tea", "boba", "jelly", "ice", "sugar"].some((s) => n.endsWith(s)) &&
-                    !itemsToIgnore.includes(n)
+                    !["cups", "tea", "boba", "jelly", "ice", "sugar"].
+                        some((s) => n.endsWith(s)) && !itemsToIgnore.includes(n) //Performs the exclusion of the specific item types
                     );
                 })
                 .map((i) => ({
                     name: i.name,
                     is_disabled: i.stock < 1,
                 }))
-            : inventory
+            : inventory //Here we assume it's a normal category otherwise (tea, boba, jelly, ice/sugar)
                 .filter((i) =>
-                    i.name.trim().toLowerCase().endsWith(toFilterBy.trim().toLowerCase())
+                    i.name.trim().toLowerCase().endsWith(toFilterBy.trim().toLowerCase()) //Identifies the item type by the last word in its string (ex: Popping Boba -> Boba)
                 )
                 .map((i) => ({
                     name: i.name,
@@ -210,13 +244,21 @@ export default function CashierPage() {
         return (
             <div className="flex flex-wrap gap-8">
             {options.map((item) => {
+                const isSelected: boolean = 
+                            (allowsMultipleSelections)
+                                ? selectedCustomizationOptions[category].includes(item.name)
+                                : item.name === selectedCustomizationOptions[category]
                 return(
                     <CustomizationCard
                         key={`customizationcard-${category}-${item.name}`}
                         itemName={item.name}
                         isDisabled={item.is_disabled}
-                        categorySelection={selectedCustomizationOptions[category] ?? ""}
-                        whenClicked={() => customizationCardClicked(item.name, category)}
+                        isSelected={isSelected}
+                        whenClicked={
+                            (allowsMultipleSelections)
+                            ? () => customizationCardClickedMultipleSelections(item.name, category, isSelected)
+                            : () => customizationCardClicked(item.name, category)
+                        }
                     />
                 )
             })}
@@ -234,27 +276,27 @@ export default function CashierPage() {
                         
                        <div className="max-h-[800px] overflow-y-auto pr-2">
                             <CustomizationCategory name="Size">
-                                <CustomizationData isOneItem={false} toFilterBy="cups" category="Size" />
+                                <CustomizationData isOneItem={false} toFilterBy="cups" category="Size" allowsMultipleSelections={false}/>
                             </CustomizationCategory>
 
                             <CustomizationCategory name="Ice">
-                                <CustomizationData isOneItem={true} toFilterBy="ice" category="Ice" />
+                                <CustomizationData isOneItem={true} toFilterBy="ice" category="Ice" allowsMultipleSelections={false}/>
                             </CustomizationCategory>
 
                             <CustomizationCategory name="Tea">
-                                <CustomizationData isOneItem={false} toFilterBy="tea" category="Tea" />
+                                <CustomizationData isOneItem={false} toFilterBy="tea" category="Tea" allowsMultipleSelections={false}/>
                             </CustomizationCategory>
 
                             <CustomizationCategory name="Boba">
-                                <CustomizationData isOneItem={false} toFilterBy="boba" category="Boba" />
+                                <CustomizationData isOneItem={false} toFilterBy="boba" category="Boba" allowsMultipleSelections={false}/>
                             </CustomizationCategory>
 
                             <CustomizationCategory name="Jelly">
-                                <CustomizationData isOneItem={false} toFilterBy="jelly" category="Jelly" />
+                                <CustomizationData isOneItem={false} toFilterBy="jelly" category="Jelly" allowsMultipleSelections={false}/>
                             </CustomizationCategory>
 
                             <CustomizationCategory name="Toppings">
-                                <CustomizationData isOneItem={false} toFilterBy="topping" category="Toppings" />
+                                <CustomizationData isOneItem={false} toFilterBy="topping" category="Toppings" allowsMultipleSelections={true}/>
                             </CustomizationCategory>
                         </div>
 

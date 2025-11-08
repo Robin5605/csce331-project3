@@ -101,6 +101,17 @@ export default function MenuManagerPage() {
     const [deleteFormError, setDeleteFormError] = useState<string | null>(null);
     const [deleteForm, setDeleteForm] = useState({ id : "0"});
 
+    // dialog visibility + form state for editing
+    const [editOpen, setEditOpen] = useState(false);
+    const [editSubmitting, setEditSubmitting] = useState(false);
+    const [editError, setEditError] = useState<string | null>(null);
+    const [editForm, setEditForm] = useState({
+        id: 0,
+        name: "",
+        stock: "0",
+        cost: "0",
+        });
+
     const fetchMenu = async () => {
         try {
             setLoading(true);
@@ -200,6 +211,7 @@ export default function MenuManagerPage() {
         setDeleteOpen(true);
     }
 
+
     const onSubmitDeleteItem: React.FormEventHandler<HTMLFormElement> = async (e) => {
         e.preventDefault();
         setDeleteFormError(null);
@@ -241,6 +253,71 @@ export default function MenuManagerPage() {
     }
 
 
+    const openEditDialog = (row: Ingredient) => {
+        setEditError(null);
+        setEditForm({
+            id: row.id,
+            name: row.name,
+            stock: String(row.stock ?? 0),
+            cost: String(row.cost ?? 0),
+        });
+        setEditOpen(true);
+    };
+
+    const onSubmitEditItem : React.FormEventHandler<HTMLFormElement> = async (e) => {
+        e.preventDefault();
+        setEditError(null); 
+
+        // Validate UI Strings
+        if (!editForm.name.trim()) {
+            setEditError("Name is required.");
+            return;
+        }
+        const stockNum = Number(editForm.stock);
+        const costNum = Number(editForm.cost);
+        if (!Number.isFinite(stockNum) || stockNum < 0) {
+            setEditError("Stock must be a non-negative number.");
+            return;
+        }
+        if (!Number.isFinite(costNum) || costNum < 0) {
+            setEditError("Cost must be a non-negative number.");
+            return;
+        }
+
+        // now lets post to API that will add to database
+        try {
+            setEditSubmitting(true);
+            setEditError(null);
+
+            const body = {
+                name: editForm.name.trim(),
+                stock: stockNum,
+                cost: costNum,
+            };
+
+            const res = await fetch("/api/ingredient", {
+                method: "PUT",
+                headers: { "Content-Type" : "application/json"},
+                body: JSON.stringify(body),
+            });
+
+            if(!res.ok) throw new Error('PUT /api/ingredient ${res.status}');
+
+            const updated: Ingredient = await res.json();
+
+            // Edit table
+            setRows(prev => prev.map(x => (x.id === updated.id ? updated : x)));
+
+            // close Dialog
+            setEditOpen(false);
+        } catch (e: any) {
+            setFormError(e?.message ?? "Failed to add item.");
+        } finally {
+            setSubmitting(false);
+        }
+    }
+
+
     return (
         <div className="min-h-screen bg-neutral-100 text-gray-900">
             <div className="w-full h-8 bg-neutral-800 text-gray-100 flex items-center justify-center text-sm">
@@ -278,6 +355,7 @@ export default function MenuManagerPage() {
                                 <Th>Name</Th>
                                 <Th>Stock</Th>
                                 <Th>Cost</Th>
+                                <Th>Edit Ingredient</Th>
                             </tr>
                         </thead>
                         <tbody>
@@ -300,6 +378,9 @@ export default function MenuManagerPage() {
                                         <Td>{r.name}</Td>
                                         <Td>{r.stock}</Td>
                                         <Td>${r.cost.toFixed(2)}</Td>
+                                        <Td><button onClick={() => openEditDialog(r)} className="px-2 py-1 text-xs rounded-md border hover:bg-gray-50">
+                                                Edit
+                                        </button></Td>
                                     </tr>
                                 ))
                             ) : (
@@ -421,6 +502,65 @@ export default function MenuManagerPage() {
                     </div>
                 </form>
             </Dialog>
+
+            <Dialog open={editOpen} onClose={() => setEditOpen(false)} title="Edit Ingredient">
+                <form onSubmit={onSubmitEditItem} className="space-y-3">
+                    <div className="text-xs text-gray-500">Editing ID: {editForm.id}</div>
+
+                    <div>
+                    <label className="block text-sm text-gray-700 mb-1">Name *</label>
+                    <input
+                        value={editForm.name}
+                        onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                        className="w-full rounded-md border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-neutral-300"
+                        required
+                    />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                    <div>
+                        <label className="block text-sm text-gray-700 mb-1">Stock *</label>
+                        <input
+                        value={editForm.stock}
+                        onChange={(e) => setEditForm({ ...editForm, stock: e.target.value })}
+                        className="w-full rounded-md border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-neutral-300"
+                        inputMode="numeric"
+                        required
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm text-gray-700 mb-1">Cost *</label>
+                        <input
+                        value={editForm.cost}
+                        onChange={(e) => setEditForm({ ...editForm, cost: e.target.value })}
+                        className="w-full rounded-md border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-neutral-300"
+                        inputMode="decimal"
+                        required
+                        />
+                    </div>
+                    </div>
+
+                    {editError && <p className="text-xs text-red-600 mt-1">Error: {editError}</p>}
+
+                    <div className="flex justify-end gap-2 pt-2">
+                    <button
+                        type="button"
+                        onClick={() => setEditOpen(false)}
+                        className="px-3 py-2 text-sm rounded-md border border-gray-300 hover:bg-gray-50"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        type="submit"
+                        disabled={editSubmitting}
+                        className="px-3 py-2 text-sm rounded-md bg-neutral-900 text-white hover:bg-neutral-800 disabled:opacity-50"
+                    >
+                        {editSubmitting ? "Saving..." : "Save Changes"}
+                    </button>
+                    </div>
+                </form>
+            </Dialog>
+
 
         </div>
     );

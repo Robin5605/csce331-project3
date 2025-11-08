@@ -112,3 +112,58 @@ export async function delete_from_ingredient_management_table(
 
     return rows[0];
 }
+
+// Update an ingredient by id and return the updated row.
+export async function update_menu_management_table(
+  id: number,
+  name: string,
+  categoryId: number | null,
+  stock: number,
+  cost: number
+) {
+  const { rows, rowCount } = await client.query<MenuItem>(
+    `
+    UPDATE menu
+       SET name = $2,
+           category_id = $3,
+           stock = $4,
+           cost  = $5
+     WHERE id = $1
+     RETURNING id, name, category_id, stock, cost::float8 AS cost
+    `,
+    [id, name, categoryId ?? null, stock, cost]
+  );
+
+  if (rowCount === 0) {
+    throw new Error(`Menu item with id=${id} not found`);
+  }
+
+  return rows[0];
+}
+
+
+// Update an ingredient by id and return the updated row
+export async function update_ingredient_management_table(
+  id: number,
+  name: string,
+  stock: number,
+  cost: number
+) {
+  const { rows, rowCount } = await client.query<Ingredient>(
+    `
+    UPDATE ingredients
+       SET name = $2,
+           stock = $3,
+           cost  = $4
+     WHERE id = $1
+     RETURNING id, name, stock, cost::float8 AS cost
+    `,
+    [id, name, stock, cost]
+  );
+
+  if (rowCount === 0) {
+    throw new Error(`Ingredient with id=${id} not found`);
+  }
+
+  return rows[0];
+}

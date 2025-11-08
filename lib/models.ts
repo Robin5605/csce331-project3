@@ -28,7 +28,7 @@ interface MenuItem {
     cost: number;
 }
 
-interface Ingredient{
+interface Ingredient {
     id: number;
     name: string;
     stock: number;

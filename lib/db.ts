@@ -47,31 +47,29 @@ export async function insert_into_menu_management_table(
     return rows;
 }
 
-// Function takes in the id of the menu item we want to delete and runs the sql query to do so. 
-export async function delete_from_menu_management_table(
-    id: number,
-) {
+// Function takes in the id of the menu item we want to delete and runs the sql query to do so.
+export async function delete_from_menu_management_table(id: number) {
     const { rows, rowCount } = await client.query(
         `
         DELETE FROM menu WHERE id = $1
         RETURNING id;
         `,
-        [id]
+        [id],
     );
 
-    if(rowCount == 0){
+    if (rowCount == 0) {
         throw new Error(`Menu item with id=${id} not found`);
     }
 
     return rows[0];
 }
 
-export async function populate_ingredient_management_table(){
+export async function populate_ingredient_management_table() {
     const { rows } = await client.query<Ingredient>(
         `
         SELECT id, name, stock, cost::float8 AS cost FROM ingredients
         ORDER by id
-        `
+        `,
     );
 
     return rows;
@@ -80,8 +78,8 @@ export async function populate_ingredient_management_table(){
 export async function insert_into_ingredient_management_table(
     name: string,
     stock: number,
-    cost: number
-){
+    cost: number,
+) {
     const { rows } = await client.query(
         `
         INSERT INTO ingredients (name, stock, cost)
@@ -94,19 +92,16 @@ export async function insert_into_ingredient_management_table(
     return rows;
 }
 
-
-export async function delete_from_ingredient_management_table(
-    id: number,
-) {
+export async function delete_from_ingredient_management_table(id: number) {
     const { rows, rowCount } = await client.query(
         `
         DELETE FROM ingredients WHERE id = $1
         RETURNING id;
         `,
-        [id]
+        [id],
     );
 
-    if(rowCount == 0){
+    if (rowCount == 0) {
         throw new Error(`Menu item with id=${id} not found`);
     }
 
@@ -115,14 +110,14 @@ export async function delete_from_ingredient_management_table(
 
 // Update an ingredient by id and return the updated row.
 export async function update_menu_management_table(
-  id: number,
-  name: string,
-  categoryId: number | null,
-  stock: number,
-  cost: number
+    id: number,
+    name: string,
+    categoryId: number | null,
+    stock: number,
+    cost: number,
 ) {
-  const { rows, rowCount } = await client.query<MenuItem>(
-    `
+    const { rows, rowCount } = await client.query<MenuItem>(
+        `
     UPDATE menu
        SET name = $2,
            category_id = $3,
@@ -131,26 +126,25 @@ export async function update_menu_management_table(
      WHERE id = $1
      RETURNING id, name, category_id, stock, cost::float8 AS cost
     `,
-    [id, name, categoryId ?? null, stock, cost]
-  );
+        [id, name, categoryId ?? null, stock, cost],
+    );
 
-  if (rowCount === 0) {
-    throw new Error(`Menu item with id=${id} not found`);
-  }
+    if (rowCount === 0) {
+        throw new Error(`Menu item with id=${id} not found`);
+    }
 
-  return rows[0];
+    return rows[0];
 }
-
 
 // Update an ingredient by id and return the updated row
 export async function update_ingredient_management_table(
-  id: number,
-  name: string,
-  stock: number,
-  cost: number
+    id: number,
+    name: string,
+    stock: number,
+    cost: number,
 ) {
-  const { rows, rowCount } = await client.query<Ingredient>(
-    `
+    const { rows, rowCount } = await client.query<Ingredient>(
+        `
     UPDATE ingredients
        SET name = $2,
            stock = $3,
@@ -158,12 +152,12 @@ export async function update_ingredient_management_table(
      WHERE id = $1
      RETURNING id, name, stock, cost::float8 AS cost
     `,
-    [id, name, stock, cost]
-  );
+        [id, name, stock, cost],
+    );
 
-  if (rowCount === 0) {
-    throw new Error(`Ingredient with id=${id} not found`);
-  }
+    if (rowCount === 0) {
+        throw new Error(`Ingredient with id=${id} not found`);
+    }
 
-  return rows[0];
+    return rows[0];
 }

@@ -43,35 +43,39 @@ function Dialog({
     title: string;
     children: React.ReactNode;
 }) {
-    if(!open) return null;
+    if (!open) return null;
     return (
         <div
             className="fixed inset-0 z-50 flex items-center justify-center"
             aria-modal="true"
             role="dialog"
-            onKeyDown={(e) => { if (e.key === "Escape") onClose(); }}
+            onKeyDown={(e) => {
+                if (e.key === "Escape") onClose();
+            }}
         >
-        {/* Backdrop - so that if someone clicks off of the dialog pane then it closes. */}
-        <button
-            className="absolute inset-0 bg-black/30"
-            onClick={onClose}
-            aria-label="Close dialog backdrop"
-        />
+            {/* Backdrop - so that if someone clicks off of the dialog pane then it closes. */}
+            <button
+                className="absolute inset-0 bg-black/30"
+                onClick={onClose}
+                aria-label="Close dialog backdrop"
+            />
 
-        {/* Panel */}
-        <div className="relative w-full max-w-md rounded-x1 bg-white shadow-x1 border p-4">
-            <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
-                <button
-                    onClick={onClose}
-                    className="rounded-md px-2 py-1 text-sm text-gray-600 hover:bg-gray-100"
-                    aria-label="Close dialog"
-                >
-                    x
-                </button>
+            {/* Panel */}
+            <div className="relative w-full max-w-md rounded-x1 bg-white shadow-x1 border p-4">
+                <div className="flex items-center justify-between">
+                    <h2 className="text-lg font-semibold text-gray-900">
+                        {title}
+                    </h2>
+                    <button
+                        onClick={onClose}
+                        className="rounded-md px-2 py-1 text-sm text-gray-600 hover:bg-gray-100"
+                        aria-label="Close dialog"
+                    >
+                        x
+                    </button>
+                </div>
+                <div className="mt-3">{children}</div>
             </div>
-            <div className="mt-3">{children}</div>
-        </div>
         </div>
     );
 }
@@ -99,7 +103,7 @@ export default function MenuManagerPage() {
     const [deleteOpen, setDeleteOpen] = useState(false);
     const [deleteSubmitting, setDeleteSubmitting] = useState(false);
     const [deleteFormError, setDeleteFormError] = useState<string | null>(null);
-    const [deleteForm, setDeleteForm] = useState({ id : "0"});
+    const [deleteForm, setDeleteForm] = useState({ id: "0" });
 
     // dialog visibility + form state for editing
     const [editOpen, setEditOpen] = useState(false);
@@ -110,7 +114,7 @@ export default function MenuManagerPage() {
         name: "",
         stock: "0",
         cost: "0",
-        });
+    });
 
     const fetchMenu = async () => {
         try {
@@ -137,7 +141,7 @@ export default function MenuManagerPage() {
             (r) =>
                 !q ||
                 r.name.toLowerCase().includes(q) ||
-                String(r.id).includes(q) 
+                String(r.id).includes(q),
         );
     }, [rows, query]);
 
@@ -145,13 +149,15 @@ export default function MenuManagerPage() {
 
     // trigger dialog to open by changing the addOpen to true which causes UI to refresh dialog component.
     const openAddDialog = () => {
-        setForm({ name: "", stock: "0", cost: "0"});
+        setForm({ name: "", stock: "0", cost: "0" });
         setFormError(null);
         setAddOpen(true);
-    }
+    };
 
     // validate -> convert types -> POST -> updateTable -> close
-    const onSubmitNewItem: React.FormEventHandler<HTMLFormElement> = async (e) => {
+    const onSubmitNewItem: React.FormEventHandler<HTMLFormElement> = async (
+        e,
+    ) => {
         e.preventDefault();
         setFormError(null);
 
@@ -184,11 +190,11 @@ export default function MenuManagerPage() {
 
             const res = await fetch("/api/ingredient", {
                 method: "POST",
-                headers: { "Content-Type" : "application/json"},
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(body),
             });
 
-            if(!res.ok) throw new Error(`POST /api/ingredient ${res.status}`);
+            if (!res.ok) throw new Error(`POST /api/ingredient ${res.status}`);
 
             const created: Ingredient = await res.json();
 
@@ -202,23 +208,23 @@ export default function MenuManagerPage() {
         } finally {
             setSubmitting(false);
         }
-
-    }
+    };
 
     const openDeleteDialog = () => {
-        setDeleteForm({ id : "0" });
+        setDeleteForm({ id: "0" });
         setDeleteFormError(null);
         setDeleteOpen(true);
-    }
+    };
 
-
-    const onSubmitDeleteItem: React.FormEventHandler<HTMLFormElement> = async (e) => {
+    const onSubmitDeleteItem: React.FormEventHandler<HTMLFormElement> = async (
+        e,
+    ) => {
         e.preventDefault();
         setDeleteFormError(null);
 
         const idNum = Number(deleteForm.id);
-        
-        if(!Number.isFinite(idNum) || idNum < 0){
+
+        if (!Number.isFinite(idNum) || idNum < 0) {
             setDeleteFormError("Please enter a valid non-negative numeric ID.");
             return;
         }
@@ -229,16 +235,17 @@ export default function MenuManagerPage() {
             setDeleteFormError(null);
 
             const body = {
-                id: idNum
+                id: idNum,
             };
 
             const res = await fetch("/api/ingredient", {
                 method: "DELETE",
-                headers: { "Content-Type" : "application/json"},
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(body),
             });
 
-            if(!res.ok) throw new Error(`DELETE /api/ingredient ${res.status}`);
+            if (!res.ok)
+                throw new Error(`DELETE /api/ingredient ${res.status}`);
 
             // ser the rows in the table
             setRows((prev) => prev.filter((x) => x.id !== idNum));
@@ -250,8 +257,7 @@ export default function MenuManagerPage() {
         } finally {
             setDeleteSubmitting(false);
         }
-    }
-
+    };
 
     const openEditDialog = (row: Ingredient) => {
         setEditError(null);
@@ -264,9 +270,11 @@ export default function MenuManagerPage() {
         setEditOpen(true);
     };
 
-    const onSubmitEditItem : React.FormEventHandler<HTMLFormElement> = async (e) => {
+    const onSubmitEditItem: React.FormEventHandler<HTMLFormElement> = async (
+        e,
+    ) => {
         e.preventDefault();
-        setEditError(null); 
+        setEditError(null);
 
         // Validate UI Strings
 
@@ -301,16 +309,18 @@ export default function MenuManagerPage() {
 
             const res = await fetch("/api/ingredient", {
                 method: "PUT",
-                headers: { "Content-Type" : "application/json"},
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(body),
             });
 
-            if(!res.ok) throw new Error(`PUT /api/ingredient ${res.status}`);
+            if (!res.ok) throw new Error(`PUT /api/ingredient ${res.status}`);
 
             const updated: Ingredient = await res.json();
 
             // Edit table
-            setRows(prev => prev.map(x => (x.id === updated.id ? updated : x)));
+            setRows((prev) =>
+                prev.map((x) => (x.id === updated.id ? updated : x)),
+            );
 
             // close Dialog
             setEditOpen(false);
@@ -319,8 +329,7 @@ export default function MenuManagerPage() {
         } finally {
             setEditSubmitting(false);
         }
-    }
-
+    };
 
     return (
         <div className="min-h-screen bg-neutral-100 text-gray-900">
@@ -338,8 +347,12 @@ export default function MenuManagerPage() {
                         className="flex-1 min-w-[220px] px-3 py-2 rounded-md border focus:outline-none focus:ring-2 focus:ring-neutral-300"
                     />
                     <ToolbarButton onClick={fetchMenu}>Refresh</ToolbarButton>
-                    <ToolbarButton onClick={openAddDialog}>Add Item</ToolbarButton>
-                    <ToolbarButton onClick={openDeleteDialog}>Delete Item</ToolbarButton>
+                    <ToolbarButton onClick={openAddDialog}>
+                        Add Item
+                    </ToolbarButton>
+                    <ToolbarButton onClick={openDeleteDialog}>
+                        Delete Item
+                    </ToolbarButton>
                     {/* Edit/Delete can be added after you implement PUT/DELETE */}
                 </div>
                 {error && (
@@ -382,9 +395,16 @@ export default function MenuManagerPage() {
                                         <Td>{r.name}</Td>
                                         <Td>{r.stock}</Td>
                                         <Td>${r.cost.toFixed(2)}</Td>
-                                        <Td><button onClick={() => openEditDialog(r)} className="px-2 py-1 text-xs rounded-md border hover:bg-gray-50">
+                                        <Td>
+                                            <button
+                                                onClick={() =>
+                                                    openEditDialog(r)
+                                                }
+                                                className="px-2 py-1 text-xs rounded-md border hover:bg-gray-50"
+                                            >
                                                 Edit
-                                        </button></Td>
+                                            </button>
+                                        </Td>
                                     </tr>
                                 ))
                             ) : (
@@ -407,165 +427,225 @@ export default function MenuManagerPage() {
             </div>
 
             {/* ADD ITEM DIALOG PANE */}
-            <Dialog open={addOpen} onClose={() => setAddOpen(false)} title="Add New Menu Item">
+            <Dialog
+                open={addOpen}
+                onClose={() => setAddOpen(false)}
+                title="Add New Menu Item"
+            >
                 <form onSubmit={onSubmitNewItem} className="space-y-3">
                     <div>
-                    <label className="block text-sm text-gray-700 mb-1">Name *</label>
-                    <input
-                        value={form.name}
-                        onChange={(e) => setForm({ ...form, name: e.target.value })}
-                        className="w-full rounded-md border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-neutral-300"
-                        placeholder="e.g., Thai Milk Tea"
-                        autoFocus
-                        required
-                    />
+                        <label className="block text-sm text-gray-700 mb-1">
+                            Name *
+                        </label>
+                        <input
+                            value={form.name}
+                            onChange={(e) =>
+                                setForm({ ...form, name: e.target.value })
+                            }
+                            className="w-full rounded-md border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-neutral-300"
+                            placeholder="e.g., Thai Milk Tea"
+                            autoFocus
+                            required
+                        />
                     </div>
 
                     <div className="grid grid-cols-2 gap-3">
-                    <div>
-                        <label className="block text-sm text-gray-700 mb-1">Stock *</label>
-                        <input
-                        value={form.stock}
-                        onChange={(e) => setForm({ ...form, stock: e.target.value })}
-                        className="w-full rounded-md border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-neutral-300"
-                        placeholder="e.g., 24"
-                        inputMode="numeric"
-                        required
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-sm text-gray-700 mb-1">Cost *</label>
-                        <input
-                        value={form.cost}
-                        onChange={(e) => setForm({ ...form, cost: e.target.value })}
-                        className="w-full rounded-md border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-neutral-300"
-                        placeholder="e.g., 4.50"
-                        inputMode="decimal"
-                        required
-                        />
-                    </div>
+                        <div>
+                            <label className="block text-sm text-gray-700 mb-1">
+                                Stock *
+                            </label>
+                            <input
+                                value={form.stock}
+                                onChange={(e) =>
+                                    setForm({ ...form, stock: e.target.value })
+                                }
+                                className="w-full rounded-md border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-neutral-300"
+                                placeholder="e.g., 24"
+                                inputMode="numeric"
+                                required
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm text-gray-700 mb-1">
+                                Cost *
+                            </label>
+                            <input
+                                value={form.cost}
+                                onChange={(e) =>
+                                    setForm({ ...form, cost: e.target.value })
+                                }
+                                className="w-full rounded-md border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-neutral-300"
+                                placeholder="e.g., 4.50"
+                                inputMode="decimal"
+                                required
+                            />
+                        </div>
                     </div>
 
                     {formError && (
-                    <p className="text-xs text-red-600 mt-1">Error: {formError}</p>
+                        <p className="text-xs text-red-600 mt-1">
+                            Error: {formError}
+                        </p>
                     )}
 
                     <div className="flex justify-end gap-2 pt-2">
-                    <button
-                        type="button"
-                        onClick={() => setAddOpen(false)}
-                        className="px-3 py-2 text-sm rounded-md border border-gray-300 hover:bg-gray-50"
-                    >
-                        Cancel
-                    </button>
-                    <button
-                        type="submit"
-                        disabled={submitting}
-                        className="px-3 py-2 text-sm rounded-md bg-neutral-900 text-white hover:bg-neutral-800 disabled:opacity-50"
-                    >
-                        {submitting ? "Adding..." : "Add Item"}
-                    </button>
+                        <button
+                            type="button"
+                            onClick={() => setAddOpen(false)}
+                            className="px-3 py-2 text-sm rounded-md border border-gray-300 hover:bg-gray-50"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            disabled={submitting}
+                            className="px-3 py-2 text-sm rounded-md bg-neutral-900 text-white hover:bg-neutral-800 disabled:opacity-50"
+                        >
+                            {submitting ? "Adding..." : "Add Item"}
+                        </button>
                     </div>
                 </form>
             </Dialog>
 
             {/* DELETE ITEM DIALOG PANE */}
-            <Dialog open={deleteOpen} onClose={() => setDeleteOpen(false)} title="Remove Menu Item">
+            <Dialog
+                open={deleteOpen}
+                onClose={() => setDeleteOpen(false)}
+                title="Remove Menu Item"
+            >
                 <form onSubmit={onSubmitDeleteItem} className="space-y-3">
                     <div>
-                    <label className="block text-sm text-gray-700 mb-1">ID *</label>
-                    <input
-                        value={deleteForm.id}
-                        onChange={(e) => setDeleteForm({ ...deleteForm, id: e.target.value })}
-                        className="w-full rounded-md border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-neutral-300"
-                        placeholder="0"
-                        autoFocus
-                        required
-                    />
+                        <label className="block text-sm text-gray-700 mb-1">
+                            ID *
+                        </label>
+                        <input
+                            value={deleteForm.id}
+                            onChange={(e) =>
+                                setDeleteForm({
+                                    ...deleteForm,
+                                    id: e.target.value,
+                                })
+                            }
+                            className="w-full rounded-md border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-neutral-300"
+                            placeholder="0"
+                            autoFocus
+                            required
+                        />
                     </div>
 
                     {deleteFormError && (
-                    <p className="text-xs text-red-600 mt-1">Error: {deleteFormError}</p>
+                        <p className="text-xs text-red-600 mt-1">
+                            Error: {deleteFormError}
+                        </p>
                     )}
 
                     <div className="flex justify-end gap-2 pt-2">
-                    <button
-                        type="button"
-                        onClick={() => setDeleteOpen(false)}
-                        className="px-3 py-2 text-sm rounded-md border border-gray-300 hover:bg-gray-50"
-                    >
-                        Cancel
-                    </button>
-                    <button
-                        type="submit"
-                        disabled={deleteSubmitting}
-                        className="px-3 py-2 text-sm rounded-md bg-neutral-900 text-white hover:bg-neutral-800 disabled:opacity-50"
-                    >
-                        {deleteSubmitting ? "Deleting..." : "Delete Item"}
-                    </button>
+                        <button
+                            type="button"
+                            onClick={() => setDeleteOpen(false)}
+                            className="px-3 py-2 text-sm rounded-md border border-gray-300 hover:bg-gray-50"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            disabled={deleteSubmitting}
+                            className="px-3 py-2 text-sm rounded-md bg-neutral-900 text-white hover:bg-neutral-800 disabled:opacity-50"
+                        >
+                            {deleteSubmitting ? "Deleting..." : "Delete Item"}
+                        </button>
                     </div>
                 </form>
             </Dialog>
 
-            <Dialog open={editOpen} onClose={() => setEditOpen(false)} title="Edit Ingredient">
+            <Dialog
+                open={editOpen}
+                onClose={() => setEditOpen(false)}
+                title="Edit Ingredient"
+            >
                 <form onSubmit={onSubmitEditItem} className="space-y-3">
-                    <div className="text-xs text-gray-500">Editing ID: {editForm.id}</div>
+                    <div className="text-xs text-gray-500">
+                        Editing ID: {editForm.id}
+                    </div>
 
                     <div>
-                    <label className="block text-sm text-gray-700 mb-1">Name *</label>
-                    <input
-                        value={editForm.name}
-                        onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                        className="w-full rounded-md border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-neutral-300"
-                        required
-                    />
+                        <label className="block text-sm text-gray-700 mb-1">
+                            Name *
+                        </label>
+                        <input
+                            value={editForm.name}
+                            onChange={(e) =>
+                                setEditForm({
+                                    ...editForm,
+                                    name: e.target.value,
+                                })
+                            }
+                            className="w-full rounded-md border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-neutral-300"
+                            required
+                        />
                     </div>
 
                     <div className="grid grid-cols-2 gap-3">
-                    <div>
-                        <label className="block text-sm text-gray-700 mb-1">Stock *</label>
-                        <input
-                        value={editForm.stock}
-                        onChange={(e) => setEditForm({ ...editForm, stock: e.target.value })}
-                        className="w-full rounded-md border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-neutral-300"
-                        inputMode="numeric"
-                        required
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-sm text-gray-700 mb-1">Cost *</label>
-                        <input
-                        value={editForm.cost}
-                        onChange={(e) => setEditForm({ ...editForm, cost: e.target.value })}
-                        className="w-full rounded-md border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-neutral-300"
-                        inputMode="decimal"
-                        required
-                        />
-                    </div>
+                        <div>
+                            <label className="block text-sm text-gray-700 mb-1">
+                                Stock *
+                            </label>
+                            <input
+                                value={editForm.stock}
+                                onChange={(e) =>
+                                    setEditForm({
+                                        ...editForm,
+                                        stock: e.target.value,
+                                    })
+                                }
+                                className="w-full rounded-md border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-neutral-300"
+                                inputMode="numeric"
+                                required
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm text-gray-700 mb-1">
+                                Cost *
+                            </label>
+                            <input
+                                value={editForm.cost}
+                                onChange={(e) =>
+                                    setEditForm({
+                                        ...editForm,
+                                        cost: e.target.value,
+                                    })
+                                }
+                                className="w-full rounded-md border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-neutral-300"
+                                inputMode="decimal"
+                                required
+                            />
+                        </div>
                     </div>
 
-                    {editError && <p className="text-xs text-red-600 mt-1">Error: {editError}</p>}
+                    {editError && (
+                        <p className="text-xs text-red-600 mt-1">
+                            Error: {editError}
+                        </p>
+                    )}
 
                     <div className="flex justify-end gap-2 pt-2">
-                    <button
-                        type="button"
-                        onClick={() => setEditOpen(false)}
-                        className="px-3 py-2 text-sm rounded-md border border-gray-300 hover:bg-gray-50"
-                    >
-                        Cancel
-                    </button>
-                    <button
-                        type="submit"
-                        disabled={editSubmitting}
-                        className="px-3 py-2 text-sm rounded-md bg-neutral-900 text-white hover:bg-neutral-800 disabled:opacity-50"
-                    >
-                        {editSubmitting ? "Saving..." : "Save Changes"}
-                    </button>
+                        <button
+                            type="button"
+                            onClick={() => setEditOpen(false)}
+                            className="px-3 py-2 text-sm rounded-md border border-gray-300 hover:bg-gray-50"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            disabled={editSubmitting}
+                            className="px-3 py-2 text-sm rounded-md bg-neutral-900 text-white hover:bg-neutral-800 disabled:opacity-50"
+                        >
+                            {editSubmitting ? "Saving..." : "Save Changes"}
+                        </button>
                     </div>
                 </form>
             </Dialog>
-
-
         </div>
     );
 }

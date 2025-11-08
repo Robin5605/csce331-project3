@@ -188,7 +188,7 @@ export default function MenuManagerPage() {
                 body: JSON.stringify(body),
             });
 
-            if(!res.ok) throw new Error('POST /api/ingredient ${res.status}');
+            if(!res.ok) throw new Error(`POST /api/ingredient ${res.status}`);
 
             const created: Ingredient = await res.json();
 
@@ -269,6 +269,9 @@ export default function MenuManagerPage() {
         setEditError(null); 
 
         // Validate UI Strings
+
+        const idNum = Number(editForm.id);
+
         if (!editForm.name.trim()) {
             setEditError("Name is required.");
             return;
@@ -290,6 +293,7 @@ export default function MenuManagerPage() {
             setEditError(null);
 
             const body = {
+                id: idNum,
                 name: editForm.name.trim(),
                 stock: stockNum,
                 cost: costNum,
@@ -301,7 +305,7 @@ export default function MenuManagerPage() {
                 body: JSON.stringify(body),
             });
 
-            if(!res.ok) throw new Error('PUT /api/ingredient ${res.status}');
+            if(!res.ok) throw new Error(`PUT /api/ingredient ${res.status}`);
 
             const updated: Ingredient = await res.json();
 
@@ -311,9 +315,9 @@ export default function MenuManagerPage() {
             // close Dialog
             setEditOpen(false);
         } catch (e: any) {
-            setFormError(e?.message ?? "Failed to add item.");
+            setEditError(e?.message ?? "Failed to update item.");
         } finally {
-            setSubmitting(false);
+            setEditSubmitting(false);
         }
     }
 
@@ -494,10 +498,10 @@ export default function MenuManagerPage() {
                     </button>
                     <button
                         type="submit"
-                        disabled={submitting}
+                        disabled={deleteSubmitting}
                         className="px-3 py-2 text-sm rounded-md bg-neutral-900 text-white hover:bg-neutral-800 disabled:opacity-50"
                     >
-                        {submitting ? "Deleting..." : "Delete Item"}
+                        {deleteSubmitting ? "Deleting..." : "Delete Item"}
                     </button>
                     </div>
                 </form>

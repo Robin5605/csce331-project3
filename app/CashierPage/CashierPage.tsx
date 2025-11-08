@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react";
+import { ReactNode, useState } from "react";
 import Image from "next/image"
 
 import ItemCard from "../../components/ItemCard";
@@ -113,6 +113,28 @@ export default function CashierPage() {
     const [isCustomizationOpen, setIsCustomizationOpen] = useState<boolean>(false);
     const [selectedCategory, setSelectedCateory] = useState<string>("Fruit Tea");
     const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
+    const [selectedCustomizationOptions, setSelectedCustomizationOptions] = useState<Record<string, string>>({
+        Size: "Medium Cups",
+        Ice: "100%",
+        Boba: "none",
+        Jelly: "none",
+        Tea: "black tea",
+        Topping: "none",
+    });
+
+    //Handles whenever a MenuItem is clicked to bring up the customization menu
+    const menuItemClicked = (item: MenuItem) => {
+        setSelectedItem(item)
+        setIsCustomizationOpen(true)
+    }
+
+    //Handles whenever a CustomizationCard is clicked in order to select it
+    const customizationCardClicked = (name: string, category: string) => {
+    setSelectedCustomizationOptions({
+        ...selectedCustomizationOptions,
+        [category]: name,
+    });
+    };
 
     //Used as a button for each category in the Cashier page
     const Category = ({ name }: {name: string}) => {
@@ -127,35 +149,83 @@ export default function CashierPage() {
     }
 
     //Used as a button for each category in the Customization page
-    const CustomizationCategory = ({ name }: {name: string}) => {
-        const [selection, setSelection] = useState("");
-        
-
+    const CustomizationCategory = ({ name, children }: {name: string, children?: ReactNode;}) => {
         return(
             <div className="w-full">
                 <h2 className="font-semibold text-xl mt-3 mb-2">{name}</h2>
                 <div className="flex gap-8">
-                    {
-                        <p>BOLLYWOOD</p>
-                    }
+                    {children}
                 </div>
             </div>
        )
     }
 
-    //Handles whenever a MenuItem is clicked to bring up the customization menu
-    const menuItemClicked = (item: MenuItem) => {
-        setSelectedItem(item)
-        setIsCustomizationOpen(true)
+    //Used to contain items for each customization category and handle filtering
+    const CustomizationData = ({ isOneItem = true, toFilterBy = "", category} : { toFilterBy: string, isOneItem: boolean, category: string }) => {
+        if(isOneItem){
+            return(
+                <>
+                    {["0%", "25%", "50%", "75%", "100%"].map(per => {
+                        <CustomizationCard
+                            key={`customizationcard${category}${per}`}
+                            itemName={per}
+                            categorySelection={selectedCustomizationOptions[category]}
+                            whenClicked={() => customizationCardClicked(per, category)}
+                        />
+                    })}       
+                </>
+            )
+        }
+        return(
+            <>
+                {inventory
+                .filter(i =>i.name
+                    .trim()
+                    .toLowerCase()
+                    .endsWith(toFilterBy)
+                ).map(i => (
+                    <CustomizationCard 
+                        key={`customizationcard${i.name}`}
+                        itemName={i.name}
+                        categorySelection={selectedCustomizationOptions[category]}
+                        whenClicked={() => customizationCardClicked(i.name, category)}
+                    />
+                ))}
+            </>
+        )
     }
 
+    console.log(selectedCustomizationOptions)
     return (
         <div className="flex min-h-screen bg-[#ffddd233] font-sans dark:bg-black gap-6 justify-between">
             <AlertDialog open={isCustomizationOpen} onOpenChange={setIsCustomizationOpen}>
                 {/* The reason we override small is because that's the only way we can adjust the width of the AlertDialog */}
                 <AlertDialogContent className="w-[90vw] max-w-none sm:max-w-2xl p-8 "> 
                     <AlertDialogTitle className="font-semibold text-3xl">Customize Order</AlertDialogTitle>
+                        <CustomizationCategory name="Size">
+                            <CustomizationData isOneItem={false} toFilterBy="cups" category="Size"/>
+                            {/* {inventory
+                                .filter(i =>i.name
+                                    .trim()
+                                    .toLowerCase()
+                                    .endsWith("cups")
+                                ).map(i => (
+                                    <CustomizationCard 
+                                    itemName={i.name}
+                                    categorySelection={selectedCustomizationOptions["size"]}
+                                    whenClicked={() =>
+                                        setSelectedCustomizationOptions({
+                                        ...selectedCustomizationOptions,
+                                        size: i.name.toLowerCase(),
+                                        })
+                                    }
+                                    />
+                            ))} */}
+                        </CustomizationCategory>
                         <CustomizationCategory name={"Ice"}/>
+                        <CustomizationCategory name={"Tea"}/>
+                        <CustomizationCategory name={"Boba"}/>
+                        <CustomizationCategory name={"Jelly"}/>
                         <CustomizationCategory name={"Toppings"}/>
                     <AlertDialogFooter>
                         <AlertDialogCancel onClick={() => setIsCustomizationOpen(false)}>

@@ -76,7 +76,13 @@ const menuData: MenuData = {
   ]
 };
 
-const inventory = [
+interface InventoryItem {
+  id: number;
+  name: string;
+  stock: number;
+  cost: number;
+}
+const inventory: InventoryItem[] = [
   { id: 9, name: "Red Bean", stock: 100, cost: 0.75 },
   { id: 12, name: "Pudding", stock: 100, cost: 0.75 },
   { id: 13, name: "Herb Jelly", stock: 100, cost: 0.75 },
@@ -97,7 +103,7 @@ const inventory = [
   { id: 1, name: "Black Tea", stock: 100, cost: 0 },
   { id: 10, name: "Creama", stock: 94, cost: 1.25 },
   { id: 17, name: "Mango Popping Boba", stock: 95, cost: 1 },
-  { id: 8, name: "Mini Pearl", stock: 51, cost: 0.75 },
+  { id: 8, name: "Mini Pearl", stock: 0, cost: 0.75 },
   { id: 2, name: "Green Tea", stock: 4, cost: 0 },
   { id: 6, name: "Aloe Vera", stock: 94, cost: 0.75 },
   { id: 28, name: "Ice", stock: 988, cost: 0.0 },
@@ -109,23 +115,28 @@ const inventory = [
 
 
 export default function CashierPage() {
-    //Serves as the state used for showing the Customization page
-    const [isCustomizationOpen, setIsCustomizationOpen] = useState<boolean>(false);
-    const [selectedCategory, setSelectedCateory] = useState<string>("Fruit Tea");
-    const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
-    const [selectedCustomizationOptions, setSelectedCustomizationOptions] = useState<Record<string, string>>({
+    //Sets default selection for customization options
+    const defaultCustomizations = {
         Size: "Medium Cups",
         Ice: "100%",
         Boba: "none",
         Jelly: "none",
-        Tea: "black tea",
+        Tea: "Black Tea",
         Topping: "none",
-    });
+    }
+
+
+    //Serves as the state used for showing the Customization page
+    const [isCustomizationOpen, setIsCustomizationOpen] = useState<boolean>(false);
+    const [selectedCategory, setSelectedCateory] = useState<string>("Fruit Tea");
+    const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
+    const [selectedCustomizationOptions, setSelectedCustomizationOptions] = useState<Record<string, string>>(defaultCustomizations);
 
     //Handles whenever a MenuItem is clicked to bring up the customization menu
     const menuItemClicked = (item: MenuItem) => {
-        setSelectedItem(item)
-        setIsCustomizationOpen(true)
+        setSelectedCustomizationOptions(defaultCustomizations); //Makes sure to reset the selected options
+        setSelectedItem(item);
+        setIsCustomizationOpen(true);
     }
 
     //Handles whenever a CustomizationCard is clicked in order to select it
@@ -162,37 +173,55 @@ export default function CashierPage() {
 
     //Used to contain items for each customization category and handle filtering
     const CustomizationData = ({ isOneItem = true, toFilterBy = "", category} : { toFilterBy: string, isOneItem: boolean, category: string }) => {
-        if(isOneItem){
-            return(
-                <>
-                    {["0%", "25%", "50%", "75%", "100%"].map(per => {
-                        <CustomizationCard
-                            key={`customizationcard${category}${per}`}
-                            itemName={per}
-                            categorySelection={selectedCustomizationOptions[category]}
-                            whenClicked={() => customizationCardClicked(per, category)}
-                        />
-                    })}       
-                </>
-            )
+        const itemsToIgnore = ["napkins", "straws", "seal", "bag"];
+
+        interface OptionItem {
+            name: string;
+            is_disabled: boolean;
         }
-        return(
-            <>
-                {inventory
-                .filter(i =>i.name
-                    .trim()
-                    .toLowerCase()
-                    .endsWith(toFilterBy)
-                ).map(i => (
-                    <CustomizationCard 
-                        key={`customizationcard${i.name}`}
-                        itemName={i.name}
-                        categorySelection={selectedCustomizationOptions[category]}
-                        whenClicked={() => customizationCardClicked(i.name, category)}
+
+        const options: OptionItem[] = isOneItem
+            ? ["0%", "25%", "50%", "75%", "100%"].map((label) => ({
+                name: label,
+                is_disabled: false,
+                }))
+            : category === "Toppings"
+            ? inventory
+                .filter((i) => {
+                    const n = i.name.trim().toLowerCase();
+                    return (
+                    !["cups", "tea", "boba", "jelly", "ice", "sugar"].some((s) => n.endsWith(s)) &&
+                    !itemsToIgnore.includes(n)
+                    );
+                })
+                .map((i) => ({
+                    name: i.name,
+                    is_disabled: i.stock < 1,
+                }))
+            : inventory
+                .filter((i) =>
+                    i.name.trim().toLowerCase().endsWith(toFilterBy.trim().toLowerCase())
+                )
+                .map((i) => ({
+                    name: i.name,
+                    is_disabled: i.stock < 1,
+                }));
+
+        return (
+            <div className="flex flex-wrap gap-8">
+            {options.map((item) => {
+                return(
+                    <CustomizationCard
+                        key={`customizationcard-${category}-${item.name}`}
+                        itemName={item.name}
+                        isDisabled={item.is_disabled}
+                        categorySelection={selectedCustomizationOptions[category] ?? ""}
+                        whenClicked={() => customizationCardClicked(item.name, category)}
                     />
-                ))}
-            </>
-        )
+                )
+            })}
+            </div>
+        );
     }
 
     console.log(selectedCustomizationOptions)
@@ -200,33 +229,36 @@ export default function CashierPage() {
         <div className="flex min-h-screen bg-[#ffddd233] font-sans dark:bg-black gap-6 justify-between">
             <AlertDialog open={isCustomizationOpen} onOpenChange={setIsCustomizationOpen}>
                 {/* The reason we override small is because that's the only way we can adjust the width of the AlertDialog */}
-                <AlertDialogContent className="w-[90vw] max-w-none sm:max-w-2xl p-8 "> 
+                <AlertDialogContent className="w-[90vw] max-w-none sm:max-w-4xl p-8 "> 
                     <AlertDialogTitle className="font-semibold text-3xl">Customize Order</AlertDialogTitle>
-                        <CustomizationCategory name="Size">
-                            <CustomizationData isOneItem={false} toFilterBy="cups" category="Size"/>
-                            {/* {inventory
-                                .filter(i =>i.name
-                                    .trim()
-                                    .toLowerCase()
-                                    .endsWith("cups")
-                                ).map(i => (
-                                    <CustomizationCard 
-                                    itemName={i.name}
-                                    categorySelection={selectedCustomizationOptions["size"]}
-                                    whenClicked={() =>
-                                        setSelectedCustomizationOptions({
-                                        ...selectedCustomizationOptions,
-                                        size: i.name.toLowerCase(),
-                                        })
-                                    }
-                                    />
-                            ))} */}
-                        </CustomizationCategory>
-                        <CustomizationCategory name={"Ice"}/>
-                        <CustomizationCategory name={"Tea"}/>
-                        <CustomizationCategory name={"Boba"}/>
-                        <CustomizationCategory name={"Jelly"}/>
-                        <CustomizationCategory name={"Toppings"}/>
+                        
+                       <div className="max-h-[800px] overflow-y-auto pr-2">
+                            <CustomizationCategory name="Size">
+                                <CustomizationData isOneItem={false} toFilterBy="cups" category="Size" />
+                            </CustomizationCategory>
+
+                            <CustomizationCategory name="Ice">
+                                <CustomizationData isOneItem={true} toFilterBy="ice" category="Ice" />
+                            </CustomizationCategory>
+
+                            <CustomizationCategory name="Tea">
+                                <CustomizationData isOneItem={false} toFilterBy="tea" category="Tea" />
+                            </CustomizationCategory>
+
+                            <CustomizationCategory name="Boba">
+                                <CustomizationData isOneItem={false} toFilterBy="boba" category="Boba" />
+                            </CustomizationCategory>
+
+                            <CustomizationCategory name="Jelly">
+                                <CustomizationData isOneItem={false} toFilterBy="jelly" category="Jelly" />
+                            </CustomizationCategory>
+
+                            <CustomizationCategory name="Toppings">
+                                <CustomizationData isOneItem={false} toFilterBy="topping" category="Toppings" />
+                            </CustomizationCategory>
+                        </div>
+
+
                     <AlertDialogFooter>
                         <AlertDialogCancel onClick={() => setIsCustomizationOpen(false)}>
                             Cancel

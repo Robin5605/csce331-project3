@@ -79,9 +79,9 @@ const menuData: MenuData = {
 
 export default function CashierPage() {
     //Serves as the state used for showing the Customization page
-    const [isCustomizationOpen, setIsCustomizationOpen] = useState<boolean>(false)
-    const [selectedCategory, setSelectedCateory] = useState<string>("Fruit Tea")
-    const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null)
+    const [isCustomizationOpen, setIsCustomizationOpen] = useState<boolean>(false);
+    const [selectedCategory, setSelectedCateory] = useState<string>("Fruit Tea");
+    const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
 
     //Used as a button for each category in the Cashier page
     const Category = ({ name }: {name: string}) => {
@@ -97,7 +97,8 @@ export default function CashierPage() {
 
     //Used as a button for each category in the Customization page
     const CustomizationCategory = ({ name }: {name: string}) => {
-        const [selection, setSelection] = useState("")
+        const [selection, setSelection] = useState("");
+        
 
         return(
             <div className="w-full">
@@ -109,6 +110,12 @@ export default function CashierPage() {
                 </div>
             </div>
        )
+    }
+
+    //Handles whenever a MenuItem is clicked to bring up the customization menu
+    const menuItemClicked = (item: MenuItem) => {
+        setSelectedItem(item)
+        setIsCustomizationOpen(true)
     }
 
     return (
@@ -145,7 +152,7 @@ export default function CashierPage() {
                             return(
                                 <ItemCard
                                     itemName={itemData.name}
-                                    whenClicked={() => setSelectedItem(itemData)}
+                                    whenClicked={() => menuItemClicked(itemData)}
                                 />
                             )
                         })

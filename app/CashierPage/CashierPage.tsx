@@ -280,8 +280,6 @@ export default function CashierPage() {
         );
     }
 
-    console.log(selectedCustomizationOptions)
-    console.log(curOrders)
     return (
         <div className="flex min-h-screen bg-[#ffddd233] font-sans dark:bg-black gap-6 justify-between">
             <AlertDialog open={isCustomizationOpen} onOpenChange={setIsCustomizationOpen}>

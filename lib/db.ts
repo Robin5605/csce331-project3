@@ -52,11 +52,15 @@ export async function insert_into_orders_table(
     employeeId: number,
     paymentMethod: string
 ) {
+    console.log(`cost: ${cost}`);
+    console.log(`empl id: ${employeeId}`);
+    console.log(`pymnt mthd: ${paymentMethod}`);
     const { rows } = await client.query(
         `
-        INSERT into orders (cost, employee_id, payment_method)
-        VALUES (${cost}, ${employeeId}, ${paymentMethod})
-        RETURNING id`
+        INSERT into orders (cost, employee_id, payment_method, placed_at)
+        VALUES ($1, $2, $3, NOW())
+        RETURNING id`,
+        [cost ?? 0,employeeId ?? "1",paymentMethod ?? "CARD"],
     );
 
     return rows;

@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import CustomizationCard from "@/components/CustomizationCard";
 
+
 //[REMOVE WHEN API IS IMPLEMENTED] Temporary data for now
 interface MenuItem {
   id: number;
@@ -177,6 +178,37 @@ export default function CashierPage() {
         setCurOrders([...curOrders, order]);
         setIsCustomizationOpen(false);
     };
+
+
+    //handles current order and sends completed order to database
+    const checkoutOrder = async () => {
+        console.log("checking out");
+        try{
+            const orderBody = {
+                cost: totalCost,
+                employeeId: "1",
+                paymentMethod: "CARD"
+            };
+            const orderRes = await fetch("api/cashier", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify(orderBody),
+            });
+            if(!orderRes.ok) throw new Error(`POST_ORDER /api/menu ${orderRes.status}`);
+            const orderInfo: number = await orderRes.json();
+            //let currentOrderId = orderRows[0];
+            //let currentDrinkOrderId = 0;
+            //console.log(typeof(orderRows));
+            //
+            //curOrders.map((drinkOrder, drinkOrderIndex) => {
+            //    if()
+            //} );
+        }
+        catch (e: any){
+            
+        }
+        setCurOrders([]);
+    }
 
 
     //Used as a button for each category in the Cashier page
@@ -427,7 +459,7 @@ export default function CashierPage() {
                 <span>Total:</span>
                 <span>{totalCost.toFixed(2)}$</span>
                 </div>
-                <button className="w-full bg-[#6d6875] hover:bg-[#564f5a] text-white font-semibold py-2 rounded-xl transition">
+                <button className="w-full bg-[#6d6875] hover:bg-[#564f5a] text-white font-semibold py-2 rounded-xl transition" onClick={checkoutOrder}>
                     Checkout
                 </button>
             </div>

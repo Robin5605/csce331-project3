@@ -46,3 +46,47 @@ export async function insert_into_menu_management_table(
 
     return rows;
 }
+
+export async function insert_into_orders_table(
+    cost: number,
+    employeeId: number,
+    paymentMethod: string
+) {
+    const { rows } = await client.query(
+        `
+        INSERT into orders (cost, employee_id, payment_method)
+        VALUES (${cost}, ${employeeId}, ${paymentMethod})
+        RETURNING id`
+    );
+
+    return rows;
+}
+
+export async function insert_into_drinks_orders_table(
+    menuId: number,
+    orderId: number
+) {
+    const { rows } = await client.query(
+        `
+        INSERT into drinks_orders (menu_id, order_id)
+        VALUES (${menuId},${orderId})
+        RETURNING id`
+    );
+
+    return rows;
+}
+
+export async function insert_into_drinks_ingredients_table(
+    drinkId: number,
+    ingredientId: number,
+    servings: number
+) {
+    const { rows } = await client.query(
+        `
+        INSERT into drinks_ingredients (drink_id, ingredient_id, servings)
+        VALUES (${drinkId},${ingredientId},${servings})
+        RETURNING id`
+    );
+
+    return rows;
+}

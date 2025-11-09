@@ -172,8 +172,8 @@ export default function CashierPage() {
     const submitOrder = () => {
         // Add the current selection into the total orders
         const order = {
-            ...selectedCustomizationOptions,
-            Drink: selectedItem
+            Drink: selectedItem,
+            ...selectedCustomizationOptions
         }
         setCurOrders([...curOrders, order]);
         setIsCustomizationOpen(false);
@@ -189,20 +189,39 @@ export default function CashierPage() {
                 employeeId: "1",
                 paymentMethod: "CARD"
             };
-            const orderRes = await fetch("api/cashier", {
+            const orderRes = await fetch("api/cashier/order", {
                 method: "POST",
                 headers: {"Content-Type": "application/json"},
                 body: JSON.stringify(orderBody),
             });
-            if(!orderRes.ok) throw new Error(`POST_ORDER /api/menu ${orderRes.status}`);
-            const orderInfo: number = await orderRes.json();
-            //let currentOrderId = orderRows[0];
-            //let currentDrinkOrderId = 0;
-            //console.log(typeof(orderRows));
-            //
-            //curOrders.map((drinkOrder, drinkOrderIndex) => {
-            //    if()
-            //} );
+            if(!orderRes.ok) throw new Error(`POST /api/menu ${orderRes.status}`);
+            let { id } = await orderRes.json();
+            const orderId = id;
+            console.log(`order id: ${orderId}`);
+            //console.log(`order info: ${orderInfo}`);
+            curOrders.map((order, orderIndex) => {
+                console.log(orderIndex);
+                let drinkOrderId = -1;
+                Object.entries(order).forEach(async ([key,value]) => {
+                    console.log(`\tk: ${key}\tv: ${value}`);
+                    if(key.toLowerCase() === 'drink') {
+                        console.log(`\tdrink id: ${value.id}`);
+                        const drinkOrderBody = {
+                            menuId: value.id,
+                            orderId: orderId
+                        };
+                        const drinkOrderRes = await fetch("api/cashier/drinks_order", {
+                            method: "POST",
+                            headers: {"Content-Type": "application/json"},
+                            body: JSON.stringify(drinkOrderBody),
+                        });
+                        console.log(await drinkOrderRes.json());
+                    }
+                    //else if (key === "Ice" || key === "Sugar") {
+                    //    
+                    //}
+                } );
+            } );
         }
         catch (e: any){
             

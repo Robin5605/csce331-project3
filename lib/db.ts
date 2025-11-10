@@ -80,10 +80,7 @@ export async function insert_into_drinks_orders_table(
     return rows;
 }
 
-export async function update_menu_inventory(
-    ammount: number,
-    menu_id: number,
-) {
+export async function update_menu_inventory(ammount: number, menu_id: number) {
     const { rows } = await client.query(
         `UPDATE menu SET stock = stock - ${ammount} WHERE id = ${menu_id}`,
     );

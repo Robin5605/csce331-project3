@@ -1,9 +1,8 @@
 "use client";
 import React, { useEffect, useMemo, useState } from "react";
-
 import { MenuItem, Order, DrinkIngredient, DrinkOrder } from "@/lib/models";
 
-const addItemButton: React.FC<
+const AddItemButton: React.FC<
     React.ButtonHTMLAttributes<HTMLButtonElement>
 > = ({ children, className = "", ...props }) => (
     <button
@@ -14,7 +13,7 @@ const addItemButton: React.FC<
     </button>
 );
 
-const menuItemIDArea: React.FC<
+const MenuItemIDArea: React.FC<
     React.TextareaHTMLAttributes<HTMLTextAreaElement>
 > = ({ children, className = "", ...props }) => (
     <textarea
@@ -25,21 +24,27 @@ const menuItemIDArea: React.FC<
     </textarea>
 );
 
-export default function customerOrderTest() {
+export default function CustomerOrderTest() {
     const addMItem = async () => {
         try {
-        } catch (e: any) {}
+            console.log("Adding menu item...");
+            // your logic here
+        } catch (e: any) {
+            console.error(e);
+        }
     };
 
     return (
         <div className="min-h-screen bg-neutral-100 text-gray-900">
-            <div>
-                <textarea id="menuItemIDTA"></textarea>
-                <addItemButton onClick={addMItem}>
-                    add menuitem to order
-                </addItemButton>
+            <div className="flex flex-col gap-3 p-4">
+                <MenuItemIDArea
+                    id="menuItemIDTA"
+                    placeholder="Enter Menu Item ID..."
+                />
+                <AddItemButton onClick={addMItem}>
+                    Add menu item to order
+                </AddItemButton>
             </div>
-            <div></div>
         </div>
     );
 }

@@ -1,5 +1,5 @@
 import { Client } from "pg";
-import { MenuItem } from "./models";
+import { Employee, MenuItem } from "./models";
 
 const client = new Client({
     connectionString: process.env.DATABASE_URL,
@@ -43,6 +43,12 @@ export async function insert_into_menu_management_table(
         RETURNING id, name, category_id, stock, cost::float8 AS cost`,
         [name, categoryId ?? null, stock ?? 0, cost ?? 0],
     );
+
+    return rows;
+}
+
+export async function fetch_employee_data(): Promise<Employee[]> {
+    const { rows } = await client.query<Employee>("SELECT * FROM employees");
 
     return rows;
 }

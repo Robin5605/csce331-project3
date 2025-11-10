@@ -197,15 +197,21 @@ export default function CashierPage() {
             if(!orderRes.ok) throw new Error(`POST /api/menu ${orderRes.status}`);
             let { id } = await orderRes.json();
             const orderId = id;
-            console.log(`order id: ${orderId}`);
+            console.log(`= order id: ${orderId}`);
             //console.log(`order info: ${orderInfo}`);
-            curOrders.map((order, orderIndex) => {
+            curOrders.map(async (order, orderIndex) => {
                 console.log(orderIndex);
                 let drinkOrderId = -1;
-                Object.entries(order).forEach(async ([key,value]) => {
-                    console.log(`\tk: ${key}\tv: ${value}`);
+                //Object.entries(order).forEach(async ([key,value]) => {
+                console.log(`length ${Object.entries(order).length}`)
+                for(let index = 0; index < Object.entries(order).length; ++index) {
+                    let [key, value] = Object.entries(order)[index];
+                    console.log(`\t= k: ${key}\tv: ${value}\tdo id: ${drinkOrderId}`);
+                    if(value === 'None' || value === null || value.length === 0){
+                        continue;
+                    } 
                     if(key.toLowerCase() === 'drink') {
-                        console.log(`\tdrink id: ${value.id}`);
+                        console.log(`\t= drink id: ${value.id}`);
                         const drinkOrderBody = {
                             menuId: value.id,
                             orderId: orderId
@@ -215,12 +221,60 @@ export default function CashierPage() {
                             headers: {"Content-Type": "application/json"},
                             body: JSON.stringify(drinkOrderBody),
                         });
-                        console.log(await drinkOrderRes.json());
+                        //console.log(await drinkOrderRes.json());
+                        let { id } = await drinkOrderRes.json();
+                        drinkOrderId = id;
+                        console.log(`\t= drink order id: ${drinkOrderId}`);
                     }
-                    //else if (key === "Ice" || key === "Sugar") {
-                    //    
-                    //}
-                } );
+                    else {
+                        let ingredientAmmount = 0;
+                        if (key === "Ice" || key === "Sugar") {
+                            if(value === "100%") {
+                                ingredientAmmount = 4;
+                            }
+                            else if(value === "75%") {
+                                ingredientAmmount = 3;
+                            }
+                            else if(value === "50%") {
+                                ingredientAmmount = 2;
+                            }
+                            else if(value === "25%") {
+                                ingredientAmmount = 1;
+                            }
+                            else {
+                                continue;
+                            }
+                        }
+                        else if (key === "Size") {
+                            continue;
+                        }
+                        else{
+                            ingredientAmmount = 1;
+                        }
+                        let ingredientTemp = inventory.filter( (cItem) => {
+                                if(cItem.name == key){
+                                    return cItem;
+                                }
+                        })[0];
+                        if(ingredientTemp == null){
+                            console.log("\t\t==bad ingredient name==");
+                            continue;
+                        }
+                        const drinkIngredientBody = {
+                            drink_id: drinkOrderId,
+                            ingredient_id: ingredientTemp.id,
+                            servings: ingredientAmmount
+                        };
+                        console.log("\t\t== drink id: " + drinkIngredientBody.drink_id);
+                        console.log("\t\t== ing id: " + drinkIngredientBody.ingredient_id);
+                        console.log("\t\t== servings: " + drinkIngredientBody.servings);
+                        //await fetch("api/cashier/drink_ingredients", {
+                        //    method: "POST",
+                        //    headers: {"Content-Type": "application/json"},
+                        //    body: JSON.stringify(drinkIngredientBody),
+                        //});
+                    }
+                }
             } );
         }
         catch (e: any){
@@ -410,13 +464,13 @@ export default function CashierPage() {
                             Object.entries(order).forEach(([key, value]) => {
                                 //Doesn't show if not added
                                 if(value === 'None' || value === null || value.length === 0){
-                                    return
+                                    return;
                                 } 
 
                                 //Handles drinks
                                 if(key.toLowerCase() === 'drink'){
                                     order_price += value.cost
-                                    return
+                                    return;
                                 }
                                 
                                 //Handles these differently since their values aren't items in the ingreidents table

@@ -61,3 +61,12 @@ export async function remove_employee(id: number): Promise<Employee | null> {
 
     return rows.length === 0 ? null : rows[0];
 }
+
+export async function updateEmployee(id: number, newName: string, newHoursWorked: number, newPin: number): Promise<Employee | null> {
+    const { rows } = await client.query<Employee>(
+        "UPDATE employees SET name = $2, hours_worked = $3, pin = $4 WHERE id = $1 RETURNING *",
+        [id, newName, newHoursWorked, newPin]
+    );
+
+    return rows.length === 0 ? null : rows[0];
+}

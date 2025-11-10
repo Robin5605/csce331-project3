@@ -21,9 +21,9 @@ export async function fetch_all_menu_items(): Promise<MenuItem[]> {
  */
 export async function fetch_login_information(
     pin: string,
-): Promise<{ pin: string }[]> {
+): Promise<{ is_manager: boolean; id: number; name: string }[]> {
     const query = "SELECT is_manager, id, name FROM employees WHERE pin = $1;";
-    const result = await client.query<{ pin: string }>(query, [pin]);
+    const result = await client.query<{ is_manager: boolean; id: number; name: string }>(query, [pin]);
 
     return result.rows;
 }

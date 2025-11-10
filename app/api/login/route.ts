@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { fetch_login_information } from "@/lib/db";
 
 /**
- * GET request for login verification
+ * POST request for login verification
  * @returns NextResponse indicating success or failure
  *  */
 export async function POST(request: Request) {

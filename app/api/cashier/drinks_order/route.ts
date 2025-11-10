@@ -10,5 +10,5 @@ export async function POST(req: Request) {
     const { menuId, orderId } = thing;
     const rows = await insert_into_drinks_orders_table(menuId, orderId);
     await update_menu_inventory(1, menuId);
-    return NextResponse.json(rows[0], { status: 201 });
+    return NextResponse.json(rows, { status: 201 });
 }

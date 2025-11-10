@@ -1,9 +1,9 @@
-'use server'
+"use server";
 import { EmployeesDataTable } from "./data-table";
 import { columns } from "./columns";
 import { fetch_employee_data, updateEmployee } from "@/lib/db";
 
-export { updateEmployee as updateEmployeeAction};
+export { updateEmployee as updateEmployeeAction };
 
 export default async function EmployeePage() {
     const data = await fetch_employee_data();

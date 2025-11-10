@@ -1,7 +1,5 @@
 import { Client } from "pg";
 import { MenuItem } from "./models";
-import { connection } from "next/server";
-
 const client = new Client({
     connectionString: process.env.DATABASE_URL,
 });

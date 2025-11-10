@@ -36,7 +36,9 @@ export default function LoginPage() {
             } catch (e) {
                 errorText = "<no response body>";
             }
-            throw Error(`Failed to authenticate: POST /api/login returned status ${res.status} - ${errorText}`);
+            throw Error(
+                `Failed to authenticate: POST /api/login returned status ${res.status} - ${errorText}`,
+            );
         }
         const data: LoginResponse = await res.json();
         setLoginResponse(data);

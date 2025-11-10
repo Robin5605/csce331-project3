@@ -85,9 +85,9 @@ export async function insert_into_drinks_ingredients_table(
     ingredientId: number,
     servings: number
 ) {
-    console.log(drinkId);
-    console.log(ingredientId);
-    console.log(servings);
+    //console.log(drinkId);
+    //console.log(ingredientId);
+    //console.log(servings);
     const { rows } = await client.query(
         `
         INSERT into drinks_ingredients (drink_id, ingredient_id, servings)
@@ -102,7 +102,9 @@ export async function update_ingredient_inventory(
     ammount: number,
     ingredient_id: number
 ) {
+    //console.log(`ingredient_id ${ingredient_id}`);
+    //console.log(`ammount ${ammount}`);
     const { rows } = await client.query(
-        `UPDATE menu SET stock = stock + ${ammount} WHERE id = ${ingredient_id}`
+        `UPDATE ingredients SET stock = stock - ${ammount} WHERE id = ${ingredient_id}`
     );
 }

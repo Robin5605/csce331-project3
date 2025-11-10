@@ -182,7 +182,7 @@ export default function CashierPage() {
 
     //handles current order and sends completed order to database
     const checkoutOrder = async () => {
-        console.log("checking out");
+        //console.log("checking out");
         try{
             const orderBody = {
                 cost: totalCost,
@@ -197,21 +197,16 @@ export default function CashierPage() {
             if(!orderRes.ok) throw new Error(`POST /api/menu ${orderRes.status}`);
             let { id } = await orderRes.json();
             const orderId = id;
-            console.log(`= order id: ${orderId}`);
-            //console.log(`order info: ${orderInfo}`);
+            //console.log(`= order id: ${orderId}`);
             curOrders.map(async (order, orderIndex) => {
-                console.log(orderIndex);
                 let drinkOrderId = -1;
-                //Object.entries(order).forEach(async ([key,value]) => {
-                console.log(`length ${Object.entries(order).length}`)
                 for(let index = 0; index < Object.entries(order).length; ++index) {
                     let [key, value] = Object.entries(order)[index];
-                    console.log(`\t= k: ${key}\tv: ${value}\tdo id: ${drinkOrderId}`);
+                    //console.log(`\t= k: ${key}\tv: ${value}\tdo id: ${drinkOrderId}`);
                     if(value === 'None' || value === null || value.length === 0){
                         continue;
                     } 
                     if(key.toLowerCase() === 'drink') {
-                        console.log(`\t= drink id: ${value.id}`);
                         const drinkOrderBody = {
                             menuId: value.id,
                             orderId: orderId
@@ -221,13 +216,12 @@ export default function CashierPage() {
                             headers: {"Content-Type": "application/json"},
                             body: JSON.stringify(drinkOrderBody),
                         });
-                        //console.log(await drinkOrderRes.json());
                         let { id } = await drinkOrderRes.json();
                         drinkOrderId = id;
-                        console.log(`\t= drink order id: ${drinkOrderId}`);
                     }
                     else {
                         let ingredientAmmount = 0;
+                        let ingredientTemp: InventoryItem | any = inventory[0];
                         if (key === "Ice" || key === "Sugar") {
                             if(value === "100%") {
                                 ingredientAmmount = 4;
@@ -244,35 +238,62 @@ export default function CashierPage() {
                             else {
                                 continue;
                             }
+                            ingredientTemp =   { id: 28, name: "Ice"};
                         }
                         else if (key === "Size") {
                             continue;
                         }
-                        else{
+                        else if (Array.isArray(value)) {
                             ingredientAmmount = 1;
+                            value.forEach( async (ingredientName) => {
+                                ingredientTemp = inventory.find((cItem) => {
+                                    if(cItem.name == ingredientName){
+                                        return cItem;
+                                    }
+                                });
+
+                                if(ingredientTemp == null){
+                                    console.log("==bad ingredient name==");
+                                    return;
+                                }
+
+                                const drinkIngredientBody = {
+                                    drink_id: drinkOrderId,
+                                    ingredient_id: ingredientTemp.id,
+                                    servings: ingredientAmmount
+                                };
+                                await fetch("api/cashier/drink_ingredients", {
+                                    method: "POST",
+                                    headers: {"Content-Type": "application/json"},
+                                    body: JSON.stringify(drinkIngredientBody),
+                                });
+                            });
+                            continue;
                         }
-                        let ingredientTemp = inventory.filter( (cItem) => {
-                                if(cItem.name == key){
+                        else {
+                            ingredientAmmount = 1;
+                            ingredientTemp = inventory.find((cItem) => {
+                                if(cItem.name == value){
                                     return cItem;
                                 }
-                        })[0];
+                            });
+                        }
+                        
                         if(ingredientTemp == null){
                             console.log("\t\t==bad ingredient name==");
                             continue;
                         }
+
                         const drinkIngredientBody = {
                             drink_id: drinkOrderId,
                             ingredient_id: ingredientTemp.id,
                             servings: ingredientAmmount
                         };
-                        console.log("\t\t== drink id: " + drinkIngredientBody.drink_id);
-                        console.log("\t\t== ing id: " + drinkIngredientBody.ingredient_id);
-                        console.log("\t\t== servings: " + drinkIngredientBody.servings);
-                        //await fetch("api/cashier/drink_ingredients", {
-                        //    method: "POST",
-                        //    headers: {"Content-Type": "application/json"},
-                        //    body: JSON.stringify(drinkIngredientBody),
-                        //});
+                        await fetch("api/cashier/drink_ingredients", {
+                            method: "POST",
+                            headers: {"Content-Type": "application/json"},
+                            body: JSON.stringify(drinkIngredientBody),
+                        });
                     }
                 }
             } );

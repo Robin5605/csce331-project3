@@ -8,6 +8,5 @@ export async function POST(req: Request){
     const thing = await req.json();
     const { menuId, orderId } = thing;
     const rows = await insert_into_drinks_orders_table(menuId, orderId);
-    let doid = rows[0];
-    return NextResponse.json(doid, { status: 201 });
+    return NextResponse.json(rows[0], { status: 201 });
 }

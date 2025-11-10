@@ -30,7 +30,13 @@ export default function LoginPage() {
             body: JSON.stringify({ pin }),
         });
         if (!res.ok) {
-            throw Error(`POST /api/login ${res.status}`);
+            let errorText;
+            try {
+                errorText = await res.text();
+            } catch (e) {
+                errorText = "<no response body>";
+            }
+            throw Error(`Failed to authenticate: POST /api/login returned status ${res.status} - ${errorText}`);
         }
         const data: LoginResponse = await res.json();
         setLoginResponse(data);

@@ -4,7 +4,7 @@ import { Employee } from "@/lib/models";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-// TODO: replcae with models.ts definitions
+// TODO: replace with models.ts definitions
 type LoginResponse = Pick<Employee, "id" | "name" | "is_manager">;
 
 /**

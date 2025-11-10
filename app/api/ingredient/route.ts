@@ -1,16 +1,16 @@
 import { NextResponse } from "next/server";
 import {
-    insert_into_menu_management_table,
-    populate_menu_management_table,
-    delete_from_menu_management_table,
-    update_menu_management_table,
+    insert_into_ingredient_management_table,
+    populate_ingredient_management_table,
+    delete_from_ingredient_management_table,
+    update_ingredient_management_table,
 } from "@/lib/db";
 
 /**
  * GET request to get all menu items from database.
  */
 export async function GET() {
-    const rows = await populate_menu_management_table();
+    const rows = await populate_ingredient_management_table();
     return NextResponse.json(rows);
 }
 
@@ -19,7 +19,7 @@ export async function GET() {
  */
 export async function POST(req: Request) {
     const b = await req.json();
-    const { name, categoryId, stock, cost } = b;
+    const { name, stock, cost } = b;
 
     // Run validation on inputted values
     if (!name || name.trim() === "" || typeof name !== "string") {
@@ -40,21 +40,8 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: "Invalid cost." }, { status: 400 });
     }
 
-    let catId = null;
-    if (categoryId !== null && categoryId !== undefined && categoryId !== "") {
-        const cid = Number(categoryId);
-        if (!Number.isFinite(cid)) {
-            return NextResponse.json(
-                { error: "Invalid categoryId" },
-                { status: 400 },
-            );
-        }
-        catId = cid;
-    }
-
-    const rows = await insert_into_menu_management_table(
+    const rows = await insert_into_ingredient_management_table(
         name,
-        categoryId,
         stock,
         cost,
     );
@@ -63,7 +50,7 @@ export async function POST(req: Request) {
 }
 
 /**
- * DELETE request do delete an item from the database.
+ * DELETE request to delete an item from the database.
  * */
 export async function DELETE(req: Request) {
     try {
@@ -80,7 +67,7 @@ export async function DELETE(req: Request) {
             );
         }
 
-        const row = await delete_from_menu_management_table(idNum);
+        const row = await delete_from_ingredient_management_table(idNum);
         return NextResponse.json(row, { status: 200 });
     } catch (e: any) {
         if (e.message?.includes("not found")) {
@@ -98,7 +85,7 @@ export async function DELETE(req: Request) {
 export async function PUT(req: Request) {
     try {
         const b = await req.json();
-        const { id, name, categoryId, stock, cost } = b;
+        const { id, name, stock, cost } = b;
 
         const idNum = Number(id);
 
@@ -134,26 +121,9 @@ export async function PUT(req: Request) {
             );
         }
 
-        let catId = null;
-        if (
-            categoryId !== null &&
-            categoryId !== undefined &&
-            categoryId !== ""
-        ) {
-            const cid = Number(categoryId);
-            if (!Number.isFinite(cid)) {
-                return NextResponse.json(
-                    { error: "Invalid categoryId" },
-                    { status: 400 },
-                );
-            }
-            catId = cid;
-        }
-
-        const row = await update_menu_management_table(
+        const row = await update_ingredient_management_table(
             idNum,
             name,
-            catId,
             stockNum,
             costNum,
         );

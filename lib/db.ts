@@ -1,5 +1,6 @@
 import { Client } from "pg";
-import { MenuItem } from "./models";
+import { Employee, MenuItem } from "./models";
+
 const client = new Client({
     connectionString: process.env.DATABASE_URL,
 });
@@ -60,4 +61,33 @@ export async function insert_into_menu_management_table(
     );
 
     return rows;
+}
+
+export async function fetch_employee_data(): Promise<Employee[]> {
+    const { rows } = await client.query<Employee>("SELECT * FROM employees");
+
+    return rows;
+}
+
+export async function remove_employee(id: number): Promise<Employee | null> {
+    const { rows } = await client.query<Employee>(
+        "DELETE FROM employees WHERE id = $1 RETURNING *",
+        [id],
+    );
+
+    return rows.length === 0 ? null : rows[0];
+}
+
+export async function updateEmployee(
+    id: number,
+    newName: string,
+    newHoursWorked: number,
+    newPin: number,
+): Promise<Employee | null> {
+    const { rows } = await client.query<Employee>(
+        "UPDATE employees SET name = $2, hours_worked = $3, pin = $4 WHERE id = $1 RETURNING *",
+        [id, newName, newHoursWorked, newPin],
+    );
+
+    return rows.length === 0 ? null : rows[0];
 }

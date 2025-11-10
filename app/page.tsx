@@ -25,9 +25,10 @@ export default function Home() {
 
                 {/* Buttons */}
                 <div className="flex flex-col gap-4 sm:flex-row">
-                    <button 
-                    onClick={() => router.push("/loginPage")}
-                    className="rounded-full bg-blue-600 px-6 py-3 font-medium text-white hover:bg-blue-700">
+                    <button
+                        onClick={() => router.push("/loginPage")}
+                        className="rounded-full bg-blue-600 px-6 py-3 font-medium text-white hover:bg-blue-700"
+                    >
                         Login
                     </button>
                     <button className="rounded-full bg-green-600 px-6 py-3 font-medium text-white hover:bg-green-700">

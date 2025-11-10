@@ -1,20 +1,19 @@
 "use client";
 
+import { Employee } from "@/lib/models";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 
 // TODO: replcae with models.ts definitions
-interface LoginResponse {
-  id: number;
-  name: string;
-  is_manager: boolean;
-}
+type LoginResponse = Pick<Employee, "id" | "name" | "is_manager">;
 
 /**
  * Login Page Component
  * @returns 
  */
 export default function LoginPage() {
+  const router = useRouter();
   const [pin, setPin] = useState("");
   const [loginResponse, setLoginResponse] = useState<LoginResponse | null>(null);
 
@@ -37,6 +36,14 @@ export default function LoginPage() {
     setPin("");
     alert(`Login Successful! Welcome, ${data.name} ${data.is_manager ? "(Manager)" : ""}`);
     // TODO: Redirect to correct application page
+
+    if (data.is_manager) {
+      router.push("/managerPage");
+    }
+    else {
+      // TODO: Change to orderPage when implemented
+      router.push("/loginPage");
+    }
   };
 
   const buttons = ["1","2","3","4","5","6","7","8","9","0"];

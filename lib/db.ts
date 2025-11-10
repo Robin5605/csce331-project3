@@ -1,116 +1,362 @@
+// lib/db.ts
 import { Client } from "pg";
-import { MenuItem } from "./models";
+import { MenuItem, Ingredient, Employee } from "./models";
 
+// Create a single client and connect once
 const client = new Client({
     connectionString: process.env.DATABASE_URL,
 });
 
-await client.connect();
+let _connected = false;
+async function ensureConnected() {
+    if (!_connected) {
+        await client.connect();
+        _connected = true;
+    }
+}
 
 /**
  * Fetches all menu items from the database.
- * @return A promise that resolves to an array of MenuItem objects.
  */
 export async function fetch_all_menu_items(): Promise<MenuItem[]> {
+    await ensureConnected();
     const result = await client.query<MenuItem>("SELECT * FROM menu");
-
     return result.rows;
 }
 
-export async function populate_menu_management_table() {
-    const { rows } = await client.query<MenuItem>(`SELECT id,
-           name,
-           category_id,
-           stock,
-           cost::float8 AS cost
+/**
+ * Fetch login information from the database by PIN.
+ */
+export async function fetch_login_information(
+    pin: string,
+): Promise<{ is_manager: boolean; id: number; name: string }[]> {
+    await ensureConnected();
+    const query = `
+    SELECT is_manager, id, name
+    FROM employees
+    WHERE pin = $1;
+  `;
+    const result = await client.query<{
+        is_manager: boolean;
+        id: number;
+        name: string;
+    }>(query, [pin]);
+    return result.rows;
+}
+
+/**
+ * Return rows for menu management table (typed & casted).
+ */
+export async function populate_menu_management_table(): Promise<MenuItem[]> {
+    await ensureConnected();
+    const { rows } = await client.query<MenuItem>(
+        `
+    SELECT id, name, category_id, stock, cost::float8 AS cost
     FROM menu
     ORDER BY id
-  `);
-
+    `,
+    );
     return rows;
 }
 
+/**
+ * Insert a menu item and return the inserted row.
+ */
 export async function insert_into_menu_management_table(
     name: string,
     categoryId: number | null,
     stock: number,
     cost: number,
-) {
-    const { rows } = await client.query(
+): Promise<MenuItem[]> {
+    await ensureConnected();
+    const { rows } = await client.query<MenuItem>(
         `
-        INSERT into menu (name, category_id, stock, cost)
-        VALUES ($1,$2,$3,$4)
-        RETURNING id, name, category_id, stock, cost::float8 AS cost`,
+    INSERT INTO menu (name, category_id, stock, cost)
+    VALUES ($1, $2, $3, $4)
+    RETURNING id, name, category_id, stock, cost::float8 AS cost
+    `,
         [name, categoryId ?? null, stock ?? 0, cost ?? 0],
     );
-
     return rows;
 }
 
+/**
+ * Insert an order and return the created order id.
+ */
 export async function insert_into_orders_table(
     cost: number,
     employeeId: number,
-    paymentMethod: string,
-) {
-    //console.log(`cost: ${cost}`);
-    //console.log(`empl id: ${employeeId}`);
-    //console.log(`pymnt mthd: ${paymentMethod}`);
-    const { rows } = await client.query(
+    paymentMethod: "CARD" | "CASH" | string,
+): Promise<{ id: number }> {
+    await ensureConnected();
+    const { rows } = await client.query<{ id: number }>(
         `
-        INSERT into orders (cost, employee_id, payment_method, placed_at)
-        VALUES ($1, $2, $3, NOW())
-        RETURNING id`,
-        [cost ?? 0, employeeId ?? "1", paymentMethod ?? "CARD"],
+    INSERT INTO orders (cost, employee_id, payment_method, placed_at)
+    VALUES ($1, $2, $3, NOW())
+    RETURNING id
+    `,
+        [cost ?? 0, employeeId, paymentMethod ?? "CARD"],
+    );
+    return rows[0];
+}
+
+/**
+ * Delete a menu item by id and return the deleted id.
+ */
+export async function delete_from_menu_management_table(
+    id: number,
+): Promise<{ id: number }> {
+    await ensureConnected();
+    const { rows, rowCount } = await client.query<{ id: number }>(
+        `
+    DELETE FROM menu
+    WHERE id = $1
+    RETURNING id
+    `,
+        [id],
     );
 
+    if (rowCount === 0) {
+        throw new Error(`Menu item with id=${id} not found`);
+    }
+    return rows[0];
+}
+
+/**
+ * Populate ingredient management table.
+ */
+export async function populate_ingredient_management_table(): Promise<
+    Ingredient[]
+> {
+    await ensureConnected();
+    const { rows } = await client.query<Ingredient>(
+        `
+    SELECT id, name, stock, cost::float8 AS cost
+    FROM ingredients
+    ORDER BY id
+    `,
+    );
     return rows;
 }
 
+/**
+ * Link a drink (menu item) to an order.
+ */
 export async function insert_into_drinks_orders_table(
     menuId: number,
     orderId: number,
-) {
-    const { rows } = await client.query(
+): Promise<{ id: number }> {
+    await ensureConnected();
+    const { rows } = await client.query<{ id: number }>(
         `
-        INSERT into drinks_orders (menu_id, order_id)
-        VALUES (${menuId},${orderId})
-        RETURNING id`,
+    INSERT INTO drinks_orders (menu_id, order_id)
+    VALUES ($1, $2)
+    RETURNING id
+    `,
+        [menuId, orderId],
     );
+    return rows[0];
+}
 
+/**
+ * Insert an ingredient and return the inserted row.
+ */
+export async function insert_into_ingredient_management_table(
+    name: string,
+    stock: number,
+    cost: number,
+): Promise<Ingredient[]> {
+    await ensureConnected();
+    const { rows } = await client.query<Ingredient>(
+        `
+    INSERT INTO ingredients (name, stock, cost)
+    VALUES ($1, $2, $3)
+    RETURNING id, name, stock, cost::float8 AS cost
+    `,
+        [name, stock ?? 0, cost ?? 0],
+    );
     return rows;
 }
 
-export async function update_menu_inventory(ammount: number, menu_id: number) {
-    const { rows } = await client.query(
-        `UPDATE menu SET stock = stock - ${ammount} WHERE id = ${menu_id}`,
+/**
+ * Decrement menu stock safely (parameterized).
+ */
+export async function update_menu_inventory(
+    amount: number,
+    menu_id: number,
+): Promise<void> {
+    await ensureConnected();
+    await client.query(
+        `
+    UPDATE menu
+    SET stock = stock - $1
+    WHERE id = $2
+    `,
+        [amount, menu_id],
     );
 }
 
+/**
+ * Insert mapping in drinks_ingredients.
+ */
 export async function insert_into_drinks_ingredients_table(
     drinkId: number,
     ingredientId: number,
     servings: number,
-) {
-    //console.log(drinkId);
-    //console.log(ingredientId);
-    //console.log(servings);
-    const { rows } = await client.query(
+): Promise<{ id: number }> {
+    await ensureConnected();
+    const { rows } = await client.query<{ id: number }>(
         `
-        INSERT into drinks_ingredients (drink_id, ingredient_id, servings)
-        VALUES (${drinkId},${ingredientId},${servings})
-        RETURNING id`,
+    INSERT INTO drinks_ingredients (drink_id, ingredient_id, servings)
+    VALUES ($1, $2, $3)
+    RETURNING id
+    `,
+        [drinkId, ingredientId, servings],
+    );
+    return rows[0];
+}
+
+/**
+ * Decrement ingredient stock safely (parameterized).
+ */
+export async function update_ingredient_inventory(
+    amount: number,
+    ingredient_id: number,
+): Promise<void> {
+    await ensureConnected();
+    await client.query(
+        `
+    UPDATE ingredients
+    SET stock = stock - $1
+    WHERE id = $2
+    `,
+        [amount, ingredient_id],
+    );
+}
+
+/**
+ * Delete an ingredient by id and return the deleted id.
+ */
+export async function delete_from_ingredient_management_table(
+    id: number,
+): Promise<{ id: number }> {
+    await ensureConnected();
+    const { rows, rowCount } = await client.query<{ id: number }>(
+        `
+    DELETE FROM ingredients
+    WHERE id = $1
+    RETURNING id
+    `,
+        [id],
     );
 
+    if (rowCount === 0) {
+        throw new Error(`Ingredient with id=${id} not found`);
+    }
+    return rows[0];
+}
+
+/**
+ * Update a menu item by id and return the updated row.
+ */
+export async function update_menu_management_table(
+    id: number,
+    name: string,
+    categoryId: number | null,
+    stock: number,
+    cost: number,
+): Promise<MenuItem> {
+    await ensureConnected();
+    const { rows, rowCount } = await client.query<MenuItem>(
+        `
+    UPDATE menu
+       SET name = $2,
+           category_id = $3,
+           stock = $4,
+           cost = $5
+     WHERE id = $1
+     RETURNING id, name, category_id, stock, cost::float8 AS cost
+    `,
+        [id, name, categoryId ?? null, stock, cost],
+    );
+
+    if (rowCount === 0) {
+        throw new Error(`Menu item with id=${id} not found`);
+    }
+    return rows[0];
+}
+
+/**
+ * Update an ingredient by id and return the updated row.
+ */
+export async function update_ingredient_management_table(
+    id: number,
+    name: string,
+    stock: number,
+    cost: number,
+): Promise<Ingredient> {
+    await ensureConnected();
+    const { rows, rowCount } = await client.query<Ingredient>(
+        `
+    UPDATE ingredients
+       SET name = $2,
+           stock = $3,
+           cost  = $4
+     WHERE id = $1
+     RETURNING id, name, stock, cost::float8 AS cost
+    `,
+        [id, name, stock, cost],
+    );
+
+    if (rowCount === 0) {
+        throw new Error(`Ingredient with id=${id} not found`);
+    }
+    return rows[0];
+}
+
+/**
+ * Fetch all employees.
+ */
+export async function fetch_employee_data(): Promise<Employee[]> {
+    await ensureConnected();
+    const { rows } = await client.query<Employee>(
+        "SELECT * FROM employees ORDER BY id",
+    );
     return rows;
 }
 
-export async function update_ingredient_inventory(
-    ammount: number,
-    ingredient_id: number,
-) {
-    //console.log(`ingredient_id ${ingredient_id}`);
-    //console.log(`ammount ${ammount}`);
-    const { rows } = await client.query(
-        `UPDATE ingredients SET stock = stock - ${ammount} WHERE id = ${ingredient_id}`,
+/**
+ * Remove an employee by id and return the removed row (or null).
+ */
+export async function remove_employee(id: number): Promise<Employee | null> {
+    await ensureConnected();
+    const { rows } = await client.query<Employee>(
+        "DELETE FROM employees WHERE id = $1 RETURNING *",
+        [id],
     );
+    return rows.length === 0 ? null : rows[0];
+}
+
+/**
+ * Update an employee by id and return the updated row (or null).
+ */
+export async function updateEmployee(
+    id: number,
+    newName: string,
+    newHoursWorked: number,
+    newPin: number,
+): Promise<Employee | null> {
+    await ensureConnected();
+    const { rows } = await client.query<Employee>(
+        `
+    UPDATE employees
+       SET name = $2,
+           hours_worked = $3,
+           pin = $4
+     WHERE id = $1
+     RETURNING *
+    `,
+        [id, newName, newHoursWorked, newPin],
+    );
+    return rows.length === 0 ? null : rows[0];
 }

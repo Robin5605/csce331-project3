@@ -87,7 +87,7 @@ export async function insert_into_orders_table(
     cost: number,
     employeeId: number,
     paymentMethod: "CARD" | "CASH" | string,
-): Promise<{ id: number }> {
+): Promise<{ id: number }[]> {
     await ensureConnected();
     const { rows } = await client.query<{ id: number }>(
         `
@@ -97,7 +97,7 @@ export async function insert_into_orders_table(
     `,
         [cost ?? 0, employeeId, paymentMethod ?? "CARD"],
     );
-    return rows[0];
+    return rows;
 }
 
 /**
@@ -145,7 +145,7 @@ export async function populate_ingredient_management_table(): Promise<
 export async function insert_into_drinks_orders_table(
     menuId: number,
     orderId: number,
-): Promise<{ id: number }> {
+): Promise<{ id: number }[]> {
     await ensureConnected();
     const { rows } = await client.query<{ id: number }>(
         `
@@ -155,7 +155,7 @@ export async function insert_into_drinks_orders_table(
     `,
         [menuId, orderId],
     );
-    return rows[0];
+    return rows;
 }
 
 /**
@@ -203,7 +203,7 @@ export async function insert_into_drinks_ingredients_table(
     drinkId: number,
     ingredientId: number,
     servings: number,
-): Promise<{ id: number }> {
+): Promise<{ id: number }[]> {
     await ensureConnected();
     const { rows } = await client.query<{ id: number }>(
         `
@@ -213,7 +213,7 @@ export async function insert_into_drinks_ingredients_table(
     `,
         [drinkId, ingredientId, servings],
     );
-    return rows[0];
+    return rows;
 }
 
 /**

@@ -50,7 +50,7 @@ export async function insert_into_menu_management_table(
 export async function insert_into_orders_table(
     cost: number,
     employeeId: number,
-    paymentMethod: string
+    paymentMethod: string,
 ) {
     //console.log(`cost: ${cost}`);
     //console.log(`empl id: ${employeeId}`);
@@ -60,7 +60,7 @@ export async function insert_into_orders_table(
         INSERT into orders (cost, employee_id, payment_method, placed_at)
         VALUES ($1, $2, $3, NOW())
         RETURNING id`,
-        [cost ?? 0,employeeId ?? "1",paymentMethod ?? "CARD"],
+        [cost ?? 0, employeeId ?? "1", paymentMethod ?? "CARD"],
     );
 
     return rows;
@@ -68,22 +68,31 @@ export async function insert_into_orders_table(
 
 export async function insert_into_drinks_orders_table(
     menuId: number,
-    orderId: number
+    orderId: number,
 ) {
     const { rows } = await client.query(
         `
         INSERT into drinks_orders (menu_id, order_id)
         VALUES (${menuId},${orderId})
-        RETURNING id`
+        RETURNING id`,
     );
 
     return rows;
 }
 
+export async function update_menu_inventory(
+    ammount: number,
+    menu_id: number,
+) {
+    const { rows } = await client.query(
+        `UPDATE menu SET stock = stock - ${ammount} WHERE id = ${menu_id}`,
+    );
+}
+
 export async function insert_into_drinks_ingredients_table(
     drinkId: number,
     ingredientId: number,
-    servings: number
+    servings: number,
 ) {
     //console.log(drinkId);
     //console.log(ingredientId);
@@ -92,7 +101,7 @@ export async function insert_into_drinks_ingredients_table(
         `
         INSERT into drinks_ingredients (drink_id, ingredient_id, servings)
         VALUES (${drinkId},${ingredientId},${servings})
-        RETURNING id`
+        RETURNING id`,
     );
 
     return rows;
@@ -100,11 +109,11 @@ export async function insert_into_drinks_ingredients_table(
 
 export async function update_ingredient_inventory(
     ammount: number,
-    ingredient_id: number
+    ingredient_id: number,
 ) {
     //console.log(`ingredient_id ${ingredient_id}`);
     //console.log(`ammount ${ammount}`);
     const { rows } = await client.query(
-        `UPDATE ingredients SET stock = stock - ${ammount} WHERE id = ${ingredient_id}`
+        `UPDATE ingredients SET stock = stock - ${ammount} WHERE id = ${ingredient_id}`,
     );
 }

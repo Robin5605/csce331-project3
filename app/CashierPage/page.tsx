@@ -239,10 +239,11 @@ export default function CashierPage() {
         //console.log("checking out");
         try {
             const orderBody = {
-                cost: totalCost,
+                cost: getOrderPrice(curOrders),
                 employeeId: "1",
                 paymentMethod: "CARD",
             };
+            console.log(orderBody.cost);
             const orderRes = await fetch("api/cashier/order", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },

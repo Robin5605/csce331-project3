@@ -360,3 +360,19 @@ export async function updateEmployee(
     );
     return rows.length === 0 ? null : rows[0];
 }
+
+/** 
+ * Fetch all ingredients (just name and stock) on low stock (<=50).
+ */
+export async function lowStockIngredients() {
+    await ensureConnected();
+    const { rows } = await client.query<Ingredient>(
+        `
+            SELECT name, stock FROM ingredients 
+            WHERE stock <= 50
+            ORDER BY stock ASC
+        `
+    );
+
+    return rows;
+}

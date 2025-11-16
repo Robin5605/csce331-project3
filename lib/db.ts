@@ -368,7 +368,8 @@ export async function lowStockIngredients() {
     await ensureConnected();
     const { rows } = await client.query<Ingredient>(
         `
-            SELECT name, stock FROM ingredients 
+            SELECT name AS "ingredientName",
+            stock FROM ingredients 
             WHERE stock <= 50
             ORDER BY stock ASC
         `

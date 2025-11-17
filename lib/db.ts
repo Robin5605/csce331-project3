@@ -1,6 +1,6 @@
 // lib/db.ts
 import { Client } from "pg";
-import { MenuItem, Ingredient, Employee } from "./models";
+import { MenuItem, Ingredient, Employee, XReportRow, ZReportRow } from "./models";
 
 // Create a single client and connect once
 const client = new Client({
@@ -360,3 +360,107 @@ export async function updateEmployee(
     );
     return rows.length === 0 ? null : rows[0];
 }
+
+
+//  X REPORTS AND Z REPORTS
+
+/**
+ * Fetch X report data.
+ * @returns type of x_rows
+ */
+export async function fetch_x_report(): Promise<XReportRow[]> {
+    await ensureConnected();
+
+    const query = `
+        SELECT
+            EXTRACT(HOUR FROM placed_at AT TIME ZONE 'UTC') AS sale_hour,
+            COUNT(*) AS number_of_sales,
+            COALESCE(SUM(cost), 0) AS total_sales
+        FROM orders
+        WHERE placed_at::date = (CURRENT_DATE - INTERVAL '1 day')
+        GROUP BY 1
+        ORDER BY 1;
+    `;
+
+    const { rows } = await client.query(query);
+
+    return rows.map((r: any) => ({
+        hour: `${String(r.sale_hour).padStart(2, "0")}:00 - ${String(r.sale_hour).padStart(2, "0")}:59`,
+        number_of_sales: Number(r.number_of_sales),
+        total_sales: Number(r.total_sales),
+    }));
+}
+
+/**
+ * Fetch Z report data.
+ * @returns type of z_rows
+ */
+export async function fetch_z_report(): Promise<ZReportRow[]> {
+    await ensureConnected();
+
+    const totalSales = (await client.query<{ total: number }>(`
+        SELECT COALESCE(SUM(cost), 0)::float8 AS total
+        FROM orders
+        WHERE placed_at::date = (CURRENT_DATE - INTERVAL '1 day')
+    `)).rows[0].total;
+
+    const salesTax = totalSales * 0.0825;
+
+    const cash = (await client.query<{ total: number }>(`
+        SELECT COALESCE(SUM(cost), 0)::float8 AS total
+        FROM orders
+        WHERE placed_at::date = (CURRENT_DATE - INTERVAL '1 day')
+        AND payment_method = 'CASH'
+    `)).rows[0].total;
+
+    const card = (await client.query<{ total: number }>(`
+        SELECT COALESCE(SUM(cost), 0)::float8 AS total
+        FROM orders
+        WHERE placed_at::date = (CURRENT_DATE - INTERVAL '1 day')
+        AND payment_method = 'CARD'
+    `)).rows[0].total;
+
+    const mobile = (await client.query<{ total: number }>(`
+        SELECT COALESCE(SUM(cost), 0)::float8 AS total
+        FROM orders
+        WHERE placed_at::date = (CURRENT_DATE - INTERVAL '1 day')
+        AND payment_method = 'MOBILE'
+    `)).rows[0].total;
+
+    const cardFees = card * 0.02;
+    const revenue = totalSales - salesTax - cardFees;
+
+    const openingEmployee = (await client.query<{ name: string }>(`
+        SELECT e.name
+        FROM employees e
+        JOIN orders o ON e.id = o.employee_id
+        WHERE o.placed_at::date = (CURRENT_DATE - INTERVAL '1 day')
+        ORDER BY o.placed_at ASC, e.id ASC
+        LIMIT 1
+    `)).rows[0]?.name ?? "N/A";
+
+    const closingEmployee = (await client.query<{ name: string }>(`
+        SELECT e.name
+        FROM employees e
+        JOIN orders o ON e.id = o.employee_id
+        WHERE o.placed_at::date = (CURRENT_DATE - INTERVAL '1 day')
+        ORDER BY o.placed_at DESC, e.id ASC
+        LIMIT 1
+    `)).rows[0]?.name ?? "N/A";
+
+    const toMoney = (n: number) => `$${n.toFixed(2)}`;
+
+    return [
+        { metric: "Total Sales", total: toMoney(totalSales) },
+        { metric: "Sales Tax (8.25%)", total: toMoney(salesTax) },
+        { metric: "Cash Payments", total: toMoney(cash) },
+        { metric: "Card Payments", total: toMoney(card) },
+        { metric: "Mobile Payments", total: toMoney(mobile) },
+        { metric: "Total Card Fees", total: toMoney(cardFees) },
+        { metric: "Total Revenue", total: toMoney(revenue) },
+        { metric: "Opening Employee", total: openingEmployee },
+        { metric: "Closing Employee", total: closingEmployee }
+    ];
+}
+
+

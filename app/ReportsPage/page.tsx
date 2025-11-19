@@ -12,17 +12,14 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
+import { SalesDatum } from "@/lib/models";
+
 // data type of each row entry in restock table
 type RestockRow = {
   ingredientName: string;
   stock: number;
 };
 
-// placeholder types for chart data
-type SalesDatum = {
-  menuItem: string;
-  sales: number;
-};
 
 type InventoryUsageDatum = {
   ingredient: string;
@@ -30,7 +27,7 @@ type InventoryUsageDatum = {
 };
 
 export default function ReportsPage() {
-  // Restock state (already implemented)
+  // Restock state
   const [restockData, setRestockData] = useState<RestockRow[]>([]);
   const [isRestockLoading, setIsRestockLoading] = useState(false);
 
@@ -54,11 +51,37 @@ export default function ReportsPage() {
   // --- Product Sales (design only, no implementation) ---
   const [salesStart, setSalesStart] = useState<string>("");
   const [salesEnd, setSalesEnd] = useState<string>("");
-  const [salesData] = useState<SalesDatum[]>([]); // no seed data
+  const [salesData, setSalesData] = useState<SalesDatum[]>([]); 
+  const [isSalesLoading, setIsSalesLoading] = useState(false);
 
-  function handleGenerateSales() {
+  async function handleGenerateSales() {
     // TODO: implement sales report generation
-    console.log("Generate Product Sales report", { salesStart, salesEnd });
+    try {
+
+      setIsSalesLoading(true);
+
+      // lets build expected request body (considering salesStart and salesEnd should have values)
+      const body = {
+        startDate: salesStart || null,
+        endDate : salesEnd || null,
+      };
+
+      // now we make fetch request here
+      const res = await fetch("/api/reports")
+
+
+      // check if response is not okay. If so, throw an error. 
+
+      // take response and make sure it converts into sales datum
+
+      console.log("Generate Product Sales report", { salesStart, salesEnd });
+
+    } catch(err) {
+      console.error(err);
+    } finally {
+      setIsSalesLoading(false); 
+    }
+    
   }
 
   // --- Inventory Usage (design only, no implementation) ---
@@ -66,7 +89,7 @@ export default function ReportsPage() {
   const [usageEnd, setUsageEnd] = useState<string>("");
   const [usageData] = useState<InventoryUsageDatum[]>([]); // no seed data
 
-  function handleGenerateUsage() {
+  async function handleGenerateUsage() {
     // TODO: implement inventory usage report generation
     console.log("Generate Inventory Usage report", { usageStart, usageEnd });
   }
@@ -190,7 +213,7 @@ export default function ReportsPage() {
                 onClick={handleGenerateUsage}
                 className="rounded bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700"
               >
-                Generate
+                {isSalesLoading ? "Generating..." :  "Generate"}
               </button>
             </div>
 
@@ -224,7 +247,7 @@ export default function ReportsPage() {
           </div>
         </div>
 
-        {/* Restock Report (your existing implementation) */}
+        {/* Restock Report */}
         <section className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold text-slate-900">

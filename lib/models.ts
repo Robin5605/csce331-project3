@@ -48,6 +48,11 @@ interface DrinkOrder {
     order_id: number;
 }
 
+interface SalesDatum {
+  menuItem: string;
+  sales: number;
+}
+
 export type {
     Category,
     Order,
@@ -56,4 +61,6 @@ export type {
     Ingredient,
     DrinkIngredient,
     DrinkOrder,
+    SalesDatum,
 };
+

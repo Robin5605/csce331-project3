@@ -1,6 +1,8 @@
 // lib/db.ts
 import { Client } from "pg";
-import { MenuItem, Ingredient, Employee } from "./models";
+import { MenuItem, Ingredient, Employee, SalesDatum } from "./models";
+
+
 
 // Create a single client and connect once
 const client = new Client({
@@ -376,4 +378,26 @@ export async function lowStockIngredients() {
     );
 
     return rows;
+}
+
+/**
+ * Get all the sales between dates provided for the menu items. 
+ */
+export async function salesBetweenDates(startDate: string, endDate: string){
+    await ensureConnected();
+    const { rows } = await client.query<SalesDatum>(
+            `
+                SELECT m.name AS "menuItem", sum(m.cost) AS "sales"
+                FROM drinks_orders as dord
+                JOIN orders AS o on o.id = dord.order_id
+                JOIN menu   AS m on m.id = dord.menu_id
+                WHERE o.placed_at >= $1 AND o.placed_at < $2
+                GROUP BY m.name
+                ORDER BY m.name;
+            `,
+                [startDate, endDate],
+    );
+
+    return rows; 
+
 }

@@ -53,6 +53,11 @@ interface SalesDatum {
   sales: number;
 }
 
+interface InventoryUsageDatum {
+    ingredient: string;
+    used: number;
+}
+
 export type {
     Category,
     Order,
@@ -62,5 +67,6 @@ export type {
     DrinkIngredient,
     DrinkOrder,
     SalesDatum,
+    InventoryUsageDatum,
 };
 

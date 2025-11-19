@@ -1,6 +1,6 @@
 // lib/db.ts
 import { Client } from "pg";
-import { MenuItem, Ingredient, Employee, SalesDatum } from "./models";
+import { MenuItem, Ingredient, Employee, SalesDatum, InventoryUsageDatum } from "./models";
 
 
 
@@ -414,3 +414,26 @@ export async function salesBetweenDates(startDate: string, endDate: string){
     return rows; 
 
 }
+
+/**
+ * Get all the inventory usage between dates provided for the menu items. 
+ */
+export async function usageBetweenDates(startDate: string, endDate: string){
+    await ensureConnected();
+    const { rows } = await client.query<InventoryUsageDatum>(
+            `
+                SELECT i.name AS "ingredient", SUM(di.servings) AS "used"
+                FROM drinks_orders AS dord
+                JOIN orders            AS o   ON o.id = dord.order_id
+                JOIN drinks_ingredients AS di ON di.drink_id = dord.id
+                JOIN ingredients        AS i  ON i.id = di.ingredient_id
+                WHERE o.placed_at >= $1 AND o.placed_at < $2
+                GROUP BY i.name
+                ORDER BY i.name;
+            `,
+                [startDate, endDate],
+    );
+
+    return rows; 
+}
+

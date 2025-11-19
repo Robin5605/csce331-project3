@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import { salesBetweenDates } from "@/lib/db";
+import { usageBetweenDates } from "@/lib/db";
 
 
 /**
- * returns the sales data from two dates.
+ * returns the inventory usage data from two dates.
  */
 export async function POST(req: Request){
     try{
@@ -26,13 +26,13 @@ export async function POST(req: Request){
             );
         }
 
-        const rows = await salesBetweenDates(startDate, endDate);
+        const rows = await usageBetweenDates(startDate, endDate);
 
         return NextResponse.json(rows);
     } catch (err) {
-        console.error("Error in /api/reports/sales:", err);
+        console.error("Error in /api/reports/usage:", err);
          return NextResponse.json(
-            { error: "Failed to fetch sales report." },
+            { error: "Failed to fetch inventory usage report." },
             { status: 500 }
         );
     } 

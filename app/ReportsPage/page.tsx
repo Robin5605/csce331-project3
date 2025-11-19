@@ -12,18 +12,12 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-import { SalesDatum } from "@/lib/models";
+import { SalesDatum, InventoryUsageDatum } from "@/lib/models";
 
 // data type of each row entry in restock table
 type RestockRow = {
   ingredientName: string;
   stock: number;
-};
-
-
-type InventoryUsageDatum = {
-  ingredient: string;
-  used: number;
 };
 
 export default function ReportsPage() {
@@ -100,11 +94,49 @@ export default function ReportsPage() {
   // --- Inventory Usage (design only, no implementation) ---
   const [usageStart, setUsageStart] = useState<string>("");
   const [usageEnd, setUsageEnd] = useState<string>("");
-  const [usageData] = useState<InventoryUsageDatum[]>([]); // no seed data
+  const [usageData, setUsageData] = useState<InventoryUsageDatum[]>([]); // no seed data
+  const [isUsageLoading, setIsUsageLoading] = useState(false);
 
   async function handleGenerateUsage() {
-    // TODO: implement inventory usage report generation
+    // make sure a usage start and end is provided.
+    if (!usageStart || !usageEnd) {
+      alert("Please select both a start and end date.");
+      return;
+    }
+
+    try {
+
+      setIsUsageLoading(true);
+
+      // lets build expected request body (considering usageStart and uageEnd should have values)
+      const body = {
+        startDate: usageStart || null,
+        endDate : usageEnd || null,
+      };
+
+      // now we make fetch request here
+      const res = await fetch("/api/reports/usage", {
+        method: "POST",
+        headers: {
+        "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+      });
+
+      // check if response is not okay. If so, throw an error. 
+      if (!res.ok) throw new Error("Failed to fetch inventory usage chart.");
+
+    // take response and make sure it converts into sales datum
+    const json = (await res.json()) as InventoryUsageDatum[];
+
+    setUsageData(json);
+    
     console.log("Generate Inventory Usage report", { usageStart, usageEnd });
+    } catch(err) {
+      console.error(err);
+    } finally {
+      setIsUsageLoading(false);
+    }
   }
 
   return (
@@ -226,7 +258,7 @@ export default function ReportsPage() {
                 onClick={handleGenerateUsage}
                 className="rounded bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700"
               >
-                Generate
+                {isUsageLoading ? "Generating..." :  "Generate"}
               </button>
             </div>
 

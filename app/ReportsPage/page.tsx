@@ -55,7 +55,11 @@ export default function ReportsPage() {
   const [isSalesLoading, setIsSalesLoading] = useState(false);
 
   async function handleGenerateSales() {
-    // TODO: implement sales report generation
+    if (!salesStart || !salesEnd) {
+      alert("Please select both a start and end date.");
+      return;
+    }
+
     try {
 
       setIsSalesLoading(true);
@@ -67,12 +71,21 @@ export default function ReportsPage() {
       };
 
       // now we make fetch request here
-      const res = await fetch("/api/reports")
-
+      const res = await fetch("/api/reports/sales", {
+        method: "POST",
+        headers: {
+        "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+      });
 
       // check if response is not okay. If so, throw an error. 
+      if (!res.ok) throw new Error("Failed to fetch sales chart.");
 
       // take response and make sure it converts into sales datum
+      const json = (await res.json()) as SalesDatum[];
+
+      setSalesData(json);
 
       console.log("Generate Product Sales report", { salesStart, salesEnd });
 
@@ -144,7 +157,7 @@ export default function ReportsPage() {
                 onClick={handleGenerateSales}
                 className="rounded bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700"
               >
-                Generate
+                {isSalesLoading ? "Generating..." :  "Generate"}
               </button>
             </div>
 
@@ -213,7 +226,7 @@ export default function ReportsPage() {
                 onClick={handleGenerateUsage}
                 className="rounded bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700"
               >
-                {isSalesLoading ? "Generating..." :  "Generate"}
+                Generate
               </button>
             </div>
 

@@ -10,11 +10,24 @@ const client = new Client({
 });
 
 let _connected = false;
-async function ensureConnected() {
-    if (!_connected) {
-        await client.connect();
-        _connected = true;
+export async function ensureConnected() {
+  if (_connected) return;
+
+  try {
+    await client.connect();
+  } catch (err: unknown) {
+    // If it's the "already connected" error, ignore it
+    if (
+      err instanceof Error &&
+      err.message.includes("Client has already been connected")
+    ) {
+      // do nothing, client already connected
+    } else {
+      throw err;
     }
+  }
+
+  _connected = true;
 }
 
 /**

@@ -238,10 +238,11 @@ export default function CashierPage() {
     const checkoutOrder = async () => {
         //console.log("checking out");
         try {
-            let tempCost = 0;curOrders.forEach( (cOrder) => {
+            let tempCost = 0;
+            curOrders.forEach((cOrder) => {
                 tempCost += getOrderPrice(cOrder);
             });
-            tempCost = tempCost + tempCost*TAX_RATE;
+            tempCost = tempCost + tempCost * TAX_RATE;
             const orderBody = {
                 cost: Math.round(tempCost * 100) / 100,
                 employeeId: "1",

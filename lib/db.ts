@@ -1,8 +1,12 @@
 // lib/db.ts
 import { Client } from "pg";
-import { MenuItem, Ingredient, Employee, SalesDatum, InventoryUsageDatum } from "./models";
-
-
+import {
+    MenuItem,
+    Ingredient,
+    Employee,
+    SalesDatum,
+    InventoryUsageDatum,
+} from "./models";
 
 // Create a single client and connect once
 const client = new Client({
@@ -11,23 +15,23 @@ const client = new Client({
 
 let _connected = false;
 export async function ensureConnected() {
-  if (_connected) return;
+    if (_connected) return;
 
-  try {
-    await client.connect();
-  } catch (err: unknown) {
-    // If it's the "already connected" error, ignore it
-    if (
-      err instanceof Error &&
-      err.message.includes("Client has already been connected")
-    ) {
-      // do nothing, client already connected
-    } else {
-      throw err;
+    try {
+        await client.connect();
+    } catch (err: unknown) {
+        // If it's the "already connected" error, ignore it
+        if (
+            err instanceof Error &&
+            err.message.includes("Client has already been connected")
+        ) {
+            // do nothing, client already connected
+        } else {
+            throw err;
+        }
     }
-  }
 
-  _connected = true;
+    _connected = true;
 }
 
 /**
@@ -376,7 +380,7 @@ export async function updateEmployee(
     return rows.length === 0 ? null : rows[0];
 }
 
-/** 
+/**
  * Fetch all ingredients (just name and stock) on low stock (<=50).
  */
 export async function lowStockIngredients() {
@@ -387,19 +391,19 @@ export async function lowStockIngredients() {
             stock FROM ingredients 
             WHERE stock <= 50
             ORDER BY stock ASC
-        `
+        `,
     );
 
     return rows;
 }
 
 /**
- * Get all the sales between dates provided for the menu items. 
+ * Get all the sales between dates provided for the menu items.
  */
-export async function salesBetweenDates(startDate: string, endDate: string){
+export async function salesBetweenDates(startDate: string, endDate: string) {
     await ensureConnected();
     const { rows } = await client.query<SalesDatum>(
-            `
+        `
                 SELECT m.name AS "menuItem", sum(m.cost) AS "sales"
                 FROM drinks_orders as dord
                 JOIN orders AS o on o.id = dord.order_id
@@ -408,20 +412,19 @@ export async function salesBetweenDates(startDate: string, endDate: string){
                 GROUP BY m.name
                 ORDER BY m.name;
             `,
-                [startDate, endDate],
+        [startDate, endDate],
     );
 
-    return rows; 
-
+    return rows;
 }
 
 /**
- * Get all the inventory usage between dates provided for the menu items. 
+ * Get all the inventory usage between dates provided for the menu items.
  */
-export async function usageBetweenDates(startDate: string, endDate: string){
+export async function usageBetweenDates(startDate: string, endDate: string) {
     await ensureConnected();
     const { rows } = await client.query<InventoryUsageDatum>(
-            `
+        `
                 SELECT i.name AS "ingredient", SUM(di.servings) AS "used"
                 FROM drinks_orders AS dord
                 JOIN orders            AS o   ON o.id = dord.order_id
@@ -431,9 +434,8 @@ export async function usageBetweenDates(startDate: string, endDate: string){
                 GROUP BY i.name
                 ORDER BY i.name;
             `,
-                [startDate, endDate],
+        [startDate, endDate],
     );
 
-    return rows; 
+    return rows;
 }
-

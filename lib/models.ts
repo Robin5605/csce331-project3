@@ -49,8 +49,8 @@ interface DrinkOrder {
 }
 
 interface SalesDatum {
-  menuItem: string;
-  sales: number;
+    menuItem: string;
+    sales: number;
 }
 
 interface InventoryUsageDatum {
@@ -69,4 +69,3 @@ export type {
     SalesDatum,
     InventoryUsageDatum,
 };
-

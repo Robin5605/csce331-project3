@@ -334,7 +334,7 @@ export default function MenuManagerPage() {
     return (
         <div className="min-h-screen bg-neutral-100 text-gray-900">
             <div className="w-full h-8 bg-neutral-800 text-gray-100 flex items-center justify-center text-sm">
-                Manager — Menu
+                Manager — Ingredients
             </div>
 
             {/* Toolbar */}

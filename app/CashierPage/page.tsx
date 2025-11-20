@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode, useState, JSX } from "react";
+import { ReactNode, useState, JSX, useMemo } from "react";
 import Image from "next/image";
 
 import ItemCard from "../../components/ItemCard";
@@ -119,6 +119,44 @@ const inventory: InventoryItem[] = [
     { id: 3, name: "Oolong Tea", stock: 20, cost: 0 },
 ];
 
+// configurable tax rate for UI display (8.25% default)
+const TAX_RATE = parseFloat(process.env.NEXT_PUBLIC_TAX_RATE ?? "0.0825");
+
+// price helpers
+const findInventoryCost = (name: string) => {
+    const item = inventory.find(
+        (it) => it.name.trim().toLowerCase() === name.trim().toLowerCase(),
+    );
+    return item ? item.cost : 0;
+};
+
+// compute a single order's price from its fields
+function getOrderPrice(order: Record<string, any>) {
+    let price = 0;
+    for (const [key, value] of Object.entries(order)) {
+        if (
+            value === "None" ||
+            value === null ||
+            (Array.isArray(value) && value.length === 0)
+        ) {
+            continue;
+        }
+        if (key.toLowerCase() === "drink") {
+            price += (value as MenuItem).cost;
+            continue;
+        }
+        // Ice/Sugar affect display only (no price)
+        if (key === "Ice" || key === "Sugar") continue;
+
+        if (Array.isArray(value)) {
+            for (const v of value) price += findInventoryCost(v);
+        } else {
+            price += findInventoryCost(String(value));
+        }
+    }
+    return price;
+}
+
 export default function CashierPage() {
     //Sets default selection for customization options
     const defaultCustomizations = {
@@ -141,7 +179,16 @@ export default function CashierPage() {
     const [curOrders, setCurOrders] = useState<
         Record<string, string | string[] | MenuItem | null>[]
     >([]);
-    let totalCost = 0;
+    const { subtotal, tax, total } = useMemo(() => {
+        const sub = curOrders.reduce((sum, o) => sum + getOrderPrice(o), 0);
+        const t = sub * TAX_RATE;
+        const tot = sub + t;
+        return {
+            subtotal: Math.round(sub * 100) / 100,
+            tax: Math.round(t * 100) / 100,
+            total: Math.round(tot * 100) / 100,
+        };
+    }, [curOrders]);
 
     //Handles whenever a MenuItem is clicked to bring up the customization menu
     const menuItemClicked = (item: MenuItem) => {
@@ -191,11 +238,17 @@ export default function CashierPage() {
     const checkoutOrder = async () => {
         //console.log("checking out");
         try {
+            let tempCost = 0;
+            curOrders.forEach((cOrder) => {
+                tempCost += getOrderPrice(cOrder);
+            });
+            tempCost = tempCost + tempCost * TAX_RATE;
             const orderBody = {
-                cost: totalCost,
+                cost: Math.round(tempCost * 100) / 100,
                 employeeId: "1",
                 paymentMethod: "CARD",
             };
+            console.log(orderBody.cost);
             const orderRes = await fetch("api/cashier/order", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -549,88 +602,62 @@ export default function CashierPage() {
                     </h2>
                     <div className="bg-white/40 rounded-xl p-3 shadow-inner max-h-[60vh] overflow-y-auto">
                         {curOrders.map((order, orderIndex) => {
-                            let order_price = 0;
                             const itemsJSX: JSX.Element[] = [];
+
                             Object.entries(order).forEach(([key, value]) => {
-                                //Doesn't show if not added
                                 if (
                                     value === "None" ||
                                     value === null ||
-                                    value.length === 0
+                                    (Array.isArray(value) && value.length === 0)
                                 ) {
                                     return;
                                 }
 
-                                //Handles drinks
                                 if (key.toLowerCase() === "drink") {
-                                    order_price += value.cost;
+                                    // we’ll show the drink name in the header; price is added in getOrderPrice
                                     return;
-                                }
-
-                                //Handles these differently since their values aren't items in the ingreidents table
-                                else if (key === "Ice" || key === "Sugar") {
+                                } else if (key === "Ice" || key === "Sugar") {
                                     itemsJSX.push(
                                         <div
                                             key={`suborder-${key}-${value}-single`}
                                             className="bg-[#ffe5ea] px-2 py-1 rounded mb-2"
                                         >
-                                            {key}: {value}
+                                            {key}: {value as string}
                                         </div>,
                                     );
-                                }
-
-                                //Makes sure to traverse the array and add each item
-                                else if (Array.isArray(value)) {
+                                } else if (Array.isArray(value)) {
                                     value.forEach((o: string) => {
-                                        const item = inventory.find(
-                                            (item) =>
-                                                item.name
-                                                    .trim()
-                                                    .toLowerCase() ===
-                                                o.trim().toLowerCase(),
-                                        );
-
-                                        const price = item ? item.cost : 0; //Tenary is for handling null values
-                                        order_price += price;
+                                        const p = findInventoryCost(o);
                                         itemsJSX.push(
                                             <div
                                                 key={`suborder-${key}-${o}-single`}
                                                 className="bg-[#ffe5ea] px-2 py-1 rounded mb-2"
                                             >
                                                 {o}{" "}
-                                                {price !== 0
-                                                    ? `($${price.toFixed(2)})`
+                                                {p !== 0
+                                                    ? `($${p.toFixed(2)})`
                                                     : ""}
                                             </div>,
                                         );
                                     });
-                                }
-
-                                //Default behavior
-                                else {
-                                    const item = inventory.find(
-                                        (item) =>
-                                            item.name.trim().toLowerCase() ===
-                                            value.trim().toLowerCase(),
-                                    );
-
-                                    const price = item ? item.cost : 0; //Tenary is for handling null values
-                                    order_price += price;
-
+                                } else {
+                                    const p = findInventoryCost(String(value));
                                     itemsJSX.push(
                                         <div
                                             key={`suborder-${key}-${value}-single`}
                                             className="bg-[#ffe5ea] px-2 py-1 rounded mb-2"
                                         >
-                                            {value}{" "}
-                                            {price !== 0
-                                                ? `($${price.toFixed(2)})`
+                                            {String(value)}{" "}
+                                            {p !== 0
+                                                ? `($${p.toFixed(2)})`
                                                 : ""}
                                         </div>,
                                     );
                                 }
                             });
-                            totalCost += order_price;
+
+                            const order_price = getOrderPrice(order);
+
                             return (
                                 <div
                                     key={`order-${orderIndex}`}
@@ -638,19 +665,30 @@ export default function CashierPage() {
                                 >
                                     <h3 className="font-semibold text-lg mb-2">
                                         Order {orderIndex + 1}:{" "}
-                                        {order.Drink.name}
+                                        {(order.Drink as MenuItem)?.name}
                                     </h3>
                                     {itemsJSX}
-                                    Total: {order_price}$
+                                    <div className="mt-1">
+                                        Total: ${order_price.toFixed(2)}
+                                    </div>
                                 </div>
                             );
                         })}
                     </div>
                 </div>
-                <div className="bg-white/60 rounded-xl p-3 mt-4 shadow-md">
+                <div className="bg-white/60 rounded-xl p-3 mt-4 shadow-md space-y-1">
+                    <div className="flex justify-between">
+                        <span>Subtotal</span>
+                        <span>${subtotal.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                        <span>Tax ({(TAX_RATE * 100).toFixed(2)}%)</span>
+                        <span>${tax.toFixed(2)}</span>
+                    </div>
+                    <hr className="my-2" />
                     <div className="flex justify-between text-xl font-semibold mb-3">
-                        <span>Total:</span>
-                        <span>{totalCost.toFixed(2)}$</span>
+                        <span>Total</span>
+                        <span>${total.toFixed(2)}</span>
                     </div>
                     <button
                         className="w-full bg-[#6d6875] hover:bg-[#564f5a] text-white font-semibold py-2 rounded-xl transition"

@@ -60,6 +60,16 @@ interface ZReportRow {
 }
 
 
+interface SalesDatum {
+    menuItem: string;
+    sales: number;
+}
+
+interface InventoryUsageDatum {
+    ingredient: string;
+    used: number;
+}
+
 export type {
     Category,
     Order,
@@ -70,4 +80,6 @@ export type {
     DrinkOrder,
     XReportRow,
     ZReportRow,
+    SalesDatum,
+    InventoryUsageDatum,
 };

@@ -1,6 +1,14 @@
 // lib/db.ts
 import { Client } from "pg";
-import { MenuItem, Ingredient, Employee, XReportRow, ZReportRow } from "./models";
+import {
+    MenuItem,
+    Ingredient,
+    Employee,
+    SalesDatum,
+    InventoryUsageDatum,
+    XReportRow,
+    ZReportRow,
+} from "./models";
 
 // Create a single client and connect once
 const client = new Client({
@@ -8,11 +16,24 @@ const client = new Client({
 });
 
 let _connected = false;
-async function ensureConnected() {
-    if (!_connected) {
+export async function ensureConnected() {
+    if (_connected) return;
+
+    try {
         await client.connect();
-        _connected = true;
+    } catch (err: unknown) {
+        // If it's the "already connected" error, ignore it
+        if (
+            err instanceof Error &&
+            err.message.includes("Client has already been connected")
+        ) {
+            // do nothing, client already connected
+        } else {
+            throw err;
+        }
     }
+
+    _connected = true;
 }
 
 /**
@@ -87,7 +108,7 @@ export async function insert_into_orders_table(
     cost: number,
     employeeId: number,
     paymentMethod: "CARD" | "CASH" | string,
-): Promise<{ id: number }> {
+): Promise<{ id: number }[]> {
     await ensureConnected();
     const { rows } = await client.query<{ id: number }>(
         `
@@ -97,7 +118,7 @@ export async function insert_into_orders_table(
     `,
         [cost ?? 0, employeeId, paymentMethod ?? "CARD"],
     );
-    return rows[0];
+    return rows;
 }
 
 /**
@@ -145,7 +166,7 @@ export async function populate_ingredient_management_table(): Promise<
 export async function insert_into_drinks_orders_table(
     menuId: number,
     orderId: number,
-): Promise<{ id: number }> {
+): Promise<{ id: number }[]> {
     await ensureConnected();
     const { rows } = await client.query<{ id: number }>(
         `
@@ -155,7 +176,7 @@ export async function insert_into_drinks_orders_table(
     `,
         [menuId, orderId],
     );
-    return rows[0];
+    return rows;
 }
 
 /**
@@ -203,7 +224,7 @@ export async function insert_into_drinks_ingredients_table(
     drinkId: number,
     ingredientId: number,
     servings: number,
-): Promise<{ id: number }> {
+): Promise<{ id: number }[]> {
     await ensureConnected();
     const { rows } = await client.query<{ id: number }>(
         `
@@ -213,7 +234,7 @@ export async function insert_into_drinks_ingredients_table(
     `,
         [drinkId, ingredientId, servings],
     );
-    return rows[0];
+    return rows;
 }
 
 /**
@@ -464,3 +485,62 @@ export async function fetch_z_report(): Promise<ZReportRow[]> {
 }
 
 
+/**
+ * Fetch all ingredients (just name and stock) on low stock (<=50).
+ */
+export async function lowStockIngredients() {
+    await ensureConnected();
+    const { rows } = await client.query<Ingredient>(
+        `
+            SELECT name AS "ingredientName",
+            stock FROM ingredients 
+            WHERE stock <= 50
+            ORDER BY stock ASC
+        `,
+    );
+
+    return rows;
+}
+
+/**
+ * Get all the sales between dates provided for the menu items.
+ */
+export async function salesBetweenDates(startDate: string, endDate: string) {
+    await ensureConnected();
+    const { rows } = await client.query<SalesDatum>(
+        `
+                SELECT m.name AS "menuItem", sum(m.cost) AS "sales"
+                FROM drinks_orders as dord
+                JOIN orders AS o on o.id = dord.order_id
+                JOIN menu   AS m on m.id = dord.menu_id
+                WHERE o.placed_at >= $1 AND o.placed_at < $2
+                GROUP BY m.name
+                ORDER BY m.name;
+            `,
+        [startDate, endDate],
+    );
+
+    return rows;
+}
+
+/**
+ * Get all the inventory usage between dates provided for the menu items.
+ */
+export async function usageBetweenDates(startDate: string, endDate: string) {
+    await ensureConnected();
+    const { rows } = await client.query<InventoryUsageDatum>(
+        `
+                SELECT i.name AS "ingredient", SUM(di.servings) AS "used"
+                FROM drinks_orders AS dord
+                JOIN orders            AS o   ON o.id = dord.order_id
+                JOIN drinks_ingredients AS di ON di.drink_id = dord.id
+                JOIN ingredients        AS i  ON i.id = di.ingredient_id
+                WHERE o.placed_at >= $1 AND o.placed_at < $2
+                GROUP BY i.name
+                ORDER BY i.name;
+            `,
+        [startDate, endDate],
+    );
+
+    return rows;
+}

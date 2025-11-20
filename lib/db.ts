@@ -392,14 +392,19 @@ export async function fetch_x_report(): Promise<XReportRow[]> {
     await ensureConnected();
 
     const query = `
-        SELECT
-            EXTRACT(HOUR FROM placed_at AT TIME ZONE 'UTC') AS sale_hour,
-            COUNT(*) AS number_of_sales,
-            COALESCE(SUM(cost), 0) AS total_sales
-        FROM orders
-        WHERE placed_at::date = (CURRENT_DATE - INTERVAL '1 day')
-        GROUP BY 1
-        ORDER BY 1;
+    SELECT
+        EXTRACT(HOUR FROM placed_at AT TIME ZONE 'America/Chicago') AS sale_hour,
+        COUNT(*) AS number_of_sales,
+        COALESCE(SUM(cost), 0) AS total_sales
+    FROM orders
+    WHERE
+        (placed_at AT TIME ZONE 'America/Chicago')::date =
+            (NOW() AT TIME ZONE 'America/Chicago')::date
+
+        AND EXTRACT(HOUR FROM placed_at AT TIME ZONE 'America/Chicago') <
+            EXTRACT(HOUR FROM NOW() AT TIME ZONE 'America/Chicago')
+    GROUP BY 1
+    ORDER BY 1;
     `;
 
     const { rows } = await client.query(query);

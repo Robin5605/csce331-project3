@@ -3,7 +3,7 @@
 import { Employee } from "@/lib/models";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import {signIn} from "next-auth/react";
+import { signIn } from "next-auth/react";
 import IdleLogout from "@/components/idleLogout";
 
 // TODO: replace with models.ts definitions
@@ -54,7 +54,7 @@ export default function LoginPage() {
         const result = await signIn("credentials", {
             id: data.id,
             role: data.is_manager ? "manager" : "cashier",
-            redirect: false
+            redirect: false,
         });
 
         if (result?.error) {

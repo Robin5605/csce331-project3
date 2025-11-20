@@ -7,7 +7,7 @@ import {
     SalesDatum,
     InventoryUsageDatum,
     XReportRow,
-    ZReportRow
+    ZReportRow,
 } from "./models";
 
 // Create a single client and connect once
@@ -382,7 +382,6 @@ export async function updateEmployee(
     return rows.length === 0 ? null : rows[0];
 }
 
-
 //  X REPORTS AND Z REPORTS
 
 /**
@@ -419,55 +418,69 @@ export async function fetch_x_report(): Promise<XReportRow[]> {
 export async function fetch_z_report(): Promise<ZReportRow[]> {
     await ensureConnected();
 
-    const totalSales = (await client.query<{ total: number }>(`
+    const totalSales = (
+        await client.query<{ total: number }>(`
         SELECT COALESCE(SUM(cost), 0)::float8 AS total
         FROM orders
         WHERE placed_at::date = (CURRENT_DATE - INTERVAL '1 day')
-    `)).rows[0].total;
+    `)
+    ).rows[0].total;
 
     const salesTax = totalSales * 0.0825;
 
-    const cash = (await client.query<{ total: number }>(`
+    const cash = (
+        await client.query<{ total: number }>(`
         SELECT COALESCE(SUM(cost), 0)::float8 AS total
         FROM orders
         WHERE placed_at::date = (CURRENT_DATE - INTERVAL '1 day')
         AND payment_method = 'CASH'
-    `)).rows[0].total;
+    `)
+    ).rows[0].total;
 
-    const card = (await client.query<{ total: number }>(`
+    const card = (
+        await client.query<{ total: number }>(`
         SELECT COALESCE(SUM(cost), 0)::float8 AS total
         FROM orders
         WHERE placed_at::date = (CURRENT_DATE - INTERVAL '1 day')
         AND payment_method = 'CARD'
-    `)).rows[0].total;
+    `)
+    ).rows[0].total;
 
-    const mobile = (await client.query<{ total: number }>(`
+    const mobile = (
+        await client.query<{ total: number }>(`
         SELECT COALESCE(SUM(cost), 0)::float8 AS total
         FROM orders
         WHERE placed_at::date = (CURRENT_DATE - INTERVAL '1 day')
         AND payment_method = 'MOBILE'
-    `)).rows[0].total;
+    `)
+    ).rows[0].total;
 
     const cardFees = card * 0.02;
     const revenue = totalSales - salesTax - cardFees;
 
-    const openingEmployee = (await client.query<{ name: string }>(`
+    const openingEmployee =
+        (
+            await client.query<{ name: string }>(`
         SELECT e.name
         FROM employees e
         JOIN orders o ON e.id = o.employee_id
         WHERE o.placed_at::date = (CURRENT_DATE - INTERVAL '1 day')
         ORDER BY o.placed_at ASC, e.id ASC
         LIMIT 1
-    `)).rows[0]?.name ?? "N/A";
+    `)
+        ).rows[0]?.name ?? "N/A";
 
-    const closingEmployee = (await client.query<{ name: string }>(`
+    const closingEmployee =
+        (
+            await client.query<{ name: string }>(`
         SELECT e.name
         FROM employees e
         JOIN orders o ON e.id = o.employee_id
         WHERE o.placed_at::date = (CURRENT_DATE - INTERVAL '1 day')
         ORDER BY o.placed_at DESC, e.id ASC
         LIMIT 1
-    `)).rows[0]?.name ?? "N/A";
+    `)
+        ).rows[0]?.name ?? "N/A";
 
     const toMoney = (n: number) => `$${n.toFixed(2)}`;
 
@@ -480,10 +493,9 @@ export async function fetch_z_report(): Promise<ZReportRow[]> {
         { metric: "Total Card Fees", total: toMoney(cardFees) },
         { metric: "Total Revenue", total: toMoney(revenue) },
         { metric: "Opening Employee", total: openingEmployee },
-        { metric: "Closing Employee", total: closingEmployee }
+        { metric: "Closing Employee", total: closingEmployee },
     ];
 }
-
 
 /**
  * Fetch all ingredients (just name and stock) on low stock (<=50).

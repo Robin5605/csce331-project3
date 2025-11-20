@@ -32,14 +32,16 @@ export default function Home() {
                     >
                         Login
                     </button>
-                    <button 
-                    onClick={() => router.push("/customerOrderTest")}
-                        className="rounded-full bg-green-600 px-6 py-3 font-medium text-white hover:bg-green-700">
+                    <button
+                        onClick={() => router.push("/customerOrderTest")}
+                        className="rounded-full bg-green-600 px-6 py-3 font-medium text-white hover:bg-green-700"
+                    >
                         Customer
                     </button>
-                    <button 
-                    onClick={()=> signIn("google")}
-                    className="rounded-full bg-red-600 px-6 py-3 font-medium text-white hover:bg-red-700">
+                    <button
+                        onClick={() => signIn("google")}
+                        className="rounded-full bg-red-600 px-6 py-3 font-medium text-white hover:bg-red-700"
+                    >
                         Sign in with Google
                     </button>
                 </div>

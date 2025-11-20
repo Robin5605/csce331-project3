@@ -1,5 +1,6 @@
 import { XReportRow, ZReportRow } from "@/lib/models";
 import { fetch_x_report, fetch_z_report } from "@/lib/db";
+import IdleLogout from "@/components/idleLogout";
 import React from "react";
 
 function XReportTable({ title, rows }: { title: string; rows: XReportRow[] }) {

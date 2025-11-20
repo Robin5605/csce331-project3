@@ -3,6 +3,8 @@
 import { Employee } from "@/lib/models";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
+import IdleLogout from "@/components/idleLogout";
 
 // TODO: replace with models.ts definitions
 type LoginResponse = Pick<Employee, "id" | "name" | "is_manager">;
@@ -41,12 +43,24 @@ export default function LoginPage() {
             );
         }
         const data: LoginResponse = await res.json();
+
         setLoginResponse(data);
         setPin("");
         alert(
             `Login Successful! Welcome, ${data.name} ${data.is_manager ? "(Manager)" : ""}`,
         );
         // TODO: Redirect to correct application page
+
+        const result = await signIn("credentials", {
+            id: data.id,
+            role: data.is_manager ? "manager" : "cashier",
+            redirect: false,
+        });
+
+        if (result?.error) {
+            alert(`Sign in error: ${result.error}`);
+            return;
+        }
 
         if (data.is_manager) {
             router.push("/managerPage");

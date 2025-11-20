@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 
 import { MenuItem } from "@/lib/models";
+import IdleLogout from "@/components/idleLogout";
 
 const ToolbarButton: React.FC<
     React.ButtonHTMLAttributes<HTMLButtonElement>

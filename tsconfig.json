@@ -1,5 +1,6 @@
 {
     "compilerOptions": {
+        "types": ["next", "next-auth"],
         "target": "ES2017",
         "lib": ["dom", "dom.iterable", "esnext"],
         "allowJs": true,
@@ -28,7 +29,10 @@
         "**/*.tsx",
         ".next/types/**/*.ts",
         ".next/dev/types/**/*.ts",
-        "**/*.mts"
+        "**/*.mts",
+        "**/*.ts",
+        "**/*.tsx",
+        "types"
     ],
     "exclude": ["node_modules"]
 }

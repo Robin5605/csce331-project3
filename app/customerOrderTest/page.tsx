@@ -1,6 +1,7 @@
 "use client";
 import React, { useEffect, useMemo, useState } from "react";
 import { MenuItem, Order, DrinkIngredient, DrinkOrder } from "@/lib/models";
+import IdleLogout from "@/components/idleLogout";
 
 const AddItemButton: React.FC<
     React.ButtonHTMLAttributes<HTMLButtonElement>

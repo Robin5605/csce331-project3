@@ -1,16 +1,14 @@
 // lib/db.ts
 import { Client } from "pg";
-<<<<<<< HEAD
-import { MenuItem, Ingredient, Employee, XReportRow, ZReportRow } from "./models";
-=======
 import {
     MenuItem,
     Ingredient,
     Employee,
     SalesDatum,
     InventoryUsageDatum,
+    XReportRow,
+    ZReportRow
 } from "./models";
->>>>>>> 64d46df1be12313323301f565971ed4bc4e4ac90
 
 // Create a single client and connect once
 const client = new Client({

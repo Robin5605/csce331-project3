@@ -59,7 +59,6 @@ interface ZReportRow {
     total: string;
 }
 
-
 interface SalesDatum {
     menuItem: string;
     sales: number;

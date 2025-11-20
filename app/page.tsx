@@ -39,11 +39,16 @@ export default function Home() {
                         Customer
                     </button>
                     <button
-                        onClick={() => signIn("google")}
+                        onClick={() =>
+                            signIn("google", {
+                                callbackUrl: "/customerOrderTest",
+                            })
+                        }
                         className="rounded-full bg-red-600 px-6 py-3 font-medium text-white hover:bg-red-700"
                     >
                         Sign in with Google
                     </button>
+
                 </div>
             </main>
         </div>

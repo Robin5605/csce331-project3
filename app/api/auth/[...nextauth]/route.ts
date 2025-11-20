@@ -54,7 +54,6 @@ const handler = NextAuth({
                     token.role = (user as any).role ?? "customer";
                 }
             }
-
             return token;
         },
 
@@ -65,8 +64,21 @@ const handler = NextAuth({
         },
 
         async redirect({ url, baseUrl }) {
-            return "/customerOrderTest";
+            // If NextAuth gives us a relative URL (e.g. "/customerOrderTest"), allow it
+            if (url.startsWith("/")) return url;
+
+            // If it's the same origin full URL, allow it
+            try {
+                const parsed = new URL(url);
+                if (parsed.origin === baseUrl) return url;
+            } catch {
+                // if URL parsing fails, just fall back
+            }
+
+            // Fallback: home
+            return baseUrl;
         },
+
     },
 });
 

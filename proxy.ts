@@ -13,6 +13,7 @@ export default withAuth(
 
     // Manager-only pages
     const managerPages = [
+      "/managerPage",
       "/employees",
       "/ingredientManagementPage",
       "/menuManagementPage",

@@ -30,7 +30,7 @@ export default function Home() {
                         onClick={() => router.push("/loginPage")}
                         className="rounded-full bg-blue-600 px-6 py-3 font-medium text-white hover:bg-blue-700"
                     >
-                        Login
+                        Login for Cashier OR Manager
                     </button>
                     <button
                         onClick={() => router.push("/customerOrderTest")}

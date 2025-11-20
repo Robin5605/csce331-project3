@@ -43,24 +43,34 @@ const handler = NextAuth({
 		}
 	},
 
-  callbacks: {
-    async jwt({ token, user }) {
+callbacks: {
+    async jwt({ token, user, account }) {
       if (user) {
         token.id = user.id as string;
-        token.role = (user as any).role ?? undefined;
+
+        if (account?.provider === "google") {
+          token.role = "customer";
+        } 
+        else {
+          token.role = (user as any).role ?? "customer";
+        }
       }
+
       return token;
     },
 
     async session({ session, token }) {
       session.user.id = token.id as string;
-      session.user.role = token.role;
+      session.user.role = token.role as any;
       return session;
     },
-  },
 
-  secret: process.env.NEXTAUTH_SECRET,
+    async redirect({ url, baseUrl }) {
+      return "/customerOrderTest";
+    },
+  },
 });
+
 
 
 export { handler as GET, handler as POST };

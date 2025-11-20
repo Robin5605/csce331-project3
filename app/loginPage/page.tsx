@@ -49,7 +49,7 @@ export default function LoginPage() {
         // TODO: Redirect to correct application page
 
         if (data.is_manager) {
-            router.push("/menuManagementPage");
+            router.push("/managerPage");
         } else {
             // TODO: Change to orderPage when implemented
             router.push("/CashierPage");

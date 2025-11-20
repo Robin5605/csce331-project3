@@ -2,6 +2,7 @@
 import { EmployeesDataTable } from "./data-table";
 import { columns } from "./columns";
 import { fetch_employee_data, updateEmployee } from "@/lib/db";
+import IdleLogout from "@/components/idleLogout";
 
 export { updateEmployee as updateEmployeeAction };
 

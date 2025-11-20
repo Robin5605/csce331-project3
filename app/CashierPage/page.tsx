@@ -2,6 +2,7 @@
 
 import { ReactNode, useState, JSX, useMemo } from "react";
 import Image from "next/image";
+import IdleLogout from "@/components/idleLogout";
 
 import ItemCard from "../../components/ItemCard";
 import {

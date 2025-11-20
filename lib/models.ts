@@ -48,6 +48,17 @@ interface DrinkOrder {
     order_id: number;
 }
 
+interface XReportRow {
+    hour: string;
+    number_of_sales: number;
+    total_sales: number;
+}
+
+interface ZReportRow {
+    metric: string;
+    total: string;
+}
+
 interface SalesDatum {
     menuItem: string;
     sales: number;
@@ -66,6 +77,8 @@ export type {
     Ingredient,
     DrinkIngredient,
     DrinkOrder,
+    XReportRow,
+    ZReportRow,
     SalesDatum,
     InventoryUsageDatum,
 };

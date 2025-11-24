@@ -53,6 +53,7 @@ interface MenuItem {
     name: string;
     stock: number;
     cost: number;
+    image_url: string;
 }
 
 interface MenuData {
@@ -61,56 +62,61 @@ interface MenuData {
 
 const menuData: MenuData = {
     "Fruit Tea": [
-        { id: 1, name: "Mango Green Tea", stock: 80, cost: 6.5 },
-        { id: 2, name: "Peach Tea With Honey Jelly", stock: 75, cost: 6.25 },
-        { id: 3, name: "Passion Chess", stock: 75, cost: 6.25 },
-        { id: 5, name: "Mango & Passion Fruit", stock: 75, cost: 6.25 },
-        { id: 6, name: "Honey Lemonade", stock: 75, cost: 5.2 },
-        { id: 4, name: "Berry Lychee Burst", stock: 74, cost: 6.25 },
+        { id: 1, name: "Mango Green Tea", stock: 80, cost: 6.5, image_url: "/drinks/mango_green_tea.png" },
+        { id: 2, name: "Peach Tea With Honey Jelly", stock: 75, cost: 6.25, image_url: "/drinks/peach_tea_with_honey_jelly.png" },
+        { id: 3, name: "Passion Chess", stock: 75, cost: 6.25, image_url: "/drinks/passion_chess.png" },
+        { id: 5, name: "Mango & Passion Fruit", stock: 75, cost: 6.25, image_url: "/drinks/mango_passion_fruit.png" },
+        { id: 6, name: "Honey Lemonade", stock: 75, cost: 5.2, image_url: "/drinks/honey_lemonade.png" },
+        { id: 4, name: "Berry Lychee Burst", stock: 74, cost: 6.25, image_url: "/drinks/berry_lychee_burst.png" },
     ],
+
     "Ice Blended": [
-        { id: 7, name: "Oreo w/ Pearl", stock: 75, cost: 6.75 },
-        { id: 8, name: "Taro w/ Pudding", stock: 75, cost: 6.95 },
-        { id: 9, name: "Thai Tea w/ Pearl", stock: 75, cost: 6.95 },
-        { id: 10, name: "Coffee w/ Ice Cream", stock: 75, cost: 6.95 },
-        { id: 11, name: "Mango w/ Ice Cream", stock: 75, cost: 6.95 },
-        { id: 12, name: "Strawberry w/ Ice Cream", stock: 75, cost: 6.95 },
+        { id: 7, name: "Oreo w/ Pearl", stock: 75, cost: 6.75, image_url: "/drinks/oreo_w_pearl.png" },
+        { id: 8, name: "Taro w/ Pudding", stock: 75, cost: 6.95, image_url: "/drinks/taro_w_pudding.png" },
+        { id: 9, name: "Thai Tea w/ Pearl", stock: 75, cost: 6.95, image_url: "/drinks/thai_tea_w_pearl.png" },
+        { id: 10, name: "Coffee w/ Ice Cream", stock: 75, cost: 6.95, image_url: "/drinks/coffee_w_ice_cream.png" },
+        { id: 11, name: "Mango w/ Ice Cream", stock: 75, cost: 6.95, image_url: "/drinks/mango_w_ice_cream.png" },
+        { id: 12, name: "Strawberry w/ Ice Cream", stock: 75, cost: 6.95, image_url: "/drinks/strawberry_w_ice_cream.png" },
     ],
-    Milky: [
-        { id: 13, name: "Clasic Pearl Milk Tea", stock: 75, cost: 5.8 },
-        { id: 14, name: "Honey Pearl Milk Tea", stock: 75, cost: 6.0 },
-        { id: 15, name: "Coffe Creama", stock: 75, cost: 6.5 },
-        { id: 16, name: "Hokaido Pearl Milk Tea", stock: 75, cost: 6.25 },
-        { id: 17, name: "Mango Green Milk Tea", stock: 75, cost: 6.5 },
-        { id: 18, name: "Golden Retriever", stock: 75, cost: 6.75 },
+
+    "Milky": [
+        { id: 13, name: "Clasic Pearl Milk Tea", stock: 75, cost: 5.8, image_url: "/drinks/classic_pearl_milk_tea.png" },
+        { id: 14, name: "Honey Pearl Milk Tea", stock: 75, cost: 6.0, image_url: "/drinks/honey_pearl_milk_tea.png" },
+        { id: 15, name: "Coffe Creama", stock: 75, cost: 6.5, image_url: "/drinks/coffe_creama.png" },
+        { id: 16, name: "Hokaido Pearl Milk Tea", stock: 75, cost: 6.25, image_url: "/drinks/hokaido_pearl_milk_tea.png" },
+        { id: 17, name: "Mango Green Milk Tea", stock: 75, cost: 6.5, image_url: "/drinks/mango_green_milk_tea.png" },
+        { id: 18, name: "Golden Retriever", stock: 75, cost: 6.75, image_url: "/drinks/golden_retriever.png" },
     ],
+
     "Non Caffenated": [
-        { id: 19, name: "Tiger Boba", stock: 75, cost: 6.5 },
-        { id: 20, name: "Strawberry Coconut", stock: 75, cost: 6.5 },
+        { id: 19, name: "Tiger Boba", stock: 75, cost: 6.5, image_url: "/drinks/tiger_boba.png" },
+        { id: 20, name: "Strawberry Coconut", stock: 75, cost: 6.5, image_url: "/drinks/strawberry_coconut.png" },
         {
             id: 21,
             name: "Strawberry Coconut Ice Blended",
             stock: 75,
             cost: 6.5,
+            image_url: "/drinks/strawberry_coconut_ice_blended.png",
         },
-        { id: 22, name: "Halo Halo", stock: 75, cost: 6.95 },
-        { id: 23, name: "Wintermellon Lemonade", stock: 75, cost: 5.8 },
-        { id: 24, name: "Wintermellon w/ Fresh Milk", stock: 75, cost: 5.2 },
+        { id: 22, name: "Halo Halo", stock: 75, cost: 6.95, image_url: "/drinks/halo_halo.png" },
+        { id: 23, name: "Wintermellon Lemonade", stock: 75, cost: 5.8, image_url: "/drinks/wintermellon_lemonade.png" },
+        { id: 24, name: "Wintermellon w/ Fresh Milk", stock: 75, cost: 5.2, image_url: "/drinks/wintermellon_w_fresh_milk.png" },
     ],
+
     "Fall Seasonals": [
-        { id: 25, name: "Red Bean Matcha", stock: 75, cost: 6.95 },
-        { id: 26, name: "Pumpkin Chai", stock: 75, cost: 6.95 },
-        { id: 27, name: "Honey and Cinnamon Milk Tea", stock: 75, cost: 6.95 },
-        { id: 31, name: "temp", stock: 99, cost: 5.0 },
-        { id: 32, name: "temp2", stock: 99, cost: 1.0 },
+        { id: 25, name: "Red Bean Matcha", stock: 75, cost: 6.95, image_url: "/drinks/red_bean_matcha.png" },
+        { id: 26, name: "Pumpkin Chai", stock: 75, cost: 6.95, image_url: "/drinks/pumpkin_chai.png" },
+        { id: 27, name: "Honey and Cinnamon Milk Tea", stock: 75, cost: 6.95, image_url: "/drinks/honey_and_cinnamon_milk_tea.png" },
+        { id: 31, name: "temp", stock: 99, cost: 5.0, image_url: "" },
+        { id: 32, name: "temp2", stock: 99, cost: 1.0, image_url: "" },
     ],
+
     Uncategorized: [
-        { id: 33, name: "New Item", stock: 0, cost: 0 },
-        { id: 34, name: "New Item", stock: 0, cost: 0 },
-        { id: 35, name: "New Item", stock: 0, cost: 0 },
+        { id: 33, name: "New Item", stock: 0, cost: 0, image_url: "" },
+        { id: 34, name: "New Item", stock: 0, cost: 0, image_url: "" },
+        { id: 35, name: "New Item", stock: 0, cost: 0, image_url: "" },
     ],
 };
-
 interface InventoryItem {
     id: number;
     name: string;
@@ -280,7 +286,15 @@ function MenuItemCard({ item, onConfirm }: MenuItemCardProps) {
         <Dialog>
             <DialogTrigger asChild>
                 <div className="flex flex-col gap-2 items-center bg-gray-100 p-2 rounded border">
-                    <CupSoda width={96} height={96} />
+                    {item.image_url !== "" ? (
+                        <img
+                            src={item.image_url}
+                            alt={"drink image"}
+                            className="w-[120] h-[120] object-cover"
+                        />
+                    ) : (
+                        <CupSoda width={120} height={120} />
+                    )}
                     {item.name}
                 </div>
             </DialogTrigger>

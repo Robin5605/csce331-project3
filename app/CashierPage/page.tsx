@@ -29,6 +29,23 @@ import {
 import { DialogTrigger } from "@radix-ui/react-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
+import { ScrollArea } from "@/components/ui/scroll-area";
+
+type DrinkSize = "small" | "medium" | "large";
+
+interface CartItem {
+    id: number;
+    size: DrinkSize;
+    ice: number;
+    name: string;
+    cost: number;
+    customizations: {
+        id: number;
+        name: string;
+        cost: number;
+    }[];
+}
 
 //[REMOVE WHEN API IS IMPLEMENTED] Temporary data for now
 interface MenuItem {
@@ -132,14 +149,6 @@ const inventory: InventoryItem[] = [
     { id: 3, name: "Oolong Tea", stock: 20, cost: 0 },
 ];
 
-function getBoba(): InventoryItem[] {
-    return inventory.filter((i) => i.name.endsWith("Boba"));
-}
-
-function getJelly(): InventoryItem[] {
-    return inventory.filter((i) => i.name.endsWith("Jelly"));
-}
-
 // configurable tax rate for UI display (8.25% default)
 const TAX_RATE = parseFloat(process.env.NEXT_PUBLIC_TAX_RATE ?? "0.0825");
 
@@ -151,31 +160,17 @@ const findInventoryCost = (name: string) => {
     return item ? item.cost : 0;
 };
 
-// compute a single order's price from its fields
-function getOrderPrice(order: Record<string, any>) {
-    let price = 0;
-    for (const [key, value] of Object.entries(order)) {
-        if (
-            value === "None" ||
-            value === null ||
-            (Array.isArray(value) && value.length === 0)
-        ) {
-            continue;
-        }
-        if (key.toLowerCase() === "drink") {
-            price += (value as MenuItem).cost;
-            continue;
-        }
-        // Ice/Sugar affect display only (no price)
-        if (key === "Ice" || key === "Sugar") continue;
+function calculateSubtotal(cartItems: CartItem[]): number {
+    console.log(JSON.stringify(cartItems));
+    let total = 0;
 
-        if (Array.isArray(value)) {
-            for (const v of value) price += findInventoryCost(v);
-        } else {
-            price += findInventoryCost(String(value));
-        }
+    for (const item of cartItems) {
+        for (const customization of item.customizations)
+            total += customization.cost;
+        total += item.cost;
     }
-    return price;
+
+    return total;
 }
 
 interface CategoryCardProps {
@@ -226,18 +221,14 @@ interface InventoryItemCardProps {
     onSelect: () => void;
     onUnselect: () => void;
 }
-function ToppingCard({
-    item,
-    onSelect,
-    onUnselect,
-}: InventoryItemCardProps) {
+function ToppingCard({ item, onSelect, onUnselect }: InventoryItemCardProps) {
     const [selected, setSelected] = useState(false);
     return (
         <div
             className={`flex items-center justify-center border rounded p-4 cursor-pointer ${selected ? "bg-black text-white" : ""}`}
             onClick={() => {
                 setSelected(!selected);
-                if (selected) onSelect();
+                if (!selected) onSelect();
                 else onUnselect();
             }}
         >
@@ -246,8 +237,11 @@ function ToppingCard({
     );
 }
 
-function ToppingSelector() {
-    const [selected, setSelected] = useState<number[]>([]);
+interface ToppingSelectorProps {
+    onToppingSelect: (toppings: InventoryItem[]) => void;
+}
+function ToppingSelector({ onToppingSelect }: ToppingSelectorProps) {
+    const [selected, setSelected] = useState<InventoryItem[]>([]);
     return (
         <div className="grid grid-cols-4 gap-2">
             {inventory.map((i) => (
@@ -255,19 +249,33 @@ function ToppingSelector() {
                     key={i.id}
                     item={i}
                     onSelect={() => {
-                        setSelected([...selected, i.id]);
+                        const newArr = [...selected, i];
+                        setSelected(newArr);
+                        onToppingSelect(newArr);
                     }}
-                    onUnselect={() =>
-                        setSelected(selected.filter((id) => id !== i.id))
-                    }
+                    onUnselect={() => {
+                        const newArr = selected.filter(
+                            (item) => item.id !== i.id,
+                        );
+                        setSelected(newArr);
+                        onToppingSelect(newArr);
+                    }}
                 />
             ))}
         </div>
     );
 }
 
-function MenuItemCard({ item }: { item: MenuItem }) {
+interface MenuItemCardProps {
+    item: MenuItem;
+    onConfirm: (item: CartItem) => void;
+}
+function MenuItemCard({ item, onConfirm }: MenuItemCardProps) {
     const [ice, setIce] = useState(0);
+    const [size, setSize] = useState<DrinkSize>("medium");
+    const [selectedToppings, setSelectedToppings] = useState<InventoryItem[]>(
+        [],
+    );
     return (
         <Dialog>
             <DialogTrigger asChild>
@@ -284,13 +292,22 @@ function MenuItemCard({ item }: { item: MenuItem }) {
                     <div>
                         <p className="text-2xl">Size</p>
                         <div className="flex space-x-4">
-                            <div className="border rounded-full p-4 text-xl">
+                            <div
+                                className={`cursor-pointer duration-300 border rounded-full p-4 text-xl ${size === "small" ? "bg-black text-white" : ""}`}
+                                onClick={() => setSize("small")}
+                            >
                                 S
                             </div>
-                            <div className="border rounded-full p-4 text-xl">
+                            <div
+                                className={`cursor-pointer duration-300 border rounded-full p-4 text-xl ${size === "medium" ? "bg-black text-white" : ""}`}
+                                onClick={() => setSize("medium")}
+                            >
                                 M
                             </div>
-                            <div className="border rounded-full p-4 text-xl">
+                            <div
+                                className={`cursor-pointer duration-300 border rounded-full p-4 text-xl ${size === "large" ? "bg-black text-white" : ""}`}
+                                onClick={() => setSize("large")}
+                            >
                                 L
                             </div>
                         </div>
@@ -326,12 +343,35 @@ function MenuItemCard({ item }: { item: MenuItem }) {
 
                     <div>
                         <p className="text-2xl">Other Toppings</p>
-                        <ToppingSelector />
+                        <ToppingSelector
+                            onToppingSelect={setSelectedToppings}
+                        />
                     </div>
                 </div>
                 <DialogFooter>
                     <DialogClose asChild>
-                        <Button variant="default" className="w-full">Add to Order</Button>
+                        <Button
+                            variant="default"
+                            className="w-full"
+                            onClick={() =>
+                                onConfirm({
+                                    id: item.id,
+                                    size,
+                                    ice,
+                                    name: item.name,
+                                    cost: item.cost,
+                                    customizations: selectedToppings.map(
+                                        (t) => ({
+                                            id: t.id,
+                                            name: t.name,
+                                            cost: t.cost,
+                                        }),
+                                    ),
+                                })
+                            }
+                        >
+                            Add to Order
+                        </Button>
                     </DialogClose>
                 </DialogFooter>
             </DialogContent>
@@ -342,9 +382,14 @@ function MenuItemCard({ item }: { item: MenuItem }) {
 interface MenuItemsInterface {
     menuData: MenuData;
     selectedCategory: string;
+    onItemOrder: (item: CartItem) => void;
 }
 
-function MenuItems({ menuData, selectedCategory }: MenuItemsInterface) {
+function MenuItems({
+    menuData,
+    selectedCategory,
+    onItemOrder,
+}: MenuItemsInterface) {
     return (
         <div className="space-y-4">
             <p className="text-xl">Drinks</p>
@@ -353,7 +398,11 @@ function MenuItems({ menuData, selectedCategory }: MenuItemsInterface) {
                     .filter(([category, _]) => category === selectedCategory)
                     .map(([_, items]) =>
                         items.map((item, i) => (
-                            <MenuItemCard key={i} item={item} />
+                            <MenuItemCard
+                                key={i}
+                                item={item}
+                                onConfirm={onItemOrder}
+                            />
                         )),
                     )}
             </div>
@@ -361,27 +410,73 @@ function MenuItems({ menuData, selectedCategory }: MenuItemsInterface) {
     );
 }
 
-interface CartItem {
-    id: number;
-    name: string;
-    cost: number;
-    customizations: {
-        id: number;
-        name: string;
-        cost: number;
-    }[];
+function CartItemCard({ item }: { item: CartItem }) {
+    return (
+        <div className="border rounded p-4">
+            <p className="text-xl font-bold">
+                {item.size.charAt(0).toUpperCase() + item.size.substring(1)}{" "}
+                {item.name}
+            </p>
+            <p>Ice: {item.ice}</p>
+            {item.customizations.map((c) => (
+                <p key={c.id}>{c.name}</p>
+            ))}
+            <Separator className="my-4" />
+            <p>Total: ${calculateSubtotal([item])}</p>
+        </div>
+    );
 }
 
 function Cart({ items }: { items: CartItem[] }) {
+    const subtotal = calculateSubtotal(items);
+    const tax = TAX_RATE * subtotal;
+    const total = subtotal + tax;
+
+    function handleCheckout() {
+        fetch("/api/cashier/order", {
+            method: "POST",
+            body: JSON.stringify({
+                drinks: items.map((i) => ({
+                    id: i.id,
+                    customizations: i.customizations.map((i) => i.id),
+                })),
+                employeeId: 1,
+                paymentMethod: "CARD",
+            }),
+        });
+    }
+
     return (
-        <div>
-            test
+        <div className="grid grid-rows-[1fr_8fr_1fr] min-h-0 gap-4">
+            <p className="text-xl mb-4 text-center">Cart</p>
+            <ScrollArea className="h-120">
+                <div className="space-y-4">
+                    {items.map((i, idx) => (
+                        <CartItemCard key={idx} item={i} />
+                    ))}
+                </div>
+            </ScrollArea>
+            <div className="grid grid-rows-4 grid-cols-2 p-4 border rounded">
+                <p>Subtotal</p>
+                <p className="text-right">${subtotal.toFixed(2)}</p>
+
+                <p>Tax</p>
+                <p className="text-right">${tax.toFixed(2)}</p>
+
+                <p>Total</p>
+                <p className="text-right">${total.toFixed(2)}</p>
+                <Button className="col-span-2" onClick={handleCheckout}>
+                    Checkout
+                </Button>
+            </div>
         </div>
-    )
+    );
 }
 
 export default function CashierPage() {
     const [selectedCategory, setSelectedCategory] = useState("Fruit Tea");
+    const [cartItems, setCartItems] = useState<CartItem[]>([]);
+    console.log(cartItems);
     //Sets default selection for customization options
     const defaultCustomizations = {
         Size: "Medium Cups",
@@ -392,8 +487,23 @@ export default function CashierPage() {
         Toppings: [],
     };
 
+    const placeholderItems: CartItem[] = [
+        {
+            id: 1,
+            name: "Mango Green Tea",
+            ice: 3,
+            size: "large",
+            cost: 6.5,
+            customizations: [
+                { id: 9, name: "Red Bean", cost: 0.75 },
+                { id: 12, name: "Pudding", cost: 0.75 },
+                { id: 13, name: "Herb Jelly", cost: 0.75 },
+            ],
+        },
+    ];
+
     return (
-        <div className="grid grid-cols-[auto_1fr_auto] gap-8 p-8">
+        <div className="grid grid-cols-[1fr_7fr_2fr] gap-8 p-8 h-screen">
             <CategorySelector
                 categories={Object.keys(menuData)}
                 selectedCategory={selectedCategory}
@@ -403,9 +513,10 @@ export default function CashierPage() {
             <MenuItems
                 menuData={menuData}
                 selectedCategory={selectedCategory}
+                onItemOrder={(item) => setCartItems([...cartItems, item])}
             />
 
-            <Cart items={[]}/>
+            <Cart items={cartItems} />
         </div>
     );
 }

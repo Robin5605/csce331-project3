@@ -8,7 +8,7 @@ export type OrderStatus = "not_working_on" | "working" | "completed";
 
 interface Order {
     id: number;
-    placed_at: string; 
+    placed_at: string;
     cost: number;
     employee_id: number;
     payment_method: string;
@@ -42,11 +42,10 @@ interface Ingredient {
 }
 
 interface DrinkIngredient {
-    id: number;      
-    name: string;     
-    servings: number; 
+    id: number;
+    name: string;
+    servings: number;
 }
-
 
 interface DrinkOrder {
     id: number;

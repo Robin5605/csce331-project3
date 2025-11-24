@@ -564,7 +564,6 @@ export async function usageBetweenDates(startDate: string, endDate: string) {
     return rows;
 }
 
-
 /**
  * Fetch orders for the kitchen screen with their menu items + ingredient customizations.
  */
@@ -621,7 +620,6 @@ export async function fetch_kitchen_orders_by_status(
     const { rows } = await client.query<Order>(query, [status]);
     return rows;
 }
-
 
 /**
  * Update an order's status (e.g., not_working_on -> working -> completed).

@@ -5,7 +5,9 @@ import type { OrderStatus } from "@/lib/models";
 export async function GET(req: NextRequest) {
     try {
         const { searchParams } = new URL(req.url);
-        const statusParam = searchParams.get("order_status") as OrderStatus | null;
+        const statusParam = searchParams.get(
+            "order_status",
+        ) as OrderStatus | null;
 
         const orderStatus: OrderStatus = statusParam ?? "not_working_on";
 

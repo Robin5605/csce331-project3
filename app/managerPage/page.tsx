@@ -22,9 +22,7 @@ export default function ManagerPage() {
                     <TabsTrigger value="xz_reports">
                         X and Z Reports
                     </TabsTrigger>
-                    <TabsTrigger value="kitchenpage">
-                        Kitchen Page
-                    </TabsTrigger>
+                    <TabsTrigger value="kitchenpage">Kitchen Page</TabsTrigger>
                 </TabsList>
 
                 {/* ───── TAB CONTENTS ───── */}

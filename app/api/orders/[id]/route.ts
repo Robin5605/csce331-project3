@@ -10,9 +10,8 @@ export async function PATCH(
     req: NextRequest,
     context: { params: Promise<{ id: string }> },
 ) {
-    const { id } = await context.params;         
+    const { id } = await context.params;
     const orderId = Number(id);
-
 
     if (Number.isNaN(orderId)) {
         return NextResponse.json(

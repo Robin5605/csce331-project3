@@ -17,6 +17,35 @@ import {
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import CustomizationCard from "@/components/CustomizationCard";
+import { CupSoda, Minus, Plus } from "lucide-react";
+import {
+    Dialog,
+    DialogClose,
+    DialogContent,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+import { DialogTrigger } from "@radix-ui/react-dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
+import { ScrollArea } from "@/components/ui/scroll-area";
+
+type DrinkSize = "small" | "medium" | "large";
+
+interface CartItem {
+    id: number;
+    size: DrinkSize;
+    ice: number;
+    name: string;
+    cost: number;
+    customizations: {
+        id: number;
+        name: string;
+        cost: number;
+    }[];
+}
 
 //[REMOVE WHEN API IS IMPLEMENTED] Temporary data for now
 interface MenuItem {
@@ -24,6 +53,7 @@ interface MenuItem {
     name: string;
     stock: number;
     cost: number;
+    image_url: string;
 }
 
 interface MenuData {
@@ -32,93 +62,107 @@ interface MenuData {
 
 const menuData: MenuData = {
     "Fruit Tea": [
-        { id: 1, name: "Mango Green Tea", stock: 80, cost: 6.5 },
-        { id: 2, name: "Peach Tea With Honey Jelly", stock: 75, cost: 6.25 },
-        { id: 3, name: "Passion Chess", stock: 75, cost: 6.25 },
-        { id: 5, name: "Mango & Passion Fruit", stock: 75, cost: 6.25 },
-        { id: 6, name: "Honey Lemonade", stock: 75, cost: 5.2 },
-        { id: 4, name: "Berry Lychee Burst", stock: 74, cost: 6.25 },
+        { id: 1, name: "Mango Green Tea", stock: 80, cost: 6.5, image_url: "/drinks/mango_green_tea.png" },
+        { id: 2, name: "Peach Tea With Honey Jelly", stock: 75, cost: 6.25, image_url: "/drinks/peach_tea_with_honey_jelly.png" },
+        { id: 3, name: "Passion Chess", stock: 75, cost: 6.25, image_url: "/drinks/passion_chess.png" },
+        { id: 5, name: "Mango & Passion Fruit", stock: 75, cost: 6.25, image_url: "/drinks/mango_passion_fruit.png" },
+        { id: 6, name: "Honey Lemonade", stock: 75, cost: 5.2, image_url: "/drinks/honey_lemonade.png" },
+        { id: 4, name: "Berry Lychee Burst", stock: 74, cost: 6.25, image_url: "/drinks/berry_lychee_burst.png" },
     ],
+
     "Ice Blended": [
-        { id: 7, name: "Oreo w/ Pearl", stock: 75, cost: 6.75 },
-        { id: 8, name: "Taro w/ Pudding", stock: 75, cost: 6.95 },
-        { id: 9, name: "Thai Tea w/ Pearl", stock: 75, cost: 6.95 },
-        { id: 10, name: "Coffee w/ Ice Cream", stock: 75, cost: 6.95 },
-        { id: 11, name: "Mango w/ Ice Cream", stock: 75, cost: 6.95 },
-        { id: 12, name: "Strawberry w/ Ice Cream", stock: 75, cost: 6.95 },
+        { id: 7, name: "Oreo w/ Pearl", stock: 75, cost: 6.75, image_url: "/drinks/oreo_w_pearl.png" },
+        { id: 8, name: "Taro w/ Pudding", stock: 75, cost: 6.95, image_url: "/drinks/taro_w_pudding.png" },
+        { id: 9, name: "Thai Tea w/ Pearl", stock: 75, cost: 6.95, image_url: "/drinks/thai_tea_w_pearl.png" },
+        { id: 10, name: "Coffee w/ Ice Cream", stock: 75, cost: 6.95, image_url: "/drinks/coffee_w_ice_cream.png" },
+        { id: 11, name: "Mango w/ Ice Cream", stock: 75, cost: 6.95, image_url: "/drinks/mango_w_ice_cream.png" },
+        { id: 12, name: "Strawberry w/ Ice Cream", stock: 75, cost: 6.95, image_url: "/drinks/strawberry_w_ice_cream.png" },
     ],
+
     "Milky": [
-        { id: 13, name: "Clasic Pearl Milk Tea", stock: 75, cost: 5.8 },
-        { id: 14, name: "Honey Pearl Milk Tea", stock: 75, cost: 6.0 },
-        { id: 15, name: "Coffe Creama", stock: 75, cost: 6.5 },
-        { id: 16, name: "Hokaido Pearl Milk Tea", stock: 75, cost: 6.25 },
-        { id: 17, name: "Mango Green Milk Tea", stock: 75, cost: 6.5 },
-        { id: 18, name: "Golden Retriever", stock: 75, cost: 6.75 },
+        { id: 13, name: "Clasic Pearl Milk Tea", stock: 75, cost: 5.8, image_url: "/drinks/classic_pearl_milk_tea.png" },
+        { id: 14, name: "Honey Pearl Milk Tea", stock: 75, cost: 6.0, image_url: "/drinks/honey_pearl_milk_tea.png" },
+        { id: 15, name: "Coffe Creama", stock: 75, cost: 6.5, image_url: "/drinks/coffe_creama.png" },
+        { id: 16, name: "Hokaido Pearl Milk Tea", stock: 75, cost: 6.25, image_url: "/drinks/hokaido_pearl_milk_tea.png" },
+        { id: 17, name: "Mango Green Milk Tea", stock: 75, cost: 6.5, image_url: "/drinks/mango_green_milk_tea.png" },
+        { id: 18, name: "Golden Retriever", stock: 75, cost: 6.75, image_url: "/drinks/golden_retriever.png" },
     ],
+
     "Non Caffenated": [
-        { id: 19, name: "Tiger Boba", stock: 75, cost: 6.5 },
-        { id: 20, name: "Strawberry Coconut", stock: 75, cost: 6.5 },
+        { id: 19, name: "Tiger Boba", stock: 75, cost: 6.5, image_url: "/drinks/tiger_boba.png" },
+        { id: 20, name: "Strawberry Coconut", stock: 75, cost: 6.5, image_url: "/drinks/strawberry_coconut.png" },
         {
             id: 21,
             name: "Strawberry Coconut Ice Blended",
             stock: 75,
             cost: 6.5,
+            image_url: "/drinks/strawberry_coconut_ice_blended.png",
         },
-        { id: 22, name: "Halo Halo", stock: 75, cost: 6.95 },
-        { id: 23, name: "Wintermellon Lemonade", stock: 75, cost: 5.8 },
-        { id: 24, name: "Wintermellon w/ Fresh Milk", stock: 75, cost: 5.2 },
+        { id: 22, name: "Halo Halo", stock: 75, cost: 6.95, image_url: "/drinks/halo_halo.png" },
+        { id: 23, name: "Wintermellon Lemonade", stock: 75, cost: 5.8, image_url: "/drinks/wintermellon_lemonade.png" },
+        { id: 24, name: "Wintermellon w/ Fresh Milk", stock: 75, cost: 5.2, image_url: "/drinks/wintermellon_w_fresh_milk.png" },
     ],
+
     "Fall Seasonals": [
-        { id: 25, name: "Red Bean Matcha", stock: 75, cost: 6.95 },
-        { id: 26, name: "Pumpkin Chai", stock: 75, cost: 6.95 },
-        { id: 27, name: "Honey and Cinnamon Milk Tea", stock: 75, cost: 6.95 },
-        { id: 31, name: "temp", stock: 99, cost: 5.0 },
-        { id: 32, name: "temp2", stock: 99, cost: 1.0 },
+        { id: 25, name: "Red Bean Matcha", stock: 75, cost: 6.95, image_url: "/drinks/red_bean_matcha.png" },
+        { id: 26, name: "Pumpkin Chai", stock: 75, cost: 6.95, image_url: "/drinks/pumpkin_chai.png" },
+        { id: 27, name: "Honey and Cinnamon Milk Tea", stock: 75, cost: 6.95, image_url: "/drinks/honey_and_cinnamon_milk_tea.png" },
+        { id: 31, name: "temp", stock: 99, cost: 5.0, image_url: "" },
+        { id: 32, name: "temp2", stock: 99, cost: 1.0, image_url: "" },
     ],
-    "Uncategorized": [
-        { id: 33, name: "New Item", stock: 0, cost: 0 },
-        { id: 34, name: "New Item", stock: 0, cost: 0 },
-        { id: 35, name: "New Item", stock: 0, cost: 0 },
+
+    Uncategorized: [
+        { id: 33, name: "New Item", stock: 0, cost: 0, image_url: "" },
+        { id: 34, name: "New Item", stock: 0, cost: 0, image_url: "" },
+        { id: 35, name: "New Item", stock: 0, cost: 0, image_url: "" },
     ],
 };
-
 interface InventoryItem {
     id: number;
     name: string;
     stock: number;
     cost: number;
+    ingredient_type: number;
 }
 
 const inventory: InventoryItem[] = [
-    { id: 9, name: "Red Bean", stock: 100, cost: 0.75 },
-    { id: 12, name: "Pudding", stock: 100, cost: 0.75 },
-    { id: 13, name: "Herb Jelly", stock: 100, cost: 0.75 },
-    { id: 14, name: "Alyu Jelly", stock: 100, cost: 0.75 },
-    { id: 15, name: "Coffee Jelly", stock: 100, cost: 0.75 },
-    { id: 16, name: "Honey Jelly", stock: 100, cost: 0.75 },
-    { id: 18, name: "Strawberry Popping Boba", stock: 100, cost: 1 },
-    { id: 19, name: "Peach Popping Boba", stock: 100, cost: 1 },
-    { id: 20, name: "Crystal Boba", stock: 100, cost: 1 },
-    { id: 21, name: "Napkins", stock: 2000, cost: 0 },
-    { id: 22, name: "Large Cups", stock: 1000, cost: 0 },
-    { id: 23, name: "Small Cups", stock: 1000, cost: 0 },
-    { id: 24, name: "Medium Cups", stock: 1000, cost: 0 },
-    { id: 25, name: "Straws", stock: 1000, cost: 0 },
-    { id: 26, name: "Seal", stock: 1000, cost: 0 },
-    { id: 27, name: "Bag", stock: 1000, cost: 0 },
-    { id: 7, name: "Lychee Jelly", stock: 40, cost: 0.75 },
-    { id: 1, name: "Black Tea", stock: 100, cost: 0 },
-    { id: 10, name: "Creama", stock: 94, cost: 1.25 },
-    { id: 17, name: "Mango Popping Boba", stock: 95, cost: 1 },
-    { id: 8, name: "Mini Pearl", stock: 0, cost: 0.75 },
-    { id: 2, name: "Green Tea", stock: 4, cost: 0 },
-    { id: 6, name: "Aloe Vera", stock: 94, cost: 0.75 },
-    { id: 28, name: "Ice", stock: 988, cost: 0.0 },
-    { id: 11, name: "Ice Cream", stock: 49, cost: 1.25 },
-    { id: 4, name: "Sugar", stock: 86, cost: 0 },
-    { id: 5, name: "Pearl", stock: 35, cost: 0.75 },
-    { id: 3, name: "Oolong Tea", stock: 20, cost: 0 },
+    { id: 21, name: "Napkins", stock: 2000, cost: 0, ingredient_type: 0 },
+    { id: 22, name: "Large Cups", stock: 1000, cost: 0, ingredient_type: 0 },
+    { id: 23, name: "Small Cups", stock: 1000, cost: 0, ingredient_type: 0 },
+    { id: 24, name: "Medium Cups", stock: 1000, cost: 0, ingredient_type: 0 },
+    { id: 25, name: "Straws", stock: 1000, cost: 0, ingredient_type: 0 },
+    { id: 26, name: "Seal", stock: 1000, cost: 0, ingredient_type: 0 },
+    { id: 27, name: "Bag", stock: 1000, cost: 0, ingredient_type: 0 },
+
+    { id: 4, name: "Sugar", stock: 86, cost: 0, ingredient_type: 1 },
+
+    { id: 9, name: "Red Bean", stock: 96, cost: 0.75, ingredient_type: 100 },
+    { id: 12, name: "Pudding", stock: 92, cost: 0.75, ingredient_type: 100 },
+    { id: 8, name: "Mini Pearl", stock: 51, cost: 0.75, ingredient_type: 100 },
+    { id: 5, name: "Pearl", stock: 28, cost: 0.75, ingredient_type: 100 },
+    { id: 6, name: "Aloe Vera", stock: 89, cost: 0.75, ingredient_type: 100 },
+
+    { id: 20, name: "Crystal Boba", stock: 92, cost: 1, ingredient_type: 20 },
+    { id: 18, name: "Strawberry Popping Boba", stock: 98, cost: 1, ingredient_type: 20 },
+    { id: 17, name: "Mango Popping Boba", stock: 89, cost: 1, ingredient_type: 20 },
+    { id: 19, name: "Peach Popping Boba", stock: 96, cost: 1, ingredient_type: 20 },
+
+    { id: 3, name: "Oolong Tea", stock: 13, cost: 0, ingredient_type: 30 },
+    { id: 2, name: "Green Tea", stock: 0, cost: 0, ingredient_type: 30 },
+    { id: 1, name: "Black Tea", stock: 70, cost: 1, ingredient_type: 30 },
+
+    { id: 13, name: "Herb Jelly", stock: 100, cost: 0.75, ingredient_type: 40 },
+    { id: 7, name: "Lychee Jelly", stock: 37, cost: 0.75, ingredient_type: 40 },
+    { id: 14, name: "Alyu Jelly", stock: 96, cost: 0.75, ingredient_type: 40 },
+    { id: 15, name: "Coffee Jelly", stock: 93, cost: 0.75, ingredient_type: 40 },
+    { id: 16, name: "Honey Jelly", stock: 96, cost: 0.75, ingredient_type: 40 },
+
+    { id: 28, name: "Ice", stock: 813, cost: 0.0, ingredient_type: 1 },
+
+    { id: 10, name: "Creama", stock: 84, cost: 1.25, ingredient_type: 100 },
+    { id: 11, name: "Ice Cream", stock: 36, cost: 1.25, ingredient_type: 100 },
 ];
+
 
 // configurable tax rate for UI display (8.25% default)
 const TAX_RATE = parseFloat(process.env.NEXT_PUBLIC_TAX_RATE ?? "0.0825");
@@ -131,34 +175,392 @@ const findInventoryCost = (name: string) => {
     return item ? item.cost : 0;
 };
 
-// compute a single order's price from its fields
-function getOrderPrice(order: Record<string, any>) {
-    let price = 0;
-    for (const [key, value] of Object.entries(order)) {
-        if (
-            value === "None" ||
-            value === null ||
-            (Array.isArray(value) && value.length === 0)
-        ) {
-            continue;
-        }
-        if (key.toLowerCase() === "drink") {
-            price += (value as MenuItem).cost;
-            continue;
-        }
-        // Ice/Sugar affect display only (no price)
-        if (key === "Ice" || key === "Sugar") continue;
+function calculateSubtotal(cartItems: CartItem[]): number {
+    console.log(JSON.stringify(cartItems));
+    let total = 0;
 
-        if (Array.isArray(value)) {
-            for (const v of value) price += findInventoryCost(v);
-        } else {
-            price += findInventoryCost(String(value));
-        }
+    for (const item of cartItems) {
+        for (const customization of item.customizations)
+            total += customization.cost;
+        total += item.cost;
     }
-    return price;
+
+    return total;
+}
+
+interface CategoryCardProps {
+    category: string;
+    isSelected: boolean;
+    onClick: () => void;
+}
+
+function CategoryCard({ category, isSelected, onClick }: CategoryCardProps) {
+    return (
+        <div
+            className={`border p-4 rounded hover:border-black cursor-pointer transition duration-300 ${isSelected ? "bg-black text-white" : ""}`}
+            onClick={onClick}
+        >
+            <p>{category}</p>
+        </div>
+    );
+}
+
+interface CategorySelectorProps {
+    categories: string[];
+    selectedCategory: string;
+    onSelectedCategoryChange: (category: string) => void;
+}
+
+function CategorySelector({
+    categories,
+    selectedCategory,
+    onSelectedCategoryChange,
+}: CategorySelectorProps) {
+    return (
+        <div className="w-fit space-y-4">
+            <p className="text-xl">Categories</p>
+            {categories.map((c, i) => (
+                <CategoryCard
+                    key={i}
+                    category={c}
+                    isSelected={c === selectedCategory}
+                    onClick={() => onSelectedCategoryChange(c)}
+                />
+            ))}
+        </div>
+    );
+}
+
+interface InventoryItemCardProps {
+    item: InventoryItem;
+    onSelect: () => void;
+    onUnselect: () => void;
+}
+function ToppingCard({ item, onSelect, onUnselect }: InventoryItemCardProps) {
+    const [selected, setSelected] = useState(false);
+    return (
+        <div
+            className={`flex-col items-center justify-center border rounded p-4 cursor-pointer ${selected ? "bg-black text-white" : ""}`}
+            onClick={() => {
+                setSelected(!selected);
+                if (!selected) onSelect();
+                else onUnselect();
+            }}
+        >
+            <p className="text-center select-none">{item.name}</p>
+                {item.cost > 0 ? (
+                    <p className="text-center select-none">(${item.cost})</p>
+                ) : (
+                    <></>
+                )}
+        </div>
+    );
+}
+
+interface ToppingSelectorProps {
+    onToppingSelect: (toppings: InventoryItem[]) => void;
+    ingredientType: number;
+}
+function ToppingSelector({ onToppingSelect, ingredientType }: ToppingSelectorProps) {
+    const [selected, setSelected] = useState<InventoryItem[]>([]);
+    return (
+        <div className="grid grid-cols-4 gap-2">
+            {inventory.filter((i) => {
+                if(i.ingredient_type === ingredientType){
+                    return true;
+                }
+                return false;
+            }).map((i) => (
+                <ToppingCard
+                    key={i.id}
+                    item={i}
+                    onSelect={() => {
+                        const newArr = [...selected, i];
+                        setSelected(newArr);
+                        onToppingSelect(newArr);
+                    }}
+                    onUnselect={() => {
+                        const newArr = selected.filter(
+                            (item) => item.id !== i.id,
+                        );
+                        setSelected(newArr);
+                        onToppingSelect(newArr);
+                    }}
+                />
+            ))}
+        </div>
+    );
+}
+
+interface MenuItemCardProps {
+    item: MenuItem;
+    onConfirm: (item: CartItem) => void;
+}
+function MenuItemCard({ item, onConfirm }: MenuItemCardProps) {
+    const [ice, setIce] = useState(0);
+    const [size, setSize] = useState<DrinkSize>("medium");
+    const [selectedToppings, setSelectedToppings] = useState<InventoryItem[]>(
+        [],
+    );
+    return (
+        <Dialog>
+            <DialogTrigger asChild>
+                <div className="flex flex-col gap-2 items-center bg-gray-100 p-2 rounded border">
+                    {item.image_url !== "" ? (
+                        <img
+                            src={item.image_url}
+                            alt={"drink image"}
+                            className="w-[120] h-[120] object-cover"
+                        />
+                    ) : (
+                        <CupSoda width={120} height={120} />
+                    )}
+                    {item.name}
+                </div>
+            </DialogTrigger>
+            <DialogContent className="max-h-9/10 overflow-y-scroll">
+                <DialogHeader>
+                    <DialogTitle>Customize</DialogTitle>
+                </DialogHeader>
+                <div className="flex flex-col space-y-4">
+                    <div>
+                        <p className="text-2xl">Size</p>
+                        <div className="flex space-x-4">
+                            <div
+                                className={`cursor-pointer duration-300 border rounded-full p-4 text-xl ${size === "small" ? "bg-black text-white" : ""}`}
+                                onClick={() => setSize("small")}
+                            >
+                                S
+                            </div>
+                            <div
+                                className={`cursor-pointer duration-300 border rounded-full p-4 text-xl ${size === "medium" ? "bg-black text-white" : ""}`}
+                                onClick={() => setSize("medium")}
+                            >
+                                M
+                            </div>
+                            <div
+                                className={`cursor-pointer duration-300 border rounded-full p-4 text-xl ${size === "large" ? "bg-black text-white" : ""}`}
+                                onClick={() => setSize("large")}
+                            >
+                                L
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <p className="text-2xl">Ice</p>
+                        <div className="flex space-x-4">
+                            <Button
+                                variant="outline"
+                                size="icon"
+                                className="rounded-full"
+                                onClick={() => setIce(ice > 0 ? ice - 1 : 0)}
+                            >
+                                <Minus />
+                            </Button>
+                            <Input
+                                type="number"
+                                className="rounded-full w-fit"
+                                value={ice}
+                                readOnly
+                            />
+                            <Button
+                                variant="outline"
+                                size="icon"
+                                className="rounded-full"
+                                onClick={() => setIce(ice < 5 ? ice + 1 : 5)}
+                            >
+                                <Plus />
+                            </Button>
+                        </div>
+                    </div>
+
+                    <div className="flex flex-col space-y-4">
+                        <div>
+                            <p className="text-2xl mb-3">Boba</p>
+                                <ToppingSelector
+                                    onToppingSelect={setSelectedToppings}
+                                    ingredientType={20}
+                            />
+                        </div>
+                        <div>
+                            <p className="text-2xl mb-3">Tea</p>
+                                <ToppingSelector
+                                    onToppingSelect={setSelectedToppings}
+                                    ingredientType={30}
+                            />
+                        </div>
+                        <div>
+                            <p className="text-2xl mb-3">Jelly</p>
+                                <ToppingSelector
+                                    onToppingSelect={setSelectedToppings}
+                                    ingredientType={40}
+                            />
+                        </div>
+                        <div>
+                            <p className="text-2xl mb-3">Other Toppings</p>
+                            <ToppingSelector
+                                onToppingSelect={setSelectedToppings}
+                                ingredientType={100}
+                            />
+                        </div>
+                    </div>
+                </div>
+                <DialogFooter>
+                    <DialogClose asChild>
+                        <Button
+                            variant="default"
+                            className="w-full"
+                            onClick={() =>
+                                onConfirm({
+                                    id: item.id,
+                                    size,
+                                    ice,
+                                    name: item.name,
+                                    cost: item.cost,
+                                    customizations: selectedToppings.map(
+                                        (t) => ({
+                                            id: t.id,
+                                            name: t.name,
+                                            cost: t.cost,
+                                        }),
+                                    ),
+                                })
+                            }
+                        >
+                            Add to Order
+                        </Button>
+                    </DialogClose>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
+interface MenuItemsInterface {
+    menuData: MenuData;
+    selectedCategory: string;
+    onItemOrder: (item: CartItem) => void;
+}
+
+function MenuItems({
+    menuData,
+    selectedCategory,
+    onItemOrder,
+}: MenuItemsInterface) {
+    return (
+        <div className="space-y-4">
+            <p className="text-xl">Drinks</p>
+            <div className="grid grid-rows-3 grid-cols-3 gap-4">
+                {Object.entries(menuData)
+                    .filter(([category, _]) => category === selectedCategory)
+                    .map(([_, items]) =>
+                        items.map((item, i) => (
+                            <MenuItemCard
+                                key={i}
+                                item={item}
+                                onConfirm={onItemOrder}
+                            />
+                        )),
+                    )}
+            </div>
+        </div>
+    );
+}
+
+function CartItemCard({ item }: { item: CartItem }) {
+    return (
+        <div className="border rounded p-4">
+            <p className="text-xl font-bold">
+                {item.size.charAt(0).toUpperCase() + item.size.substring(1)}{" "}
+                {item.name}
+            </p>
+            <p>Ice: {item.ice}</p>
+            {item.customizations.map((c) => (
+                <p key={c.id}>{c.name}</p>
+            ))}
+            <Separator className="my-4" />
+            <p>Total: ${calculateSubtotal([item])}</p>
+        </div>
+    );
+}
+
+function Cart({ items, setItems }: { items: CartItem[], setItems: React.Dispatch<React.SetStateAction<CartItem[]>> }) {
+    const subtotal = calculateSubtotal(items);
+    const tax = TAX_RATE * subtotal;
+    const total = subtotal + tax;
+
+    function handleCheckout() {
+        fetch("/api/cashier/order", {
+            method: "POST",
+            body: JSON.stringify({
+                drinks: items.map((i) => ({
+                    id: i.id,
+                    customizations: i.customizations.map((i) => i.id),
+                })),
+                employeeId: 1,
+                paymentMethod: "CARD",
+            }),
+        });
+        setItems([])
+    }
+
+    return (
+        <div className="grid grid-rows-[1fr_8fr_1fr] min-h-0 gap-4">
+            <p className="text-xl mb-4 text-center">Cart</p>
+            <ScrollArea className="h-120">
+                <div className="space-y-4">
+                    {items.map((i, idx) => (
+                        <CartItemCard key={idx} item={i} />
+                    ))}
+                </div>
+            </ScrollArea>
+            <div className="grid grid-rows-4 grid-cols-2 p-4 border rounded">
+                <p>Subtotal</p>
+                <p className="text-right">${subtotal.toFixed(2)}</p>
+
+                <p>Tax</p>
+                <p className="text-right">${tax.toFixed(2)}</p>
+
+                <p>Total</p>
+                <p className="text-right">${total.toFixed(2)}</p>
+                <Dialog>
+                    {/* Button that opens the dialog */}
+                    <DialogTrigger asChild>
+                        <Button className="col-span-2">
+                            Checkout
+                        </Button>
+                    </DialogTrigger>
+
+                    <DialogContent className="max-h-[90vh]">
+                        <DialogHeader>
+                            <DialogTitle className="text-center text-2xl">
+                                Confirm Order?
+                            </DialogTitle>
+                        </DialogHeader>
+
+                        <DialogFooter>
+                            <DialogClose asChild>
+                                <Button
+                                    variant="default"
+                                    className="w-full"
+                                    onClick={handleCheckout}
+                                >
+                                    Yes, Place Order
+                                </Button>
+                            </DialogClose>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+            </div>
+        </div>
+    );
 }
 
 export default function CashierPage() {
+    const [selectedCategory, setSelectedCategory] = useState("Fruit Tea");
+    const [cartItems, setCartItems] = useState<CartItem[]>([]);
+    console.log(cartItems);
     //Sets default selection for customization options
     const defaultCustomizations = {
         Size: "Medium Cups",
@@ -169,536 +571,36 @@ export default function CashierPage() {
         Toppings: [],
     };
 
-    //Serves as the state used for showing the Customization page
-    const [isCustomizationOpen, setIsCustomizationOpen] =
-        useState<boolean>(false);
-    const [selectedCategory, setSelectedCateory] =
-        useState<string>("Fruit Tea");
-    const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
-    const [selectedCustomizationOptions, setSelectedCustomizationOptions] =
-        useState<Record<string, string | string[]>>(defaultCustomizations);
-    const [curOrders, setCurOrders] = useState<
-        Record<string, string | string[] | MenuItem | null>[]
-    >([]);
-    const { subtotal, tax, total } = useMemo(() => {
-        const sub = curOrders.reduce((sum, o) => sum + getOrderPrice(o), 0);
-        const t = sub * TAX_RATE;
-        const tot = sub + t;
-        return {
-            subtotal: Math.round(sub * 100) / 100,
-            tax: Math.round(t * 100) / 100,
-            total: Math.round(tot * 100) / 100,
-        };
-    }, [curOrders]);
-
-    //Handles whenever a MenuItem is clicked to bring up the customization menu
-    const menuItemClicked = (item: MenuItem) => {
-        setSelectedCustomizationOptions(defaultCustomizations); //Makes sure to reset the selected options
-        setSelectedItem(item);
-        setIsCustomizationOpen(true);
-    };
-
-    //Handles whenever a CustomizationCard is clicked in order to select it for categories with single select
-    const customizationCardClicked = (name: string, category: string) => {
-        setSelectedCustomizationOptions({
-            ...selectedCustomizationOptions,
-            [category]: name,
-        });
-    };
-
-    //Handles whenever a CustomizationCard is clicked in order to select it for categories with multi-select
-    const customizationCardClickedMultipleSelections = (
-        name: string,
-        category: string,
-        isSelected: boolean,
-    ) => {
-        setSelectedCustomizationOptions((prev) => {
-            const currentValue = prev[category] as string[];
-
-            return {
-                ...prev,
-                [category]: isSelected
-                    ? currentValue.filter((item) => item !== name) // remove
-                    : [...currentValue, name], // add
-            };
-        });
-    };
-
-    // Handles whenever an order is finalized on the customization side
-    const submitOrder = () => {
-        // Add the current selection into the total orders
-        const order = {
-            Drink: selectedItem,
-            ...selectedCustomizationOptions,
-        };
-        setCurOrders([...curOrders, order]);
-        setIsCustomizationOpen(false);
-    };
-
-    //handles current order and sends completed order to database
-    const checkoutOrder = async () => {
-        //console.log("checking out");
-        try {
-            let tempCost = 0;
-            curOrders.forEach((cOrder) => {
-                tempCost += getOrderPrice(cOrder);
-            });
-            tempCost = tempCost + tempCost * TAX_RATE;
-            const orderBody = {
-                cost: Math.round(tempCost * 100) / 100,
-                employeeId: "1",
-                paymentMethod: "CARD",
-            };
-            console.log(orderBody.cost);
-            const orderRes = await fetch("api/cashier/order", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(orderBody),
-            });
-            if (!orderRes.ok)
-                throw new Error(`POST /api/menu ${orderRes.status}`);
-            let { id } = await orderRes.json();
-            const orderId = id;
-            //console.log(`= order id: ${orderId}`);
-            curOrders.map(async (order, orderIndex) => {
-                let drinkOrderId = -1;
-                for (
-                    let index = 0;
-                    index < Object.entries(order).length;
-                    ++index
-                ) {
-                    let [key, value] = Object.entries(order)[index];
-                    //console.log(`\t= k: ${key}\tv: ${value}\tdo id: ${drinkOrderId}`);
-                    if (
-                        value === "None" ||
-                        value === null ||
-                        (Array.isArray(value) && value.length === 0)
-                    ) {
-                        continue;
-                    }
-                    if (key.toLowerCase() === "drink") {
-                        const drinkOrderBody = {
-                            menuId: (value as MenuItem).id,
-                            orderId: orderId,
-                        };
-                        const drinkOrderRes = await fetch(
-                            "api/cashier/drinks_order",
-                            {
-                                method: "POST",
-                                headers: { "Content-Type": "application/json" },
-                                body: JSON.stringify(drinkOrderBody),
-                            },
-                        );
-                        let { id } = await drinkOrderRes.json();
-                        drinkOrderId = id;
-                    } else {
-                        let ingredientAmmount = 0;
-                        let ingredientTemp: InventoryItem | any = inventory[0];
-                        if (key === "Ice" || key === "Sugar") {
-                            if (value === "100%") {
-                                ingredientAmmount = 4;
-                            } else if (value === "75%") {
-                                ingredientAmmount = 3;
-                            } else if (value === "50%") {
-                                ingredientAmmount = 2;
-                            } else if (value === "25%") {
-                                ingredientAmmount = 1;
-                            } else {
-                                continue;
-                            }
-                            ingredientTemp = { id: 28, name: "Ice" };
-                        } else if (key === "Size") {
-                            continue;
-                        } else if (Array.isArray(value)) {
-                            ingredientAmmount = 1;
-                            value.forEach(async (ingredientName) => {
-                                ingredientTemp = inventory.find((cItem) => {
-                                    if (cItem.name == ingredientName) {
-                                        return cItem;
-                                    }
-                                });
-
-                                if (ingredientTemp == null) {
-                                    console.log("==bad ingredient name==");
-                                    return;
-                                }
-
-                                const drinkIngredientBody = {
-                                    drink_id: drinkOrderId,
-                                    ingredient_id: ingredientTemp.id,
-                                    servings: ingredientAmmount,
-                                };
-                                await fetch("api/cashier/drink_ingredients", {
-                                    method: "POST",
-                                    headers: {
-                                        "Content-Type": "application/json",
-                                    },
-                                    body: JSON.stringify(drinkIngredientBody),
-                                });
-                            });
-                            continue;
-                        } else {
-                            ingredientAmmount = 1;
-                            ingredientTemp = inventory.find((cItem) => {
-                                if (cItem.name == value) {
-                                    return cItem;
-                                }
-                            });
-                        }
-
-                        if (ingredientTemp == null) {
-                            console.log("\t\t==bad ingredient name==");
-                            continue;
-                        }
-
-                        const drinkIngredientBody = {
-                            drink_id: drinkOrderId,
-                            ingredient_id: ingredientTemp.id,
-                            servings: ingredientAmmount,
-                        };
-                        await fetch("api/cashier/drink_ingredients", {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify(drinkIngredientBody),
-                        });
-                    }
-                }
-            });
-        } catch (e: any) {}
-        setCurOrders([]);
-    };
-
-    //Used as a button for each category in the Cashier page
-    const Category = ({ name }: { name: string }) => {
-        return (
-            <div
-                className="shadow-lg w-[90%] h-15 flex justify-center items-center bg-[#9d8189] rounded-md transform transition-transform duration-100 hover:scale-105"
-                onClick={() => setSelectedCateory(name)}
-            >
-                {name}
-            </div>
-        );
-    };
-
-    //Used as a button for each category in the Customization page
-    const CustomizationCategory = ({
-        name,
-        children,
-    }: {
-        name: string;
-        children?: ReactNode;
-    }) => {
-        return (
-            <div className="w-full">
-                <h2 className="font-semibold text-xl mt-3 mb-2">{name}</h2>
-                <div className="flex gap-8">{children}</div>
-            </div>
-        );
-    };
-
-    //Used to contain items for each customization category and handle filtering
-    const CustomizationData = ({
-        isOneItem = true,
-        allowsMultipleSelections = false,
-        toFilterBy = "",
-        category,
-    }: {
-        isOneItem: boolean;
-        allowsMultipleSelections: boolean;
-        toFilterBy: string;
-        category: string;
-    }) => {
-        const itemsToIgnore = ["napkins", "straws", "seal", "bag"];
-
-        interface OptionItem {
-            name: string;
-            is_disabled: boolean;
-        }
-
-        const options: OptionItem[] =
-            //Checks if the category is for one item (ex: Ice) or multiple items (ex: Boba)
-            //When the API is implemented, we can associate each item with a category and remove all this
-            isOneItem
-                ? ["0%", "25%", "50%", "75%", "100%"].map((label) => ({
-                      //If it is just one item, we just have the customization be the amount of said item
-                      name: label,
-                      is_disabled: false,
-                  }))
-                : category === "Toppings" //The toppings category has every item that is not tea, boba, jelly, or ice/sugar
-                  ? inventory
-                        .filter((i) => {
-                            const n = i.name.trim().toLowerCase();
-                            return (
-                                ![
-                                    "cups",
-                                    "tea",
-                                    "boba",
-                                    "jelly",
-                                    "ice",
-                                    "sugar",
-                                ].some((s) => n.endsWith(s)) &&
-                                !itemsToIgnore.includes(n) //Performs the exclusion of the specific item types
-                            );
-                        })
-                        .map((i) => ({
-                            name: i.name,
-                            is_disabled: i.stock < 1,
-                        }))
-                  : inventory //Here we assume it's a normal category otherwise (tea, boba, jelly, ice/sugar)
-                        .filter(
-                            (i) =>
-                                i.name
-                                    .trim()
-                                    .toLowerCase()
-                                    .endsWith(toFilterBy.trim().toLowerCase()), //Identifies the item type by the last word in its string (ex: Popping Boba -> Boba)
-                        )
-                        .map((i) => ({
-                            name: i.name,
-                            is_disabled: i.stock < 1,
-                        }));
-
-        return (
-            <div className="flex flex-wrap gap-8">
-                {options.map((item) => {
-                    const isSelected: boolean = allowsMultipleSelections
-                        ? selectedCustomizationOptions[category].includes(
-                              item.name,
-                          )
-                        : item.name === selectedCustomizationOptions[category];
-                    return (
-                        <CustomizationCard
-                            key={`customizationcard-${category}-${item.name}`}
-                            itemName={item.name}
-                            isDisabled={item.is_disabled}
-                            isSelected={isSelected}
-                            whenClicked={
-                                allowsMultipleSelections
-                                    ? () =>
-                                          customizationCardClickedMultipleSelections(
-                                              item.name,
-                                              category,
-                                              isSelected,
-                                          )
-                                    : () =>
-                                          customizationCardClicked(
-                                              item.name,
-                                              category,
-                                          )
-                            }
-                        />
-                    );
-                })}
-            </div>
-        );
-    };
+    const placeholderItems: CartItem[] = [
+        {
+            id: 1,
+            name: "Mango Green Tea",
+            ice: 3,
+            size: "large",
+            cost: 6.5,
+            customizations: [
+                { id: 9, name: "Red Bean", cost: 0.75 },
+                { id: 12, name: "Pudding", cost: 0.75 },
+                { id: 13, name: "Herb Jelly", cost: 0.75 },
+            ],
+        },
+    ];
 
     return (
-        <div className="flex min-h-screen bg-[#ffddd233] font-sans dark:bg-black gap-6 justify-between">
-            <AlertDialog
-                open={isCustomizationOpen}
-                onOpenChange={setIsCustomizationOpen}
-            >
-                {/* The reason we override small is because that's the only way we can adjust the width of the AlertDialog */}
-                <AlertDialogContent className="w-[90vw] max-w-none sm:max-w-4xl p-8 ">
-                    <AlertDialogTitle className="font-semibold text-3xl">
-                        Customize Order
-                    </AlertDialogTitle>
+        <div className="grid grid-cols-[1fr_7fr_2fr] gap-8 p-8 h-screen">
+            <CategorySelector
+                categories={Object.keys(menuData)}
+                selectedCategory={selectedCategory}
+                onSelectedCategoryChange={setSelectedCategory}
+            />
 
-                    <div className="max-h-[800px] overflow-y-auto pr-2">
-                        <CustomizationCategory name="Size">
-                            <CustomizationData
-                                isOneItem={false}
-                                toFilterBy="cups"
-                                category="Size"
-                                allowsMultipleSelections={false}
-                            />
-                        </CustomizationCategory>
+            <MenuItems
+                menuData={menuData}
+                selectedCategory={selectedCategory}
+                onItemOrder={(item) => setCartItems([...cartItems, item])}
+            />
 
-                        <CustomizationCategory name="Ice">
-                            <CustomizationData
-                                isOneItem={true}
-                                toFilterBy="ice"
-                                category="Ice"
-                                allowsMultipleSelections={false}
-                            />
-                        </CustomizationCategory>
-
-                        <CustomizationCategory name="Tea">
-                            <CustomizationData
-                                isOneItem={false}
-                                toFilterBy="tea"
-                                category="Tea"
-                                allowsMultipleSelections={false}
-                            />
-                        </CustomizationCategory>
-
-                        <CustomizationCategory name="Boba">
-                            <CustomizationData
-                                isOneItem={false}
-                                toFilterBy="boba"
-                                category="Boba"
-                                allowsMultipleSelections={false}
-                            />
-                        </CustomizationCategory>
-
-                        <CustomizationCategory name="Jelly">
-                            <CustomizationData
-                                isOneItem={false}
-                                toFilterBy="jelly"
-                                category="Jelly"
-                                allowsMultipleSelections={false}
-                            />
-                        </CustomizationCategory>
-
-                        <CustomizationCategory name="Toppings">
-                            <CustomizationData
-                                isOneItem={false}
-                                toFilterBy="topping"
-                                category="Toppings"
-                                allowsMultipleSelections={true}
-                            />
-                        </CustomizationCategory>
-                    </div>
-
-                    <AlertDialogFooter>
-                        <AlertDialogCancel
-                            onClick={() => setIsCustomizationOpen(false)}
-                        >
-                            Cancel
-                        </AlertDialogCancel>
-                        <AlertDialogAction onClick={() => submitOrder()}>
-                            Continue
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
-            <aside className="w-[300px] h-screen bg-gradient-to-b from-[#9d8189] to-[#ffe5d9] flex-col justify-center">
-                <h2 className="font-semibold text-3xl mt-3 mb-10 text-center">
-                    Categories
-                </h2>
-                <div className="flex flex-col items-center w-full gap-10">
-                    {Object.entries(menuData).map(([category]) => (
-                        <Category key={category} name={category} />
-                    ))}
-                </div>
-            </aside>
-
-            <main className="flex-1 flex items-start justify-center mt-10">
-                <div className="flex flex-wrap gap-16 justify-around">
-                    {menuData[selectedCategory].map((itemData) => {
-                        return (
-                            <ItemCard
-                                itemName={itemData.name}
-                                whenClicked={() => menuItemClicked(itemData)}
-                            />
-                        );
-                    })}
-                </div>
-            </main>
-
-            <aside className="w-[300px] h-screen bg-gradient-to-b from-[#9d8189] to-[#ffe5d9] flex flex-col justify-between p-4">
-                <div>
-                    <h2 className="font-semibold text-3xl text-center mt-3 mb-4">
-                        Checkout
-                    </h2>
-                    <div className="bg-white/40 rounded-xl p-3 shadow-inner max-h-[60vh] overflow-y-auto">
-                        {curOrders.map((order, orderIndex) => {
-                            const itemsJSX: JSX.Element[] = [];
-
-                            Object.entries(order).forEach(([key, value]) => {
-                                if (
-                                    value === "None" ||
-                                    value === null ||
-                                    (Array.isArray(value) && value.length === 0)
-                                ) {
-                                    return;
-                                }
-
-                                if (key.toLowerCase() === "drink") {
-                                    // we’ll show the drink name in the header; price is added in getOrderPrice
-                                    return;
-                                } else if (key === "Ice" || key === "Sugar") {
-                                    itemsJSX.push(
-                                        <div
-                                            key={`suborder-${key}-${value}-single`}
-                                            className="bg-[#ffe5ea] px-2 py-1 rounded mb-2"
-                                        >
-                                            {key}: {value as string}
-                                        </div>,
-                                    );
-                                } else if (Array.isArray(value)) {
-                                    value.forEach((o: string) => {
-                                        const p = findInventoryCost(o);
-                                        itemsJSX.push(
-                                            <div
-                                                key={`suborder-${key}-${o}-single`}
-                                                className="bg-[#ffe5ea] px-2 py-1 rounded mb-2"
-                                            >
-                                                {o}{" "}
-                                                {p !== 0
-                                                    ? `($${p.toFixed(2)})`
-                                                    : ""}
-                                            </div>,
-                                        );
-                                    });
-                                } else {
-                                    const p = findInventoryCost(String(value));
-                                    itemsJSX.push(
-                                        <div
-                                            key={`suborder-${key}-${value}-single`}
-                                            className="bg-[#ffe5ea] px-2 py-1 rounded mb-2"
-                                        >
-                                            {String(value)}{" "}
-                                            {p !== 0
-                                                ? `($${p.toFixed(2)})`
-                                                : ""}
-                                        </div>,
-                                    );
-                                }
-                            });
-
-                            const order_price = getOrderPrice(order);
-
-                            return (
-                                <div
-                                    key={`order-${orderIndex}`}
-                                    className="bg-[#fffaf8] rounded-xl p-3 mb-4 shadow flex-col"
-                                >
-                                    <h3 className="font-semibold text-lg mb-2">
-                                        Order {orderIndex + 1}:{" "}
-                                        {(order.Drink as MenuItem)?.name}
-                                    </h3>
-                                    {itemsJSX}
-                                    <div className="mt-1">
-                                        Total: ${order_price.toFixed(2)}
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                </div>
-                <div className="bg-white/60 rounded-xl p-3 mt-4 shadow-md space-y-1">
-                    <div className="flex justify-between">
-                        <span>Subtotal</span>
-                        <span>${subtotal.toFixed(2)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                        <span>Tax ({(TAX_RATE * 100).toFixed(2)}%)</span>
-                        <span>${tax.toFixed(2)}</span>
-                    </div>
-                    <hr className="my-2" />
-                    <div className="flex justify-between text-xl font-semibold mb-3">
-                        <span>Total</span>
-                        <span>${total.toFixed(2)}</span>
-                    </div>
-                    <button
-                        className="w-full bg-[#6d6875] hover:bg-[#564f5a] text-white font-semibold py-2 rounded-xl transition"
-                        onClick={checkoutOrder}
-                    >
-                        Checkout
-                    </button>
-                </div>
-            </aside>
+            <Cart items={cartItems} setItems={setCartItems}/>
         </div>
     );
 }

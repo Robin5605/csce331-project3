@@ -485,7 +485,7 @@ function CartItemCard({ item }: { item: CartItem }) {
     );
 }
 
-function Cart({ items }: { items: CartItem[] }) {
+function Cart({ items, setItems }: { items: CartItem[], setItems: React.Dispatch<React.SetStateAction<CartItem[]>> }) {
     const subtotal = calculateSubtotal(items);
     const tax = TAX_RATE * subtotal;
     const total = subtotal + tax;
@@ -502,6 +502,7 @@ function Cart({ items }: { items: CartItem[] }) {
                 paymentMethod: "CARD",
             }),
         });
+        setItems([])
     }
 
     return (
@@ -523,9 +524,34 @@ function Cart({ items }: { items: CartItem[] }) {
 
                 <p>Total</p>
                 <p className="text-right">${total.toFixed(2)}</p>
-                <Button className="col-span-2" onClick={handleCheckout}>
-                    Checkout
-                </Button>
+                <Dialog>
+                    {/* Button that opens the dialog */}
+                    <DialogTrigger asChild>
+                        <Button className="col-span-2">
+                            Checkout
+                        </Button>
+                    </DialogTrigger>
+
+                    <DialogContent className="max-h-[90vh]">
+                        <DialogHeader>
+                            <DialogTitle className="text-center text-2xl">
+                                Confirm Order?
+                            </DialogTitle>
+                        </DialogHeader>
+
+                        <DialogFooter>
+                            <DialogClose asChild>
+                                <Button
+                                    variant="default"
+                                    className="w-full"
+                                    onClick={handleCheckout}
+                                >
+                                    Yes, Place Order
+                                </Button>
+                            </DialogClose>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
             </div>
         </div>
     );
@@ -574,7 +600,7 @@ export default function CashierPage() {
                 onItemOrder={(item) => setCartItems([...cartItems, item])}
             />
 
-            <Cart items={cartItems} />
+            <Cart items={cartItems} setItems={setCartItems}/>
         </div>
     );
 }

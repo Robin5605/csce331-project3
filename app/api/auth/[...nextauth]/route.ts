@@ -78,7 +78,6 @@ const handler = NextAuth({
             // Fallback: home
             return baseUrl;
         },
-
     },
 });
 

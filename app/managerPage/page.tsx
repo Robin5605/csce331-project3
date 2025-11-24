@@ -5,6 +5,7 @@ import IngredientManagementPage from "@/app/ingredientManagementPage/page";
 import MenuManagementPage from "@/app/menuManagementPage/page";
 import ReportsPage from "@/app/ReportsPage/page";
 import XZReports from "@/app/x_and_z_reports/page";
+import KitchenPage from "@/app//KitchenPage/page";
 
 export default function ManagerPage() {
     return (
@@ -13,7 +14,7 @@ export default function ManagerPage() {
 
             <Tabs defaultValue="cashier" className="w-full">
                 {/* ───── TAB HEADERS ───── */}
-                <TabsList className="grid grid-cols-5 w-full">
+                <TabsList className="grid grid-cols-6 w-full">
                     <TabsTrigger value="employees">Employees</TabsTrigger>
                     <TabsTrigger value="ingredients">Ingredients</TabsTrigger>
                     <TabsTrigger value="menu">Menu</TabsTrigger>
@@ -21,11 +22,12 @@ export default function ManagerPage() {
                     <TabsTrigger value="xz_reports">
                         X and Z Reports
                     </TabsTrigger>
+                    <TabsTrigger value="kitchenpage">Kitchen Page</TabsTrigger>
                 </TabsList>
 
                 {/* ───── TAB CONTENTS ───── */}
 
-                <TabsContent value="employees" className="pt-4">
+                <TabsContent value="employees" className="pt-5">
                     <EmployeesPage />
                 </TabsContent>
 
@@ -43,6 +45,10 @@ export default function ManagerPage() {
 
                 <TabsContent value="xz_reports" className="pt-4">
                     <XZReports />
+                </TabsContent>
+
+                <TabsContent value="kitchenpage" className="pt-4">
+                    <KitchenPage />
                 </TabsContent>
             </Tabs>
         </div>

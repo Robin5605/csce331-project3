@@ -8,6 +8,8 @@ import {
     InventoryUsageDatum,
     XReportRow,
     ZReportRow,
+    Order,
+    OrderStatus,
 } from "./models";
 
 // Create a single client and connect once
@@ -560,4 +562,88 @@ export async function usageBetweenDates(startDate: string, endDate: string) {
     );
 
     return rows;
+}
+
+/**
+ * Fetch orders for the kitchen screen with their menu items + ingredient customizations.
+ */
+export async function fetch_kitchen_orders_by_status(
+    status: OrderStatus,
+): Promise<Order[]> {
+    await ensureConnected();
+
+    const query = `
+        SELECT
+            o.id,
+            o.placed_at,
+            o.cost::float8          AS cost,
+            o.employee_id,
+            o.payment_method,
+            o.order_status,
+            COALESCE(
+                json_agg(
+                    json_build_object(
+                        'id', m.id,
+                        'name', m.name,
+                        'category_id', m.category_id,
+                        'stock', m.stock,
+                        'cost', m.cost::float8,
+                        'image_url', m.image_url,
+                        'ingredients',
+                            COALESCE(
+                                (
+                                    SELECT json_agg(
+                                        json_build_object(
+                                            'id', i.id,
+                                            'name', i.name,
+                                            'servings', di.servings
+                                        )
+                                    )
+                                    FROM drinks_ingredients di
+                                    JOIN ingredients i ON i.id = di.ingredient_id
+                                    WHERE di.drink_id = m.id
+                                ),
+                                '[]'
+                            )
+                    )
+                ) FILTER (WHERE m.id IS NOT NULL),
+                '[]'
+            ) AS items
+        FROM orders o
+        LEFT JOIN drinks_orders dord ON dord.order_id = o.id
+        LEFT JOIN menu m ON m.id = dord.menu_id
+        WHERE o.order_status = $1
+        GROUP BY o.id
+        ORDER BY o.placed_at ASC;
+    `;
+
+    const { rows } = await client.query<Order>(query, [status]);
+    return rows;
+}
+
+/**
+ * Update an order's status (e.g., not_working_on -> working -> completed).
+ */
+export async function update_order_status(
+    orderId: number,
+    newStatus: OrderStatus,
+): Promise<Order | null> {
+    await ensureConnected();
+
+    const query = `
+        UPDATE orders
+        SET order_status = $1
+        WHERE id = $2
+        RETURNING
+            id,
+            placed_at,
+            cost::float8 AS cost,
+            employee_id,
+            payment_method,
+            order_status,
+            '[]'::json AS items -- we don't need items here; frontend already has them
+    `;
+
+    const { rows } = await client.query<Order>(query, [newStatus, orderId]);
+    return rows[0] ?? null;
 }

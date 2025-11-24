@@ -122,38 +122,47 @@ interface InventoryItem {
     name: string;
     stock: number;
     cost: number;
+    ingredient_type: number;
 }
 
 const inventory: InventoryItem[] = [
-    { id: 9, name: "Red Bean", stock: 100, cost: 0.75 },
-    { id: 12, name: "Pudding", stock: 100, cost: 0.75 },
-    { id: 13, name: "Herb Jelly", stock: 100, cost: 0.75 },
-    { id: 14, name: "Alyu Jelly", stock: 100, cost: 0.75 },
-    { id: 15, name: "Coffee Jelly", stock: 100, cost: 0.75 },
-    { id: 16, name: "Honey Jelly", stock: 100, cost: 0.75 },
-    { id: 18, name: "Strawberry Popping Boba", stock: 100, cost: 1 },
-    { id: 19, name: "Peach Popping Boba", stock: 100, cost: 1 },
-    { id: 20, name: "Crystal Boba", stock: 100, cost: 1 },
-    { id: 21, name: "Napkins", stock: 2000, cost: 0 },
-    { id: 22, name: "Large Cups", stock: 1000, cost: 0 },
-    { id: 23, name: "Small Cups", stock: 1000, cost: 0 },
-    { id: 24, name: "Medium Cups", stock: 1000, cost: 0 },
-    { id: 25, name: "Straws", stock: 1000, cost: 0 },
-    { id: 26, name: "Seal", stock: 1000, cost: 0 },
-    { id: 27, name: "Bag", stock: 1000, cost: 0 },
-    { id: 7, name: "Lychee Jelly", stock: 40, cost: 0.75 },
-    { id: 1, name: "Black Tea", stock: 100, cost: 0 },
-    { id: 10, name: "Creama", stock: 94, cost: 1.25 },
-    { id: 17, name: "Mango Popping Boba", stock: 95, cost: 1 },
-    { id: 8, name: "Mini Pearl", stock: 0, cost: 0.75 },
-    { id: 2, name: "Green Tea", stock: 4, cost: 0 },
-    { id: 6, name: "Aloe Vera", stock: 94, cost: 0.75 },
-    { id: 28, name: "Ice", stock: 988, cost: 0.0 },
-    { id: 11, name: "Ice Cream", stock: 49, cost: 1.25 },
-    { id: 4, name: "Sugar", stock: 86, cost: 0 },
-    { id: 5, name: "Pearl", stock: 35, cost: 0.75 },
-    { id: 3, name: "Oolong Tea", stock: 20, cost: 0 },
+    { id: 21, name: "Napkins", stock: 2000, cost: 0, ingredient_type: 0 },
+    { id: 22, name: "Large Cups", stock: 1000, cost: 0, ingredient_type: 0 },
+    { id: 23, name: "Small Cups", stock: 1000, cost: 0, ingredient_type: 0 },
+    { id: 24, name: "Medium Cups", stock: 1000, cost: 0, ingredient_type: 0 },
+    { id: 25, name: "Straws", stock: 1000, cost: 0, ingredient_type: 0 },
+    { id: 26, name: "Seal", stock: 1000, cost: 0, ingredient_type: 0 },
+    { id: 27, name: "Bag", stock: 1000, cost: 0, ingredient_type: 0 },
+
+    { id: 4, name: "Sugar", stock: 86, cost: 0, ingredient_type: 1 },
+
+    { id: 9, name: "Red Bean", stock: 96, cost: 0.75, ingredient_type: 100 },
+    { id: 12, name: "Pudding", stock: 92, cost: 0.75, ingredient_type: 100 },
+    { id: 8, name: "Mini Pearl", stock: 51, cost: 0.75, ingredient_type: 100 },
+    { id: 5, name: "Pearl", stock: 28, cost: 0.75, ingredient_type: 100 },
+    { id: 6, name: "Aloe Vera", stock: 89, cost: 0.75, ingredient_type: 100 },
+
+    { id: 20, name: "Crystal Boba", stock: 92, cost: 1, ingredient_type: 20 },
+    { id: 18, name: "Strawberry Popping Boba", stock: 98, cost: 1, ingredient_type: 20 },
+    { id: 17, name: "Mango Popping Boba", stock: 89, cost: 1, ingredient_type: 20 },
+    { id: 19, name: "Peach Popping Boba", stock: 96, cost: 1, ingredient_type: 20 },
+
+    { id: 3, name: "Oolong Tea", stock: 13, cost: 0, ingredient_type: 30 },
+    { id: 2, name: "Green Tea", stock: 0, cost: 0, ingredient_type: 30 },
+    { id: 1, name: "Black Tea", stock: 70, cost: 1, ingredient_type: 30 },
+
+    { id: 13, name: "Herb Jelly", stock: 100, cost: 0.75, ingredient_type: 40 },
+    { id: 7, name: "Lychee Jelly", stock: 37, cost: 0.75, ingredient_type: 40 },
+    { id: 14, name: "Alyu Jelly", stock: 96, cost: 0.75, ingredient_type: 40 },
+    { id: 15, name: "Coffee Jelly", stock: 93, cost: 0.75, ingredient_type: 40 },
+    { id: 16, name: "Honey Jelly", stock: 96, cost: 0.75, ingredient_type: 40 },
+
+    { id: 28, name: "Ice", stock: 813, cost: 0.0, ingredient_type: 1 },
+
+    { id: 10, name: "Creama", stock: 84, cost: 1.25, ingredient_type: 100 },
+    { id: 11, name: "Ice Cream", stock: 36, cost: 1.25, ingredient_type: 100 },
 ];
+
 
 // configurable tax rate for UI display (8.25% default)
 const TAX_RATE = parseFloat(process.env.NEXT_PUBLIC_TAX_RATE ?? "0.0825");
@@ -231,7 +240,7 @@ function ToppingCard({ item, onSelect, onUnselect }: InventoryItemCardProps) {
     const [selected, setSelected] = useState(false);
     return (
         <div
-            className={`flex items-center justify-center border rounded p-4 cursor-pointer ${selected ? "bg-black text-white" : ""}`}
+            className={`flex-col items-center justify-center border rounded p-4 cursor-pointer ${selected ? "bg-black text-white" : ""}`}
             onClick={() => {
                 setSelected(!selected);
                 if (!selected) onSelect();
@@ -239,18 +248,29 @@ function ToppingCard({ item, onSelect, onUnselect }: InventoryItemCardProps) {
             }}
         >
             <p className="text-center select-none">{item.name}</p>
+                {item.cost > 0 ? (
+                    <p className="text-center select-none">(${item.cost})</p>
+                ) : (
+                    <></>
+                )}
         </div>
     );
 }
 
 interface ToppingSelectorProps {
     onToppingSelect: (toppings: InventoryItem[]) => void;
+    ingredientType: number;
 }
-function ToppingSelector({ onToppingSelect }: ToppingSelectorProps) {
+function ToppingSelector({ onToppingSelect, ingredientType }: ToppingSelectorProps) {
     const [selected, setSelected] = useState<InventoryItem[]>([]);
     return (
         <div className="grid grid-cols-4 gap-2">
-            {inventory.map((i) => (
+            {inventory.filter((i) => {
+                if(i.ingredient_type === ingredientType){
+                    return true;
+                }
+                return false;
+            }).map((i) => (
                 <ToppingCard
                     key={i.id}
                     item={i}
@@ -355,11 +375,35 @@ function MenuItemCard({ item, onConfirm }: MenuItemCardProps) {
                         </div>
                     </div>
 
-                    <div>
-                        <p className="text-2xl">Other Toppings</p>
-                        <ToppingSelector
-                            onToppingSelect={setSelectedToppings}
-                        />
+                    <div className="flex flex-col space-y-4">
+                        <div>
+                            <p className="text-2xl mb-3">Boba</p>
+                                <ToppingSelector
+                                    onToppingSelect={setSelectedToppings}
+                                    ingredientType={20}
+                            />
+                        </div>
+                        <div>
+                            <p className="text-2xl mb-3">Tea</p>
+                                <ToppingSelector
+                                    onToppingSelect={setSelectedToppings}
+                                    ingredientType={30}
+                            />
+                        </div>
+                        <div>
+                            <p className="text-2xl mb-3">Jelly</p>
+                                <ToppingSelector
+                                    onToppingSelect={setSelectedToppings}
+                                    ingredientType={40}
+                            />
+                        </div>
+                        <div>
+                            <p className="text-2xl mb-3">Other Toppings</p>
+                            <ToppingSelector
+                                onToppingSelect={setSelectedToppings}
+                                ingredientType={100}
+                            />
+                        </div>
                     </div>
                 </div>
                 <DialogFooter>

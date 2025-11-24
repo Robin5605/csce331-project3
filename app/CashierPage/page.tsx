@@ -602,7 +602,14 @@ export default function CashierPage() {
                         Checkout
                     </h2>
                     <div className="bg-white/40 rounded-xl p-3 shadow-inner max-h-[60vh] overflow-y-auto">
-                        {curOrders.map((order, orderIndex) => {
+                        {curOrders.length === 0 ? (
+                            <div className="flex items-center justify-center h-full min-h-[200px]">
+                                <p className="text-gray-600 font-medium text-lg">
+                                    Cart is empty
+                                </p>
+                            </div>
+                        ) : (
+                            curOrders.map((order, orderIndex) => {
                             const itemsJSX: JSX.Element[] = [];
 
                             Object.entries(order).forEach(([key, value]) => {
@@ -674,7 +681,8 @@ export default function CashierPage() {
                                     </div>
                                 </div>
                             );
-                        })}
+                            })
+                        )}
                     </div>
                 </div>
                 <div className="bg-white/60 rounded-xl p-3 mt-4 shadow-md space-y-1">

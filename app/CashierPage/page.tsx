@@ -17,6 +17,7 @@ import {
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import CustomizationCard from "@/components/CustomizationCard";
+import { Button } from "@/components/ui/button";
 import { CupSoda, Minus, Plus } from "lucide-react";
 import {
     Dialog,
@@ -160,17 +161,33 @@ const findInventoryCost = (name: string) => {
     return item ? item.cost : 0;
 };
 
-function calculateSubtotal(cartItems: CartItem[]): number {
-    console.log(JSON.stringify(cartItems));
-    let total = 0;
+// compute a single order's price from its fields
+function getOrderPrice(order: Record<string, any>) {
+    let price = 0;
+    const quantity = (order.quantity as number) || 1;
+    for (const [key, value] of Object.entries(order)) {
+        if (
+            value === "None" ||
+            value === null ||
+            (Array.isArray(value) && value.length === 0) ||
+            key === "quantity"
+        ) {
+            continue;
+        }
+        if (key.toLowerCase() === "drink") {
+            price += (value as MenuItem).cost;
+            continue;
+        }
+        // Ice/Sugar affect display only (no price)
+        if (key === "Ice" || key === "Sugar") continue;
 
-    for (const item of cartItems) {
-        for (const customization of item.customizations)
-            total += customization.cost;
-        total += item.cost;
+        if (Array.isArray(value)) {
+            for (const v of value) price += findInventoryCost(v);
+        } else {
+            price += findInventoryCost(String(value));
+        }
     }
-
-    return total;
+    return price * quantity;
 }
 
 interface CategoryCardProps {
@@ -179,6 +196,37 @@ interface CategoryCardProps {
     onClick: () => void;
 }
 
+    //Serves as the state used for showing the Customization page
+    const [isCustomizationOpen, setIsCustomizationOpen] =
+        useState<boolean>(false);
+    const [selectedCategory, setSelectedCateory] =
+        useState<string>("Fruit Tea");
+    const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
+    const [selectedCustomizationOptions, setSelectedCustomizationOptions] =
+        useState<Record<string, string | string[]>>(defaultCustomizations);
+    const [editingIndex, setEditingIndex] = useState<number | null>(null);
+    const [curOrders, setCurOrders] = useState<
+        (Record<string, string | string[] | MenuItem | null | number> & {
+            quantity?: number;
+        })[]
+    >([]);
+    const { subtotal, tax, total } = useMemo(() => {
+        const sub = curOrders.reduce((sum, o) => sum + getOrderPrice(o), 0);
+        const t = sub * TAX_RATE;
+        const tot = sub + t;
+        return {
+            subtotal: Math.round(sub * 100) / 100,
+            tax: Math.round(t * 100) / 100,
+            total: Math.round(tot * 100) / 100,
+        };
+    }, [curOrders]);
+
+    //Handles whenever a MenuItem is clicked to bring up the customization menu
+    const menuItemClicked = (item: MenuItem) => {
+        setSelectedCustomizationOptions(defaultCustomizations); //Makes sure to reset the selected options
+        setSelectedItem(item);
+        setIsCustomizationOpen(true);
+    };
 function CategoryCard({ category, isSelected, onClick }: CategoryCardProps) {
     return (
         <div
@@ -216,6 +264,223 @@ function CategorySelector({
     );
 }
 
+    // Handles whenever an order is finalized on the customization side
+    const submitOrder = () => {
+        // Add the current selection into the total orders
+        const existingQuantity =
+            editingIndex !== null
+                ? (curOrders[editingIndex]?.quantity as number) || 1
+                : 1;
+
+        const order = {
+            Drink: selectedItem,
+            ...selectedCustomizationOptions,
+            quantity: existingQuantity,
+        };
+
+        if (editingIndex !== null) {
+            // Replace the item being edited
+            setCurOrders(
+                curOrders.map((o, i) => (i === editingIndex ? order : o)),
+            );
+            setEditingIndex(null);
+        } else {
+            // Add a new item
+            setCurOrders([...curOrders, order]);
+        }
+        setIsCustomizationOpen(false);
+    };
+
+    // Handle removing an item from the cart
+    const handleRemoveItem = (index: number) => {
+        setCurOrders(curOrders.filter((_, i) => i !== index));
+    };
+
+    // Handle increasing quantity
+    const handleIncreaseQty = (index: number) => {
+        setCurOrders(
+            curOrders.map((order, i) =>
+                i === index
+                    ? {
+                          ...order,
+                          quantity: ((order.quantity as number) || 1) + 1,
+                      }
+                    : order,
+            ),
+        );
+    };
+
+    const handleDecreaseQty = (index: number) => {
+        setCurOrders(
+            curOrders.map((order, i) => {
+                if (i === index) {
+                    const currentQty = (order.quantity as number) || 1;
+                    return { ...order, quantity: Math.max(1, currentQty - 1) };
+                }
+                return order;
+            }),
+        );
+    };
+
+    const handleEditItem = (index: number) => {
+        const orderToEdit = curOrders[index];
+        if (orderToEdit) {
+            setSelectedItem(orderToEdit.Drink as MenuItem);
+
+            const { Drink, quantity, ...customizations } = orderToEdit;
+            setSelectedCustomizationOptions(
+                customizations as Record<string, string | string[]>,
+            );
+            setEditingIndex(index);
+            setIsCustomizationOpen(true);
+        }
+    };
+
+    //handles current order and sends completed order to database
+    const checkoutOrder = async () => {
+        //console.log("checking out");
+        try {
+            let tempCost = 0;
+            curOrders.forEach((cOrder) => {
+                tempCost += getOrderPrice(cOrder);
+            });
+            tempCost = tempCost + tempCost * TAX_RATE;
+            const orderBody = {
+                cost: Math.round(tempCost * 100) / 100,
+                employeeId: "1",
+                paymentMethod: "CARD",
+            };
+            console.log(orderBody.cost);
+            const orderRes = await fetch("api/cashier/order", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(orderBody),
+            });
+            if (!orderRes.ok)
+                throw new Error(`POST /api/menu ${orderRes.status}`);
+            let { id } = await orderRes.json();
+            const orderId = id;
+            //console.log(`= order id: ${orderId}`);
+            curOrders.map(async (order, orderIndex) => {
+                const quantity = (order.quantity as number) || 1;
+                // Create multiple drink orders based on quantity
+                for (let qtyIndex = 0; qtyIndex < quantity; qtyIndex++) {
+                    let drinkOrderId = -1;
+                    for (
+                        let index = 0;
+                        index < Object.entries(order).length;
+                        ++index
+                    ) {
+                        let [key, value] = Object.entries(order)[index];
+                        //console.log(`\t= k: ${key}\tv: ${value}\tdo id: ${drinkOrderId}`);
+                        if (
+                            value === "None" ||
+                            value === null ||
+                            (Array.isArray(value) && value.length === 0)
+                        ) {
+                            continue;
+                        }
+                        if (key.toLowerCase() === "drink") {
+                            const drinkOrderBody = {
+                                menuId: (value as MenuItem).id,
+                                orderId: orderId,
+                            };
+                            const drinkOrderRes = await fetch(
+                                "api/cashier/drinks_order",
+                                {
+                                    method: "POST",
+                                    headers: {
+                                        "Content-Type": "application/json",
+                                    },
+                                    body: JSON.stringify(drinkOrderBody),
+                                },
+                            );
+                            let { id } = await drinkOrderRes.json();
+                            drinkOrderId = id;
+                        } else {
+                            let ingredientAmmount = 0;
+                            let ingredientTemp: InventoryItem | any =
+                                inventory[0];
+                            if (key === "Ice" || key === "Sugar") {
+                                if (value === "100%") {
+                                    ingredientAmmount = 4;
+                                } else if (value === "75%") {
+                                    ingredientAmmount = 3;
+                                } else if (value === "50%") {
+                                    ingredientAmmount = 2;
+                                } else if (value === "25%") {
+                                    ingredientAmmount = 1;
+                                } else {
+                                    continue;
+                                }
+                                ingredientTemp = { id: 28, name: "Ice" };
+                            } else if (key === "Size") {
+                                continue;
+                            } else if (Array.isArray(value)) {
+                                ingredientAmmount = 1;
+                                value.forEach(async (ingredientName) => {
+                                    ingredientTemp = inventory.find((cItem) => {
+                                        if (cItem.name == ingredientName) {
+                                            return cItem;
+                                        }
+                                    });
+
+                                    if (ingredientTemp == null) {
+                                        console.log("==bad ingredient name==");
+                                        return;
+                                    }
+
+                                    const drinkIngredientBody = {
+                                        drink_id: drinkOrderId,
+                                        ingredient_id: ingredientTemp.id,
+                                        servings: ingredientAmmount,
+                                    };
+                                    await fetch(
+                                        "api/cashier/drink_ingredients",
+                                        {
+                                            method: "POST",
+                                            headers: {
+                                                "Content-Type":
+                                                    "application/json",
+                                            },
+                                            body: JSON.stringify(
+                                                drinkIngredientBody,
+                                            ),
+                                        },
+                                    );
+                                });
+                                continue;
+                            } else {
+                                ingredientAmmount = 1;
+                                ingredientTemp = inventory.find((cItem) => {
+                                    if (cItem.name == value) {
+                                        return cItem;
+                                    }
+                                });
+                            }
+
+                            if (ingredientTemp == null) {
+                                console.log("\t\t==bad ingredient name==");
+                                continue;
+                            }
+
+                            const drinkIngredientBody = {
+                                drink_id: drinkOrderId,
+                                ingredient_id: ingredientTemp.id,
+                                servings: ingredientAmmount,
+                            };
+                            await fetch("api/cashier/drink_ingredients", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify(drinkIngredientBody),
+                            });
+                        }
+                    }
+                }
+            });
+        } catch (e: any) {}
+        setCurOrders([]);
+    };
 interface InventoryItemCardProps {
     item: InventoryItem;
     onSelect: () => void;
@@ -391,17 +656,57 @@ function MenuItems({
     onItemOrder,
 }: MenuItemsInterface) {
     return (
-        <div className="space-y-4">
-            <p className="text-xl">Drinks</p>
-            <div className="grid grid-rows-3 grid-cols-3 gap-4">
-                {Object.entries(menuData)
-                    .filter(([category, _]) => category === selectedCategory)
-                    .map(([_, items]) =>
-                        items.map((item, i) => (
-                            <MenuItemCard
-                                key={i}
-                                item={item}
-                                onConfirm={onItemOrder}
+        <div className="flex min-h-screen bg-[#ffddd233] font-sans dark:bg-black gap-6 justify-between">
+            <AlertDialog
+                open={isCustomizationOpen}
+                onOpenChange={(open) => {
+                    setIsCustomizationOpen(open);
+                    if (!open) {
+                        // Reset editing state when dialog closes (cancel, ESC, etc.)
+                        setEditingIndex(null);
+                    }
+                }}
+            >
+                {/* The reason we override small is because that's the only way we can adjust the width of the AlertDialog */}
+                <AlertDialogContent className="w-[90vw] max-w-none sm:max-w-4xl p-8 ">
+                    <AlertDialogTitle className="font-semibold text-3xl">
+                        Customize Order
+                    </AlertDialogTitle>
+
+                    <div className="max-h-[800px] overflow-y-auto pr-2">
+                        <CustomizationCategory name="Size">
+                            <CustomizationData
+                                isOneItem={false}
+                                toFilterBy="cups"
+                                category="Size"
+                                allowsMultipleSelections={false}
+                            />
+                        </CustomizationCategory>
+
+                        <CustomizationCategory name="Ice">
+                            <CustomizationData
+                                isOneItem={true}
+                                toFilterBy="ice"
+                                category="Ice"
+                                allowsMultipleSelections={false}
+                            />
+                        </CustomizationCategory>
+
+                        <CustomizationCategory name="Tea">
+                            <CustomizationData
+                                isOneItem={false}
+                                toFilterBy="tea"
+                                category="Tea"
+                                allowsMultipleSelections={false}
+                            />
+                        </CustomizationCategory>
+
+                        <CustomizationCategory name="Boba">
+                            <CustomizationData
+                                isOneItem={false}
+                                toFilterBy="boba"
+                                category="Boba"
+                                allowsMultipleSelections={false}
                             />
                         )),
                     )}
@@ -455,68 +760,214 @@ function Cart({ items }: { items: CartItem[] }) {
                         <CartItemCard key={idx} item={i} />
                     ))}
                 </div>
-            </ScrollArea>
-            <div className="grid grid-rows-4 grid-cols-2 p-4 border rounded">
-                <p>Subtotal</p>
-                <p className="text-right">${subtotal.toFixed(2)}</p>
+            </aside>
 
-                <p>Tax</p>
-                <p className="text-right">${tax.toFixed(2)}</p>
+            <main className="flex-1 flex items-start justify-center mt-10">
+                <div className="flex flex-wrap gap-16 justify-around">
+                    {menuData[selectedCategory].map((itemData) => {
+                        return (
+                            <ItemCard
+                                itemName={itemData.name}
+                                whenClicked={() => menuItemClicked(itemData)}
+                            />
+                        );
+                    })}
+                </div>
+            </main>
 
-                <p>Total</p>
-                <p className="text-right">${total.toFixed(2)}</p>
-                <Button className="col-span-2" onClick={handleCheckout}>
-                    Checkout
-                </Button>
-            </div>
-        </div>
-    );
-}
+            <aside className="w-[300px] h-screen bg-gradient-to-b from-[#9d8189] to-[#ffe5d9] flex flex-col justify-between p-4">
+                <div>
+                    <h2 className="font-semibold text-3xl text-center mt-3 mb-4">
+                        Checkout
+                    </h2>
+                    <div className="bg-white/40 rounded-xl p-3 shadow-inner max-h-[60vh] overflow-y-auto">
+                        {curOrders.length === 0 ? (
+                            <div className="flex items-center justify-center h-full min-h-[200px]">
+                                <p className="text-gray-600 font-medium text-lg">
+                                    Cart is empty
+                                </p>
+                            </div>
+                        ) : (
+                            curOrders.map((order, orderIndex) => {
+                                const itemsJSX: JSX.Element[] = [];
 
-export default function CashierPage() {
-    const [selectedCategory, setSelectedCategory] = useState("Fruit Tea");
-    const [cartItems, setCartItems] = useState<CartItem[]>([]);
-    console.log(cartItems);
-    //Sets default selection for customization options
-    const defaultCustomizations = {
-        Size: "Medium Cups",
-        Ice: "100%",
-        Boba: "None",
-        Jelly: "None",
-        Tea: "Black Tea",
-        Toppings: [],
-    };
+                                Object.entries(order).forEach(
+                                    ([key, value]) => {
+                                        if (
+                                            value === "None" ||
+                                            value === null ||
+                                            (Array.isArray(value) &&
+                                                value.length === 0)
+                                        ) {
+                                            return;
+                                        }
 
-    const placeholderItems: CartItem[] = [
-        {
-            id: 1,
-            name: "Mango Green Tea",
-            ice: 3,
-            size: "large",
-            cost: 6.5,
-            customizations: [
-                { id: 9, name: "Red Bean", cost: 0.75 },
-                { id: 12, name: "Pudding", cost: 0.75 },
-                { id: 13, name: "Herb Jelly", cost: 0.75 },
-            ],
-        },
-    ];
+                                        if (
+                                            key.toLowerCase() === "drink" ||
+                                            key === "quantity"
+                                        ) {
+                                            // we'll show the drink name in the header; price is added in getOrderPrice
+                                            // quantity is shown in the quantity controls, not as a customization item
+                                            return;
+                                        } else if (
+                                            key === "Ice" ||
+                                            key === "Sugar"
+                                        ) {
+                                            itemsJSX.push(
+                                                <div
+                                                    key={`suborder-${key}-${value}-single`}
+                                                    className="bg-[#ffe5ea] px-2 py-1 rounded mb-2"
+                                                >
+                                                    {key}: {value as string}
+                                                </div>,
+                                            );
+                                        } else if (Array.isArray(value)) {
+                                            value.forEach((o: string) => {
+                                                const p = findInventoryCost(o);
+                                                itemsJSX.push(
+                                                    <div
+                                                        key={`suborder-${key}-${o}-single`}
+                                                        className="bg-[#ffe5ea] px-2 py-1 rounded mb-2"
+                                                    >
+                                                        {o}{" "}
+                                                        {p !== 0
+                                                            ? `($${p.toFixed(2)})`
+                                                            : ""}
+                                                    </div>,
+                                                );
+                                            });
+                                        } else {
+                                            const p = findInventoryCost(
+                                                String(value),
+                                            );
+                                            itemsJSX.push(
+                                                <div
+                                                    key={`suborder-${key}-${value}-single`}
+                                                    className="bg-[#ffe5ea] px-2 py-1 rounded mb-2"
+                                                >
+                                                    {String(value)}{" "}
+                                                    {p !== 0
+                                                        ? `($${p.toFixed(2)})`
+                                                        : ""}
+                                                </div>,
+                                            );
+                                        }
+                                    },
+                                );
 
-    return (
-        <div className="grid grid-cols-[1fr_7fr_2fr] gap-8 p-8 h-screen">
-            <CategorySelector
-                categories={Object.keys(menuData)}
-                selectedCategory={selectedCategory}
-                onSelectedCategoryChange={setSelectedCategory}
-            />
+                                const order_price = getOrderPrice(order);
+                                const quantity =
+                                    (order.quantity as number) || 1;
 
-            <MenuItems
-                menuData={menuData}
-                selectedCategory={selectedCategory}
-                onItemOrder={(item) => setCartItems([...cartItems, item])}
-            />
-
-            <Cart items={cartItems} />
+                                return (
+                                    <div
+                                        key={`order-${orderIndex}`}
+                                        className="bg-[#fffaf8] rounded-xl p-3 mb-4 shadow flex-col"
+                                    >
+                                        <div className="flex justify-between items-start mb-2">
+                                            <h3 className="font-semibold text-lg">
+                                                Order {orderIndex + 1}:{" "}
+                                                {
+                                                    (order.Drink as MenuItem)
+                                                        ?.name
+                                                }
+                                            </h3>
+                                            <div className="flex gap-2">
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={() =>
+                                                        handleEditItem(
+                                                            orderIndex,
+                                                        )
+                                                    }
+                                                    className="h-7 px-2 text-xs bg-[#ffe5ea] hover:bg-[#ffd6dd] border-[#9d8189] text-[#6d6875]"
+                                                >
+                                                    Edit
+                                                </Button>
+                                                <Button
+                                                    variant="destructive"
+                                                    size="sm"
+                                                    onClick={() =>
+                                                        handleRemoveItem(
+                                                            orderIndex,
+                                                        )
+                                                    }
+                                                    className="h-7 px-2 text-xs"
+                                                >
+                                                    Remove
+                                                </Button>
+                                            </div>
+                                        </div>
+                                        {itemsJSX}
+                                        <div className="mt-3 flex items-center justify-between">
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-sm font-medium">
+                                                    Quantity:
+                                                </span>
+                                                <div className="flex items-center gap-1 border border-[#9d8189] rounded-md">
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon-sm"
+                                                        onClick={() =>
+                                                            handleDecreaseQty(
+                                                                orderIndex,
+                                                            )
+                                                        }
+                                                        className="h-6 w-6 p-0 hover:bg-[#ffe5ea] text-[#6d6875]"
+                                                        disabled={quantity <= 1}
+                                                    >
+                                                        -
+                                                    </Button>
+                                                    <span className="px-2 text-sm font-medium min-w-[2rem] text-center">
+                                                        {quantity}
+                                                    </span>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon-sm"
+                                                        onClick={() =>
+                                                            handleIncreaseQty(
+                                                                orderIndex,
+                                                            )
+                                                        }
+                                                        className="h-6 w-6 p-0 hover:bg-[#ffe5ea] text-[#6d6875]"
+                                                    >
+                                                        +
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                            <div className="font-semibold">
+                                                Total: ${order_price.toFixed(2)}
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })
+                        )}
+                    </div>
+                </div>
+                <div className="bg-white/60 rounded-xl p-3 mt-4 shadow-md space-y-1">
+                    <div className="flex justify-between">
+                        <span>Subtotal</span>
+                        <span>${subtotal.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                        <span>Tax ({(TAX_RATE * 100).toFixed(2)}%)</span>
+                        <span>${tax.toFixed(2)}</span>
+                    </div>
+                    <hr className="my-2" />
+                    <div className="flex justify-between text-xl font-semibold mb-3">
+                        <span>Total</span>
+                        <span>${total.toFixed(2)}</span>
+                    </div>
+                    <button
+                        className="w-full bg-[#6d6875] hover:bg-[#564f5a] text-white font-semibold py-2 rounded-xl transition"
+                        onClick={checkoutOrder}
+                    >
+                        Checkout
+                    </button>
+                </div>
+            </aside>
         </div>
     );
 }

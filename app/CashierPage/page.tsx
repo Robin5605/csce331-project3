@@ -18,6 +18,35 @@ import {
 } from "@/components/ui/alert-dialog";
 import CustomizationCard from "@/components/CustomizationCard";
 import { Button } from "@/components/ui/button";
+import { CupSoda, Minus, Plus } from "lucide-react";
+import {
+    Dialog,
+    DialogClose,
+    DialogContent,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+import { DialogTrigger } from "@radix-ui/react-dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
+import { ScrollArea } from "@/components/ui/scroll-area";
+
+type DrinkSize = "small" | "medium" | "large";
+
+interface CartItem {
+    id: number;
+    size: DrinkSize;
+    ice: number;
+    name: string;
+    cost: number;
+    customizations: {
+        id: number;
+        name: string;
+        cost: number;
+    }[];
+}
 
 //[REMOVE WHEN API IS IMPLEMENTED] Temporary data for now
 interface MenuItem {
@@ -161,16 +190,11 @@ function getOrderPrice(order: Record<string, any>) {
     return price * quantity;
 }
 
-export default function CashierPage() {
-    //Sets default selection for customization options
-    const defaultCustomizations = {
-        Size: "Medium Cups",
-        Ice: "100%",
-        Boba: "None",
-        Jelly: "None",
-        Tea: "Black Tea",
-        Toppings: [],
-    };
+interface CategoryCardProps {
+    category: string;
+    isSelected: boolean;
+    onClick: () => void;
+}
 
     //Serves as the state used for showing the Customization page
     const [isCustomizationOpen, setIsCustomizationOpen] =
@@ -203,32 +227,42 @@ export default function CashierPage() {
         setSelectedItem(item);
         setIsCustomizationOpen(true);
     };
+function CategoryCard({ category, isSelected, onClick }: CategoryCardProps) {
+    return (
+        <div
+            className={`border p-4 rounded hover:border-black cursor-pointer transition duration-300 ${isSelected ? "bg-black text-white" : ""}`}
+            onClick={onClick}
+        >
+            <p>{category}</p>
+        </div>
+    );
+}
 
-    //Handles whenever a CustomizationCard is clicked in order to select it for categories with single select
-    const customizationCardClicked = (name: string, category: string) => {
-        setSelectedCustomizationOptions({
-            ...selectedCustomizationOptions,
-            [category]: name,
-        });
-    };
+interface CategorySelectorProps {
+    categories: string[];
+    selectedCategory: string;
+    onSelectedCategoryChange: (category: string) => void;
+}
 
-    //Handles whenever a CustomizationCard is clicked in order to select it for categories with multi-select
-    const customizationCardClickedMultipleSelections = (
-        name: string,
-        category: string,
-        isSelected: boolean,
-    ) => {
-        setSelectedCustomizationOptions((prev) => {
-            const currentValue = prev[category] as string[];
-
-            return {
-                ...prev,
-                [category]: isSelected
-                    ? currentValue.filter((item) => item !== name) // remove
-                    : [...currentValue, name], // add
-            };
-        });
-    };
+function CategorySelector({
+    categories,
+    selectedCategory,
+    onSelectedCategoryChange,
+}: CategorySelectorProps) {
+    return (
+        <div className="w-fit space-y-4">
+            <p className="text-xl">Categories</p>
+            {categories.map((c, i) => (
+                <CategoryCard
+                    key={i}
+                    category={c}
+                    isSelected={c === selectedCategory}
+                    onClick={() => onSelectedCategoryChange(c)}
+                />
+            ))}
+        </div>
+    );
+}
 
     // Handles whenever an order is finalized on the customization side
     const submitOrder = () => {
@@ -447,131 +481,180 @@ export default function CashierPage() {
         } catch (e: any) {}
         setCurOrders([]);
     };
+interface InventoryItemCardProps {
+    item: InventoryItem;
+    onSelect: () => void;
+    onUnselect: () => void;
+}
+function ToppingCard({ item, onSelect, onUnselect }: InventoryItemCardProps) {
+    const [selected, setSelected] = useState(false);
+    return (
+        <div
+            className={`flex items-center justify-center border rounded p-4 cursor-pointer ${selected ? "bg-black text-white" : ""}`}
+            onClick={() => {
+                setSelected(!selected);
+                if (!selected) onSelect();
+                else onUnselect();
+            }}
+        >
+            <p className="text-center select-none">{item.name}</p>
+        </div>
+    );
+}
 
-    //Used as a button for each category in the Cashier page
-    const Category = ({ name }: { name: string }) => {
-        return (
-            <div
-                className="shadow-lg w-[90%] h-15 flex justify-center items-center bg-[#9d8189] rounded-md transform transition-transform duration-100 hover:scale-105"
-                onClick={() => setSelectedCateory(name)}
-            >
-                {name}
-            </div>
-        );
-    };
+interface ToppingSelectorProps {
+    onToppingSelect: (toppings: InventoryItem[]) => void;
+}
+function ToppingSelector({ onToppingSelect }: ToppingSelectorProps) {
+    const [selected, setSelected] = useState<InventoryItem[]>([]);
+    return (
+        <div className="grid grid-cols-4 gap-2">
+            {inventory.map((i) => (
+                <ToppingCard
+                    key={i.id}
+                    item={i}
+                    onSelect={() => {
+                        const newArr = [...selected, i];
+                        setSelected(newArr);
+                        onToppingSelect(newArr);
+                    }}
+                    onUnselect={() => {
+                        const newArr = selected.filter(
+                            (item) => item.id !== i.id,
+                        );
+                        setSelected(newArr);
+                        onToppingSelect(newArr);
+                    }}
+                />
+            ))}
+        </div>
+    );
+}
 
-    //Used as a button for each category in the Customization page
-    const CustomizationCategory = ({
-        name,
-        children,
-    }: {
-        name: string;
-        children?: ReactNode;
-    }) => {
-        return (
-            <div className="w-full">
-                <h2 className="font-semibold text-xl mt-3 mb-2">{name}</h2>
-                <div className="flex gap-8">{children}</div>
-            </div>
-        );
-    };
+interface MenuItemCardProps {
+    item: MenuItem;
+    onConfirm: (item: CartItem) => void;
+}
+function MenuItemCard({ item, onConfirm }: MenuItemCardProps) {
+    const [ice, setIce] = useState(0);
+    const [size, setSize] = useState<DrinkSize>("medium");
+    const [selectedToppings, setSelectedToppings] = useState<InventoryItem[]>(
+        [],
+    );
+    return (
+        <Dialog>
+            <DialogTrigger asChild>
+                <div className="flex flex-col gap-2 items-center bg-gray-100 p-2 rounded border">
+                    <CupSoda width={96} height={96} />
+                    {item.name}
+                </div>
+            </DialogTrigger>
+            <DialogContent className="max-h-9/10 overflow-y-scroll">
+                <DialogHeader>
+                    <DialogTitle>Customize</DialogTitle>
+                </DialogHeader>
+                <div className="flex flex-col space-y-4">
+                    <div>
+                        <p className="text-2xl">Size</p>
+                        <div className="flex space-x-4">
+                            <div
+                                className={`cursor-pointer duration-300 border rounded-full p-4 text-xl ${size === "small" ? "bg-black text-white" : ""}`}
+                                onClick={() => setSize("small")}
+                            >
+                                S
+                            </div>
+                            <div
+                                className={`cursor-pointer duration-300 border rounded-full p-4 text-xl ${size === "medium" ? "bg-black text-white" : ""}`}
+                                onClick={() => setSize("medium")}
+                            >
+                                M
+                            </div>
+                            <div
+                                className={`cursor-pointer duration-300 border rounded-full p-4 text-xl ${size === "large" ? "bg-black text-white" : ""}`}
+                                onClick={() => setSize("large")}
+                            >
+                                L
+                            </div>
+                        </div>
+                    </div>
 
-    //Used to contain items for each customization category and handle filtering
-    const CustomizationData = ({
-        isOneItem = true,
-        allowsMultipleSelections = false,
-        toFilterBy = "",
-        category,
-    }: {
-        isOneItem: boolean;
-        allowsMultipleSelections: boolean;
-        toFilterBy: string;
-        category: string;
-    }) => {
-        const itemsToIgnore = ["napkins", "straws", "seal", "bag"];
+                    <div>
+                        <p className="text-2xl">Ice</p>
+                        <div className="flex space-x-4">
+                            <Button
+                                variant="outline"
+                                size="icon"
+                                className="rounded-full"
+                                onClick={() => setIce(ice > 0 ? ice - 1 : 0)}
+                            >
+                                <Minus />
+                            </Button>
+                            <Input
+                                type="number"
+                                className="rounded-full w-fit"
+                                value={ice}
+                                readOnly
+                            />
+                            <Button
+                                variant="outline"
+                                size="icon"
+                                className="rounded-full"
+                                onClick={() => setIce(ice < 5 ? ice + 1 : 5)}
+                            >
+                                <Plus />
+                            </Button>
+                        </div>
+                    </div>
 
-        interface OptionItem {
-            name: string;
-            is_disabled: boolean;
-        }
-
-        const options: OptionItem[] =
-            //Checks if the category is for one item (ex: Ice) or multiple items (ex: Boba)
-            //When the API is implemented, we can associate each item with a category and remove all this
-            isOneItem
-                ? ["0%", "25%", "50%", "75%", "100%"].map((label) => ({
-                      //If it is just one item, we just have the customization be the amount of said item
-                      name: label,
-                      is_disabled: false,
-                  }))
-                : category === "Toppings" //The toppings category has every item that is not tea, boba, jelly, or ice/sugar
-                  ? inventory
-                        .filter((i) => {
-                            const n = i.name.trim().toLowerCase();
-                            return (
-                                ![
-                                    "cups",
-                                    "tea",
-                                    "boba",
-                                    "jelly",
-                                    "ice",
-                                    "sugar",
-                                ].some((s) => n.endsWith(s)) &&
-                                !itemsToIgnore.includes(n) //Performs the exclusion of the specific item types
-                            );
-                        })
-                        .map((i) => ({
-                            name: i.name,
-                            is_disabled: i.stock < 1,
-                        }))
-                  : inventory //Here we assume it's a normal category otherwise (tea, boba, jelly, ice/sugar)
-                        .filter(
-                            (i) =>
-                                i.name
-                                    .trim()
-                                    .toLowerCase()
-                                    .endsWith(toFilterBy.trim().toLowerCase()), //Identifies the item type by the last word in its string (ex: Popping Boba -> Boba)
-                        )
-                        .map((i) => ({
-                            name: i.name,
-                            is_disabled: i.stock < 1,
-                        }));
-
-        return (
-            <div className="flex flex-wrap gap-8">
-                {options.map((item) => {
-                    const isSelected: boolean = allowsMultipleSelections
-                        ? selectedCustomizationOptions[category].includes(
-                              item.name,
-                          )
-                        : item.name === selectedCustomizationOptions[category];
-                    return (
-                        <CustomizationCard
-                            key={`customizationcard-${category}-${item.name}`}
-                            itemName={item.name}
-                            isDisabled={item.is_disabled}
-                            isSelected={isSelected}
-                            whenClicked={
-                                allowsMultipleSelections
-                                    ? () =>
-                                          customizationCardClickedMultipleSelections(
-                                              item.name,
-                                              category,
-                                              isSelected,
-                                          )
-                                    : () =>
-                                          customizationCardClicked(
-                                              item.name,
-                                              category,
-                                          )
-                            }
+                    <div>
+                        <p className="text-2xl">Other Toppings</p>
+                        <ToppingSelector
+                            onToppingSelect={setSelectedToppings}
                         />
-                    );
-                })}
-            </div>
-        );
-    };
+                    </div>
+                </div>
+                <DialogFooter>
+                    <DialogClose asChild>
+                        <Button
+                            variant="default"
+                            className="w-full"
+                            onClick={() =>
+                                onConfirm({
+                                    id: item.id,
+                                    size,
+                                    ice,
+                                    name: item.name,
+                                    cost: item.cost,
+                                    customizations: selectedToppings.map(
+                                        (t) => ({
+                                            id: t.id,
+                                            name: t.name,
+                                            cost: t.cost,
+                                        }),
+                                    ),
+                                })
+                            }
+                        >
+                            Add to Order
+                        </Button>
+                    </DialogClose>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+}
 
+interface MenuItemsInterface {
+    menuData: MenuData;
+    selectedCategory: string;
+    onItemOrder: (item: CartItem) => void;
+}
+
+function MenuItems({
+    menuData,
+    selectedCategory,
+    onItemOrder,
+}: MenuItemsInterface) {
     return (
         <div className="flex min-h-screen bg-[#ffddd233] font-sans dark:bg-black gap-6 justify-between">
             <AlertDialog
@@ -625,46 +708,56 @@ export default function CashierPage() {
                                 category="Boba"
                                 allowsMultipleSelections={false}
                             />
-                        </CustomizationCategory>
+                        )),
+                    )}
+            </div>
+        </div>
+    );
+}
 
-                        <CustomizationCategory name="Jelly">
-                            <CustomizationData
-                                isOneItem={false}
-                                toFilterBy="jelly"
-                                category="Jelly"
-                                allowsMultipleSelections={false}
-                            />
-                        </CustomizationCategory>
+function CartItemCard({ item }: { item: CartItem }) {
+    return (
+        <div className="border rounded p-4">
+            <p className="text-xl font-bold">
+                {item.size.charAt(0).toUpperCase() + item.size.substring(1)}{" "}
+                {item.name}
+            </p>
+            <p>Ice: {item.ice}</p>
+            {item.customizations.map((c) => (
+                <p key={c.id}>{c.name}</p>
+            ))}
+            <Separator className="my-4" />
+            <p>Total: ${calculateSubtotal([item])}</p>
+        </div>
+    );
+}
 
-                        <CustomizationCategory name="Toppings">
-                            <CustomizationData
-                                isOneItem={false}
-                                toFilterBy="topping"
-                                category="Toppings"
-                                allowsMultipleSelections={true}
-                            />
-                        </CustomizationCategory>
-                    </div>
+function Cart({ items }: { items: CartItem[] }) {
+    const subtotal = calculateSubtotal(items);
+    const tax = TAX_RATE * subtotal;
+    const total = subtotal + tax;
 
-                    <AlertDialogFooter>
-                        <AlertDialogCancel
-                            onClick={() => setIsCustomizationOpen(false)}
-                        >
-                            Cancel
-                        </AlertDialogCancel>
-                        <AlertDialogAction onClick={() => submitOrder()}>
-                            Continue
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
-            <aside className="w-[300px] h-screen bg-gradient-to-b from-[#9d8189] to-[#ffe5d9] flex-col justify-center">
-                <h2 className="font-semibold text-3xl mt-3 mb-10 text-center">
-                    Categories
-                </h2>
-                <div className="flex flex-col items-center w-full gap-10">
-                    {Object.entries(menuData).map(([category]) => (
-                        <Category key={category} name={category} />
+    function handleCheckout() {
+        fetch("/api/cashier/order", {
+            method: "POST",
+            body: JSON.stringify({
+                drinks: items.map((i) => ({
+                    id: i.id,
+                    customizations: i.customizations.map((i) => i.id),
+                })),
+                employeeId: 1,
+                paymentMethod: "CARD",
+            }),
+        });
+    }
+
+    return (
+        <div className="grid grid-rows-[1fr_8fr_1fr] min-h-0 gap-4">
+            <p className="text-xl mb-4 text-center">Cart</p>
+            <ScrollArea className="h-120">
+                <div className="space-y-4">
+                    {items.map((i, idx) => (
+                        <CartItemCard key={idx} item={i} />
                     ))}
                 </div>
             </aside>

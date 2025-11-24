@@ -17,6 +17,18 @@ import {
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import CustomizationCard from "@/components/CustomizationCard";
+import { CupSoda, Minus, Plus } from "lucide-react";
+import {
+    Dialog,
+    DialogClose,
+    DialogContent,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+import { DialogTrigger } from "@radix-ui/react-dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 //[REMOVE WHEN API IS IMPLEMENTED] Temporary data for now
 interface MenuItem {
@@ -120,6 +132,14 @@ const inventory: InventoryItem[] = [
     { id: 3, name: "Oolong Tea", stock: 20, cost: 0 },
 ];
 
+function getBoba(): InventoryItem[] {
+    return inventory.filter((i) => i.name.endsWith("Boba"));
+}
+
+function getJelly(): InventoryItem[] {
+    return inventory.filter((i) => i.name.endsWith("Jelly"));
+}
+
 // configurable tax rate for UI display (8.25% default)
 const TAX_RATE = parseFloat(process.env.NEXT_PUBLIC_TAX_RATE ?? "0.0825");
 
@@ -158,7 +178,210 @@ function getOrderPrice(order: Record<string, any>) {
     return price;
 }
 
+interface CategoryCardProps {
+    category: string;
+    isSelected: boolean;
+    onClick: () => void;
+}
+
+function CategoryCard({ category, isSelected, onClick }: CategoryCardProps) {
+    return (
+        <div
+            className={`border p-4 rounded hover:border-black cursor-pointer transition duration-300 ${isSelected ? "bg-black text-white" : ""}`}
+            onClick={onClick}
+        >
+            <p>{category}</p>
+        </div>
+    );
+}
+
+interface CategorySelectorProps {
+    categories: string[];
+    selectedCategory: string;
+    onSelectedCategoryChange: (category: string) => void;
+}
+
+function CategorySelector({
+    categories,
+    selectedCategory,
+    onSelectedCategoryChange,
+}: CategorySelectorProps) {
+    return (
+        <div className="w-fit space-y-4">
+            <p className="text-xl">Categories</p>
+            {categories.map((c, i) => (
+                <CategoryCard
+                    key={i}
+                    category={c}
+                    isSelected={c === selectedCategory}
+                    onClick={() => onSelectedCategoryChange(c)}
+                />
+            ))}
+        </div>
+    );
+}
+
+interface InventoryItemCardProps {
+    item: InventoryItem;
+    onSelect: () => void;
+    onUnselect: () => void;
+}
+function ToppingCard({
+    item,
+    onSelect,
+    onUnselect,
+}: InventoryItemCardProps) {
+    const [selected, setSelected] = useState(false);
+    return (
+        <div
+            className={`flex items-center justify-center border rounded p-4 cursor-pointer ${selected ? "bg-black text-white" : ""}`}
+            onClick={() => {
+                setSelected(!selected);
+                if (selected) onSelect();
+                else onUnselect();
+            }}
+        >
+            <p className="text-center select-none">{item.name}</p>
+        </div>
+    );
+}
+
+function ToppingSelector() {
+    const [selected, setSelected] = useState<number[]>([]);
+    return (
+        <div className="grid grid-cols-4 gap-2">
+            {inventory.map((i) => (
+                <ToppingCard
+                    key={i.id}
+                    item={i}
+                    onSelect={() => {
+                        setSelected([...selected, i.id]);
+                    }}
+                    onUnselect={() =>
+                        setSelected(selected.filter((id) => id !== i.id))
+                    }
+                />
+            ))}
+        </div>
+    );
+}
+
+function MenuItemCard({ item }: { item: MenuItem }) {
+    const [ice, setIce] = useState(0);
+    return (
+        <Dialog>
+            <DialogTrigger asChild>
+                <div className="flex flex-col gap-2 items-center bg-gray-100 p-2 rounded border">
+                    <CupSoda width={96} height={96} />
+                    {item.name}
+                </div>
+            </DialogTrigger>
+            <DialogContent className="max-h-9/10 overflow-y-scroll">
+                <DialogHeader>
+                    <DialogTitle>Customize</DialogTitle>
+                </DialogHeader>
+                <div className="flex flex-col space-y-4">
+                    <div>
+                        <p className="text-2xl">Size</p>
+                        <div className="flex space-x-4">
+                            <div className="border rounded-full p-4 text-xl">
+                                S
+                            </div>
+                            <div className="border rounded-full p-4 text-xl">
+                                M
+                            </div>
+                            <div className="border rounded-full p-4 text-xl">
+                                L
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <p className="text-2xl">Ice</p>
+                        <div className="flex space-x-4">
+                            <Button
+                                variant="outline"
+                                size="icon"
+                                className="rounded-full"
+                                onClick={() => setIce(ice > 0 ? ice - 1 : 0)}
+                            >
+                                <Minus />
+                            </Button>
+                            <Input
+                                type="number"
+                                className="rounded-full w-fit"
+                                value={ice}
+                                readOnly
+                            />
+                            <Button
+                                variant="outline"
+                                size="icon"
+                                className="rounded-full"
+                                onClick={() => setIce(ice < 5 ? ice + 1 : 5)}
+                            >
+                                <Plus />
+                            </Button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <p className="text-2xl">Other Toppings</p>
+                        <ToppingSelector />
+                    </div>
+                </div>
+                <DialogFooter>
+                    <DialogClose asChild>
+                        <Button variant="default" className="w-full">Add to Order</Button>
+                    </DialogClose>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
+interface MenuItemsInterface {
+    menuData: MenuData;
+    selectedCategory: string;
+}
+
+function MenuItems({ menuData, selectedCategory }: MenuItemsInterface) {
+    return (
+        <div className="space-y-4">
+            <p className="text-xl">Drinks</p>
+            <div className="grid grid-rows-3 grid-cols-3 gap-4">
+                {Object.entries(menuData)
+                    .filter(([category, _]) => category === selectedCategory)
+                    .map(([_, items]) =>
+                        items.map((item, i) => (
+                            <MenuItemCard key={i} item={item} />
+                        )),
+                    )}
+            </div>
+        </div>
+    );
+}
+
+interface CartItem {
+    id: number;
+    name: string;
+    cost: number;
+    customizations: {
+        id: number;
+        name: string;
+        cost: number;
+    }[];
+}
+
+function Cart({ items }: { items: CartItem[] }) {
+    return (
+        <div>
+            test
+        </div>
+    )
+}
+
 export default function CashierPage() {
+    const [selectedCategory, setSelectedCategory] = useState("Fruit Tea");
     //Sets default selection for customization options
     const defaultCustomizations = {
         Size: "Medium Cups",
@@ -169,536 +392,20 @@ export default function CashierPage() {
         Toppings: [],
     };
 
-    //Serves as the state used for showing the Customization page
-    const [isCustomizationOpen, setIsCustomizationOpen] =
-        useState<boolean>(false);
-    const [selectedCategory, setSelectedCateory] =
-        useState<string>("Fruit Tea");
-    const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
-    const [selectedCustomizationOptions, setSelectedCustomizationOptions] =
-        useState<Record<string, string | string[]>>(defaultCustomizations);
-    const [curOrders, setCurOrders] = useState<
-        Record<string, string | string[] | MenuItem | null>[]
-    >([]);
-    const { subtotal, tax, total } = useMemo(() => {
-        const sub = curOrders.reduce((sum, o) => sum + getOrderPrice(o), 0);
-        const t = sub * TAX_RATE;
-        const tot = sub + t;
-        return {
-            subtotal: Math.round(sub * 100) / 100,
-            tax: Math.round(t * 100) / 100,
-            total: Math.round(tot * 100) / 100,
-        };
-    }, [curOrders]);
-
-    //Handles whenever a MenuItem is clicked to bring up the customization menu
-    const menuItemClicked = (item: MenuItem) => {
-        setSelectedCustomizationOptions(defaultCustomizations); //Makes sure to reset the selected options
-        setSelectedItem(item);
-        setIsCustomizationOpen(true);
-    };
-
-    //Handles whenever a CustomizationCard is clicked in order to select it for categories with single select
-    const customizationCardClicked = (name: string, category: string) => {
-        setSelectedCustomizationOptions({
-            ...selectedCustomizationOptions,
-            [category]: name,
-        });
-    };
-
-    //Handles whenever a CustomizationCard is clicked in order to select it for categories with multi-select
-    const customizationCardClickedMultipleSelections = (
-        name: string,
-        category: string,
-        isSelected: boolean,
-    ) => {
-        setSelectedCustomizationOptions((prev) => {
-            const currentValue = prev[category] as string[];
-
-            return {
-                ...prev,
-                [category]: isSelected
-                    ? currentValue.filter((item) => item !== name) // remove
-                    : [...currentValue, name], // add
-            };
-        });
-    };
-
-    // Handles whenever an order is finalized on the customization side
-    const submitOrder = () => {
-        // Add the current selection into the total orders
-        const order = {
-            Drink: selectedItem,
-            ...selectedCustomizationOptions,
-        };
-        setCurOrders([...curOrders, order]);
-        setIsCustomizationOpen(false);
-    };
-
-    //handles current order and sends completed order to database
-    const checkoutOrder = async () => {
-        //console.log("checking out");
-        try {
-            let tempCost = 0;
-            curOrders.forEach((cOrder) => {
-                tempCost += getOrderPrice(cOrder);
-            });
-            tempCost = tempCost + tempCost * TAX_RATE;
-            const orderBody = {
-                cost: Math.round(tempCost * 100) / 100,
-                employeeId: "1",
-                paymentMethod: "CARD",
-            };
-            console.log(orderBody.cost);
-            const orderRes = await fetch("api/cashier/order", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(orderBody),
-            });
-            if (!orderRes.ok)
-                throw new Error(`POST /api/menu ${orderRes.status}`);
-            let { id } = await orderRes.json();
-            const orderId = id;
-            //console.log(`= order id: ${orderId}`);
-            curOrders.map(async (order, orderIndex) => {
-                let drinkOrderId = -1;
-                for (
-                    let index = 0;
-                    index < Object.entries(order).length;
-                    ++index
-                ) {
-                    let [key, value] = Object.entries(order)[index];
-                    //console.log(`\t= k: ${key}\tv: ${value}\tdo id: ${drinkOrderId}`);
-                    if (
-                        value === "None" ||
-                        value === null ||
-                        value.length === 0
-                    ) {
-                        continue;
-                    }
-                    if (key.toLowerCase() === "drink") {
-                        const drinkOrderBody = {
-                            menuId: value.id,
-                            orderId: orderId,
-                        };
-                        const drinkOrderRes = await fetch(
-                            "api/cashier/drinks_order",
-                            {
-                                method: "POST",
-                                headers: { "Content-Type": "application/json" },
-                                body: JSON.stringify(drinkOrderBody),
-                            },
-                        );
-                        let { id } = await drinkOrderRes.json();
-                        drinkOrderId = id;
-                    } else {
-                        let ingredientAmmount = 0;
-                        let ingredientTemp: InventoryItem | any = inventory[0];
-                        if (key === "Ice" || key === "Sugar") {
-                            if (value === "100%") {
-                                ingredientAmmount = 4;
-                            } else if (value === "75%") {
-                                ingredientAmmount = 3;
-                            } else if (value === "50%") {
-                                ingredientAmmount = 2;
-                            } else if (value === "25%") {
-                                ingredientAmmount = 1;
-                            } else {
-                                continue;
-                            }
-                            ingredientTemp = { id: 28, name: "Ice" };
-                        } else if (key === "Size") {
-                            continue;
-                        } else if (Array.isArray(value)) {
-                            ingredientAmmount = 1;
-                            value.forEach(async (ingredientName) => {
-                                ingredientTemp = inventory.find((cItem) => {
-                                    if (cItem.name == ingredientName) {
-                                        return cItem;
-                                    }
-                                });
-
-                                if (ingredientTemp == null) {
-                                    console.log("==bad ingredient name==");
-                                    return;
-                                }
-
-                                const drinkIngredientBody = {
-                                    drink_id: drinkOrderId,
-                                    ingredient_id: ingredientTemp.id,
-                                    servings: ingredientAmmount,
-                                };
-                                await fetch("api/cashier/drink_ingredients", {
-                                    method: "POST",
-                                    headers: {
-                                        "Content-Type": "application/json",
-                                    },
-                                    body: JSON.stringify(drinkIngredientBody),
-                                });
-                            });
-                            continue;
-                        } else {
-                            ingredientAmmount = 1;
-                            ingredientTemp = inventory.find((cItem) => {
-                                if (cItem.name == value) {
-                                    return cItem;
-                                }
-                            });
-                        }
-
-                        if (ingredientTemp == null) {
-                            console.log("\t\t==bad ingredient name==");
-                            continue;
-                        }
-
-                        const drinkIngredientBody = {
-                            drink_id: drinkOrderId,
-                            ingredient_id: ingredientTemp.id,
-                            servings: ingredientAmmount,
-                        };
-                        await fetch("api/cashier/drink_ingredients", {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify(drinkIngredientBody),
-                        });
-                    }
-                }
-            });
-        } catch (e: any) {}
-        setCurOrders([]);
-    };
-
-    //Used as a button for each category in the Cashier page
-    const Category = ({ name }: { name: string }) => {
-        return (
-            <div
-                className="shadow-lg w-[90%] h-15 flex justify-center items-center bg-[#9d8189] rounded-md transform transition-transform duration-100 hover:scale-105"
-                onClick={() => setSelectedCateory(name)}
-            >
-                {name}
-            </div>
-        );
-    };
-
-    //Used as a button for each category in the Customization page
-    const CustomizationCategory = ({
-        name,
-        children,
-    }: {
-        name: string;
-        children?: ReactNode;
-    }) => {
-        return (
-            <div className="w-full">
-                <h2 className="font-semibold text-xl mt-3 mb-2">{name}</h2>
-                <div className="flex gap-8">{children}</div>
-            </div>
-        );
-    };
-
-    //Used to contain items for each customization category and handle filtering
-    const CustomizationData = ({
-        isOneItem = true,
-        allowsMultipleSelections = false,
-        toFilterBy = "",
-        category,
-    }: {
-        isOneItem: boolean;
-        allowsMultipleSelections: boolean;
-        toFilterBy: string;
-        category: string;
-    }) => {
-        const itemsToIgnore = ["napkins", "straws", "seal", "bag"];
-
-        interface OptionItem {
-            name: string;
-            is_disabled: boolean;
-        }
-
-        const options: OptionItem[] =
-            //Checks if the category is for one item (ex: Ice) or multiple items (ex: Boba)
-            //When the API is implemented, we can associate each item with a category and remove all this
-            isOneItem
-                ? ["0%", "25%", "50%", "75%", "100%"].map((label) => ({
-                      //If it is just one item, we just have the customization be the amount of said item
-                      name: label,
-                      is_disabled: false,
-                  }))
-                : category === "Toppings" //The toppings category has every item that is not tea, boba, jelly, or ice/sugar
-                  ? inventory
-                        .filter((i) => {
-                            const n = i.name.trim().toLowerCase();
-                            return (
-                                ![
-                                    "cups",
-                                    "tea",
-                                    "boba",
-                                    "jelly",
-                                    "ice",
-                                    "sugar",
-                                ].some((s) => n.endsWith(s)) &&
-                                !itemsToIgnore.includes(n) //Performs the exclusion of the specific item types
-                            );
-                        })
-                        .map((i) => ({
-                            name: i.name,
-                            is_disabled: i.stock < 1,
-                        }))
-                  : inventory //Here we assume it's a normal category otherwise (tea, boba, jelly, ice/sugar)
-                        .filter(
-                            (i) =>
-                                i.name
-                                    .trim()
-                                    .toLowerCase()
-                                    .endsWith(toFilterBy.trim().toLowerCase()), //Identifies the item type by the last word in its string (ex: Popping Boba -> Boba)
-                        )
-                        .map((i) => ({
-                            name: i.name,
-                            is_disabled: i.stock < 1,
-                        }));
-
-        return (
-            <div className="flex flex-wrap gap-8">
-                {options.map((item) => {
-                    const isSelected: boolean = allowsMultipleSelections
-                        ? selectedCustomizationOptions[category].includes(
-                              item.name,
-                          )
-                        : item.name === selectedCustomizationOptions[category];
-                    return (
-                        <CustomizationCard
-                            key={`customizationcard-${category}-${item.name}`}
-                            itemName={item.name}
-                            isDisabled={item.is_disabled}
-                            isSelected={isSelected}
-                            whenClicked={
-                                allowsMultipleSelections
-                                    ? () =>
-                                          customizationCardClickedMultipleSelections(
-                                              item.name,
-                                              category,
-                                              isSelected,
-                                          )
-                                    : () =>
-                                          customizationCardClicked(
-                                              item.name,
-                                              category,
-                                          )
-                            }
-                        />
-                    );
-                })}
-            </div>
-        );
-    };
-
     return (
-        <div className="flex min-h-screen bg-[#ffddd233] font-sans dark:bg-black gap-6 justify-between">
-            <AlertDialog
-                open={isCustomizationOpen}
-                onOpenChange={setIsCustomizationOpen}
-            >
-                {/* The reason we override small is because that's the only way we can adjust the width of the AlertDialog */}
-                <AlertDialogContent className="w-[90vw] max-w-none sm:max-w-4xl p-8 ">
-                    <AlertDialogTitle className="font-semibold text-3xl">
-                        Customize Order
-                    </AlertDialogTitle>
+        <div className="grid grid-cols-[auto_1fr_auto] gap-8 p-8">
+            <CategorySelector
+                categories={Object.keys(menuData)}
+                selectedCategory={selectedCategory}
+                onSelectedCategoryChange={setSelectedCategory}
+            />
 
-                    <div className="max-h-[800px] overflow-y-auto pr-2">
-                        <CustomizationCategory name="Size">
-                            <CustomizationData
-                                isOneItem={false}
-                                toFilterBy="cups"
-                                category="Size"
-                                allowsMultipleSelections={false}
-                            />
-                        </CustomizationCategory>
+            <MenuItems
+                menuData={menuData}
+                selectedCategory={selectedCategory}
+            />
 
-                        <CustomizationCategory name="Ice">
-                            <CustomizationData
-                                isOneItem={true}
-                                toFilterBy="ice"
-                                category="Ice"
-                                allowsMultipleSelections={false}
-                            />
-                        </CustomizationCategory>
-
-                        <CustomizationCategory name="Tea">
-                            <CustomizationData
-                                isOneItem={false}
-                                toFilterBy="tea"
-                                category="Tea"
-                                allowsMultipleSelections={false}
-                            />
-                        </CustomizationCategory>
-
-                        <CustomizationCategory name="Boba">
-                            <CustomizationData
-                                isOneItem={false}
-                                toFilterBy="boba"
-                                category="Boba"
-                                allowsMultipleSelections={false}
-                            />
-                        </CustomizationCategory>
-
-                        <CustomizationCategory name="Jelly">
-                            <CustomizationData
-                                isOneItem={false}
-                                toFilterBy="jelly"
-                                category="Jelly"
-                                allowsMultipleSelections={false}
-                            />
-                        </CustomizationCategory>
-
-                        <CustomizationCategory name="Toppings">
-                            <CustomizationData
-                                isOneItem={false}
-                                toFilterBy="topping"
-                                category="Toppings"
-                                allowsMultipleSelections={true}
-                            />
-                        </CustomizationCategory>
-                    </div>
-
-                    <AlertDialogFooter>
-                        <AlertDialogCancel
-                            onClick={() => setIsCustomizationOpen(false)}
-                        >
-                            Cancel
-                        </AlertDialogCancel>
-                        <AlertDialogAction onClick={() => submitOrder()}>
-                            Continue
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
-            <aside className="w-[300px] h-screen bg-gradient-to-b from-[#9d8189] to-[#ffe5d9] flex-col justify-center">
-                <h2 className="font-semibold text-3xl mt-3 mb-10 text-center">
-                    Categories
-                </h2>
-                <div className="flex flex-col items-center w-full gap-10">
-                    {Object.entries(menuData).map(([category]) => (
-                        <Category key={category} name={category} />
-                    ))}
-                </div>
-            </aside>
-
-            <main className="flex-1 flex items-start justify-center mt-10">
-                <div className="flex flex-wrap gap-16 justify-around">
-                    {menuData[selectedCategory].map((itemData) => {
-                        return (
-                            <ItemCard
-                                itemName={itemData.name}
-                                whenClicked={() => menuItemClicked(itemData)}
-                            />
-                        );
-                    })}
-                </div>
-            </main>
-
-            <aside className="w-[300px] h-screen bg-gradient-to-b from-[#9d8189] to-[#ffe5d9] flex flex-col justify-between p-4">
-                <div>
-                    <h2 className="font-semibold text-3xl text-center mt-3 mb-4">
-                        Checkout
-                    </h2>
-                    <div className="bg-white/40 rounded-xl p-3 shadow-inner max-h-[60vh] overflow-y-auto">
-                        {curOrders.map((order, orderIndex) => {
-                            const itemsJSX: JSX.Element[] = [];
-
-                            Object.entries(order).forEach(([key, value]) => {
-                                if (
-                                    value === "None" ||
-                                    value === null ||
-                                    (Array.isArray(value) && value.length === 0)
-                                ) {
-                                    return;
-                                }
-
-                                if (key.toLowerCase() === "drink") {
-                                    // we’ll show the drink name in the header; price is added in getOrderPrice
-                                    return;
-                                } else if (key === "Ice" || key === "Sugar") {
-                                    itemsJSX.push(
-                                        <div
-                                            key={`suborder-${key}-${value}-single`}
-                                            className="bg-[#ffe5ea] px-2 py-1 rounded mb-2"
-                                        >
-                                            {key}: {value as string}
-                                        </div>,
-                                    );
-                                } else if (Array.isArray(value)) {
-                                    value.forEach((o: string) => {
-                                        const p = findInventoryCost(o);
-                                        itemsJSX.push(
-                                            <div
-                                                key={`suborder-${key}-${o}-single`}
-                                                className="bg-[#ffe5ea] px-2 py-1 rounded mb-2"
-                                            >
-                                                {o}{" "}
-                                                {p !== 0
-                                                    ? `($${p.toFixed(2)})`
-                                                    : ""}
-                                            </div>,
-                                        );
-                                    });
-                                } else {
-                                    const p = findInventoryCost(String(value));
-                                    itemsJSX.push(
-                                        <div
-                                            key={`suborder-${key}-${value}-single`}
-                                            className="bg-[#ffe5ea] px-2 py-1 rounded mb-2"
-                                        >
-                                            {String(value)}{" "}
-                                            {p !== 0
-                                                ? `($${p.toFixed(2)})`
-                                                : ""}
-                                        </div>,
-                                    );
-                                }
-                            });
-
-                            const order_price = getOrderPrice(order);
-
-                            return (
-                                <div
-                                    key={`order-${orderIndex}`}
-                                    className="bg-[#fffaf8] rounded-xl p-3 mb-4 shadow flex-col"
-                                >
-                                    <h3 className="font-semibold text-lg mb-2">
-                                        Order {orderIndex + 1}:{" "}
-                                        {(order.Drink as MenuItem)?.name}
-                                    </h3>
-                                    {itemsJSX}
-                                    <div className="mt-1">
-                                        Total: ${order_price.toFixed(2)}
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                </div>
-                <div className="bg-white/60 rounded-xl p-3 mt-4 shadow-md space-y-1">
-                    <div className="flex justify-between">
-                        <span>Subtotal</span>
-                        <span>${subtotal.toFixed(2)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                        <span>Tax ({(TAX_RATE * 100).toFixed(2)}%)</span>
-                        <span>${tax.toFixed(2)}</span>
-                    </div>
-                    <hr className="my-2" />
-                    <div className="flex justify-between text-xl font-semibold mb-3">
-                        <span>Total</span>
-                        <span>${total.toFixed(2)}</span>
-                    </div>
-                    <button
-                        className="w-full bg-[#6d6875] hover:bg-[#564f5a] text-white font-semibold py-2 rounded-xl transition"
-                        onClick={checkoutOrder}
-                    >
-                        Checkout
-                    </button>
-                </div>
-            </aside>
+            <Cart items={[]}/>
         </div>
     );
 }

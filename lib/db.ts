@@ -647,3 +647,69 @@ export async function update_order_status(
     const { rows } = await client.query<Order>(query, [newStatus, orderId]);
     return rows[0] ?? null;
 }
+
+export interface CreateOrder {
+    drinks: {
+        id: number;
+        customizations: number[];
+    }[];
+    employeeId: number;
+    paymentMethod: string;
+}
+
+const TAX_RATE = parseFloat(process.env.NEXT_PUBLIC_TAX_RATE ?? "0.0825");
+export async function createOrder({
+    drinks,
+    employeeId,
+    paymentMethod,
+}: CreateOrder) {
+    ensureConnected();
+    try {
+        let total = 0;
+        for (const drink of drinks) {
+            const res = await client.query(
+                `SELECT SUM(cost) FROM ingredients WHERE id = ANY($1)`,
+                [drink.customizations],
+            );
+
+            const customizationsCost = Number(res.rows[0].sum);
+            total += customizationsCost;
+        }
+
+        const menuIDs = drinks.map((drink) => drink.id); // Menu IDs of all the ordered drins
+        const res = await client.query(
+            `SELECT SUM(cost) FROM menu WHERE id = ANY($1)`,
+            [menuIDs],
+        );
+
+        const baseDrinksCost = Number(res.rows[0].sum);
+        total += baseDrinksCost;
+        total += total * TAX_RATE;
+
+        const orderId = (
+            await client.query(
+                `INSERT INTO orders (cost, employee_id, payment_method) VALUES ($1, $2, $3) RETURNING id`,
+                [total, employeeId, paymentMethod],
+            )
+        ).rows[0].id as number;
+
+        for (const drink of drinks) {
+            const drinksOrdersID = (
+                await client.query(
+                    `INSERT INTO drinks_orders (menu_id, order_id) VALUES ($1, $2) RETURNING id`,
+                    [drink.id, orderId],
+                )
+            ).rows[0].id as number;
+
+            await client.query(
+                `INSERT INTO drinks_ingredients (drink_id, ingredient_id, servings) SELECT $1, unnest($2::int[]), 1`,
+                [drinksOrdersID, drink.customizations],
+            );
+        }
+
+        await client.query("COMMIT");
+    } catch (e) {
+        await client.query("ROLLBACK");
+        throw e;
+    }
+}

@@ -1,16 +1,13 @@
 import { NextResponse } from "next/server";
-import { insert_into_orders_table } from "@/lib/db";
+import { createOrder, CreateOrder, insert_into_orders_table } from "@/lib/db";
 
-//idk why any of this has to be this way
 export async function POST(req: Request) {
-    const thing = await req.json();
-    const { cost, employeeId, paymentMethod } = thing;
-    const rows = await insert_into_orders_table(
-        cost,
-        employeeId,
-        paymentMethod,
-    );
-    //console.log(rows[0]);
+    const json = (await req.json()) as CreateOrder;
+    console.log(json);
 
-    return NextResponse.json(rows[0], { status: 201 });
+    await createOrder(json);
+
+    console.log("Successfully created order");
+
+    return NextResponse.json({ status: 204 });
 }

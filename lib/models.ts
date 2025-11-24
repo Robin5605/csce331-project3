@@ -4,12 +4,16 @@ interface Category {
     stock: number;
 }
 
+export type OrderStatus = "not_working_on" | "working" | "completed";
+
 interface Order {
     id: number;
-    placed_at: Date;
+    placed_at: string; 
     cost: number;
     employee_id: number;
     payment_method: string;
+    order_status: OrderStatus;
+    items: MenuItem[];
 }
 
 interface Employee {
@@ -23,9 +27,11 @@ interface Employee {
 interface MenuItem {
     id: number;
     name: string;
-    category_id: number;
+    category_id: number | null;
     stock: number;
     cost: number;
+    image_url: string | null;
+    ingredients?: DrinkIngredient[];
 }
 
 interface Ingredient {
@@ -36,11 +42,11 @@ interface Ingredient {
 }
 
 interface DrinkIngredient {
-    id: number;
-    drink_id: number;
-    ingredient_id: number;
-    servings: number;
+    id: number;      
+    name: string;     
+    servings: number; 
 }
+
 
 interface DrinkOrder {
     id: number;

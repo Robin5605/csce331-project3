@@ -17,6 +17,7 @@ import {
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import CustomizationCard from "@/components/CustomizationCard";
+import { Button } from "@/components/ui/button";
 
 //[REMOVE WHEN API IS IMPLEMENTED] Temporary data for now
 interface MenuItem {
@@ -134,11 +135,13 @@ const findInventoryCost = (name: string) => {
 // compute a single order's price from its fields
 function getOrderPrice(order: Record<string, any>) {
     let price = 0;
+    const quantity = (order.quantity as number) || 1;
     for (const [key, value] of Object.entries(order)) {
         if (
             value === "None" ||
             value === null ||
-            (Array.isArray(value) && value.length === 0)
+            (Array.isArray(value) && value.length === 0) ||
+            key === "quantity"
         ) {
             continue;
         }
@@ -155,7 +158,7 @@ function getOrderPrice(order: Record<string, any>) {
             price += findInventoryCost(String(value));
         }
     }
-    return price;
+    return price * quantity;
 }
 
 export default function CashierPage() {
@@ -177,8 +180,11 @@ export default function CashierPage() {
     const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
     const [selectedCustomizationOptions, setSelectedCustomizationOptions] =
         useState<Record<string, string | string[]>>(defaultCustomizations);
+    const [editingIndex, setEditingIndex] = useState<number | null>(null);
     const [curOrders, setCurOrders] = useState<
-        Record<string, string | string[] | MenuItem | null>[]
+        (Record<string, string | string[] | MenuItem | null | number> & {
+            quantity?: number;
+        })[]
     >([]);
     const { subtotal, tax, total } = useMemo(() => {
         const sub = curOrders.reduce((sum, o) => sum + getOrderPrice(o), 0);
@@ -227,12 +233,69 @@ export default function CashierPage() {
     // Handles whenever an order is finalized on the customization side
     const submitOrder = () => {
         // Add the current selection into the total orders
+        const existingQuantity = editingIndex !== null 
+            ? ((curOrders[editingIndex]?.quantity as number) || 1)
+            : 1;
+        
         const order = {
             Drink: selectedItem,
             ...selectedCustomizationOptions,
+            quantity: existingQuantity,
         };
-        setCurOrders([...curOrders, order]);
+        
+        if (editingIndex !== null) {
+            // Replace the item being edited
+            setCurOrders(
+                curOrders.map((o, i) => (i === editingIndex ? order : o))
+            );
+            setEditingIndex(null);
+        } else {
+            // Add a new item
+            setCurOrders([...curOrders, order]);
+        }
         setIsCustomizationOpen(false);
+    };
+
+    // Handle removing an item from the cart
+    const handleRemoveItem = (index: number) => {
+        setCurOrders(curOrders.filter((_, i) => i !== index));
+    };
+
+    // Handle increasing quantity
+    const handleIncreaseQty = (index: number) => {
+        setCurOrders(
+            curOrders.map((order, i) =>
+                i === index
+                    ? { ...order, quantity: ((order.quantity as number) || 1) + 1 }
+                    : order
+            )
+        );
+    };
+
+    const handleDecreaseQty = (index: number) => {
+        setCurOrders(
+            curOrders.map((order, i) => {
+                if (i === index) {
+                    const currentQty = (order.quantity as number) || 1;
+                    return { ...order, quantity: Math.max(1, currentQty - 1) };
+                }
+                return order;
+            })
+        );
+    };
+
+    const handleEditItem = (index: number) => {
+        const orderToEdit = curOrders[index];
+        if (orderToEdit) {
+            setSelectedItem(orderToEdit.Drink as MenuItem);
+
+            const { Drink, quantity, ...customizations } = orderToEdit;
+            setSelectedCustomizationOptions(
+                customizations as Record<string, string | string[]>
+            );
+            setEditingIndex(index);
+            setIsCustomizationOpen(true);
+        }
     };
 
     //handles current order and sends completed order to database
@@ -261,7 +324,10 @@ export default function CashierPage() {
             const orderId = id;
             //console.log(`= order id: ${orderId}`);
             curOrders.map(async (order, orderIndex) => {
-                let drinkOrderId = -1;
+                const quantity = (order.quantity as number) || 1;
+                // Create multiple drink orders based on quantity
+                for (let qtyIndex = 0; qtyIndex < quantity; qtyIndex++) {
+                    let drinkOrderId = -1;
                 for (
                     let index = 0;
                     index < Object.entries(order).length;
@@ -362,6 +428,7 @@ export default function CashierPage() {
                             body: JSON.stringify(drinkIngredientBody),
                         });
                     }
+                }
                 }
             });
         } catch (e: any) {}
@@ -496,7 +563,13 @@ export default function CashierPage() {
         <div className="flex min-h-screen bg-[#ffddd233] font-sans dark:bg-black gap-6 justify-between">
             <AlertDialog
                 open={isCustomizationOpen}
-                onOpenChange={setIsCustomizationOpen}
+                onOpenChange={(open) => {
+                    setIsCustomizationOpen(open);
+                    if (!open) {
+                        // Reset editing state when dialog closes (cancel, ESC, etc.)
+                        setEditingIndex(null);
+                    }
+                }}
             >
                 {/* The reason we override small is because that's the only way we can adjust the width of the AlertDialog */}
                 <AlertDialogContent className="w-[90vw] max-w-none sm:max-w-4xl p-8 ">
@@ -621,8 +694,9 @@ export default function CashierPage() {
                                     return;
                                 }
 
-                                if (key.toLowerCase() === "drink") {
-                                    // we’ll show the drink name in the header; price is added in getOrderPrice
+                                if (key.toLowerCase() === "drink" || key === "quantity") {
+                                    // we'll show the drink name in the header; price is added in getOrderPrice
+                                    // quantity is shown in the quantity controls, not as a customization item
                                     return;
                                 } else if (key === "Ice" || key === "Sugar") {
                                     itemsJSX.push(
@@ -665,19 +739,67 @@ export default function CashierPage() {
                             });
 
                             const order_price = getOrderPrice(order);
+                            const quantity = (order.quantity as number) || 1;
 
                             return (
                                 <div
                                     key={`order-${orderIndex}`}
                                     className="bg-[#fffaf8] rounded-xl p-3 mb-4 shadow flex-col"
                                 >
-                                    <h3 className="font-semibold text-lg mb-2">
-                                        Order {orderIndex + 1}:{" "}
-                                        {(order.Drink as MenuItem)?.name}
-                                    </h3>
+                                    <div className="flex justify-between items-start mb-2">
+                                        <h3 className="font-semibold text-lg">
+                                            Order {orderIndex + 1}:{" "}
+                                            {(order.Drink as MenuItem)?.name}
+                                        </h3>
+                                        <div className="flex gap-2">
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => handleEditItem(orderIndex)}
+                                                className="h-7 px-2 text-xs bg-[#ffe5ea] hover:bg-[#ffd6dd] border-[#9d8189] text-[#6d6875]"
+                                            >
+                                                Edit
+                                            </Button>
+                                            <Button
+                                                variant="destructive"
+                                                size="sm"
+                                                onClick={() => handleRemoveItem(orderIndex)}
+                                                className="h-7 px-2 text-xs"
+                                            >
+                                                Remove
+                                            </Button>
+                                        </div>
+                                    </div>
                                     {itemsJSX}
-                                    <div className="mt-1">
-                                        Total: ${order_price.toFixed(2)}
+                                    <div className="mt-3 flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-sm font-medium">Quantity:</span>
+                                            <div className="flex items-center gap-1 border border-[#9d8189] rounded-md">
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon-sm"
+                                                    onClick={() => handleDecreaseQty(orderIndex)}
+                                                    className="h-6 w-6 p-0 hover:bg-[#ffe5ea] text-[#6d6875]"
+                                                    disabled={quantity <= 1}
+                                                >
+                                                    -
+                                                </Button>
+                                                <span className="px-2 text-sm font-medium min-w-[2rem] text-center">
+                                                    {quantity}
+                                                </span>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon-sm"
+                                                    onClick={() => handleIncreaseQty(orderIndex)}
+                                                    className="h-6 w-6 p-0 hover:bg-[#ffe5ea] text-[#6d6875]"
+                                                >
+                                                    +
+                                                </Button>
+                                            </div>
+                                        </div>
+                                        <div className="font-semibold">
+                                            Total: ${order_price.toFixed(2)}
+                                        </div>
                                     </div>
                                 </div>
                             );

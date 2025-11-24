@@ -272,13 +272,13 @@ export default function CashierPage() {
                     if (
                         value === "None" ||
                         value === null ||
-                        value.length === 0
+                        (Array.isArray(value) && value.length === 0)
                     ) {
                         continue;
                     }
                     if (key.toLowerCase() === "drink") {
                         const drinkOrderBody = {
-                            menuId: value.id,
+                            menuId: (value as MenuItem).id,
                             orderId: orderId,
                         };
                         const drinkOrderRes = await fetch(

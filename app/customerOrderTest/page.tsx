@@ -681,7 +681,7 @@ function Cart({
     const total = subtotal + tax;
 
     function handleCheckout() {
-        fetch("/api/cashier/order", {
+        fetch("/api/customer/order", {
             method: "POST",
             body: JSON.stringify({
                 drinks: items.map((i) => ({

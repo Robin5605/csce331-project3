@@ -287,11 +287,12 @@ export default function CashierPage() {
                 body: JSON.stringify(orderBody),
             });
             if (!orderRes.ok)
-                throw new Error(`POST /api/menu ${orderRes.status}`);
+                throw new Error(`POST /api/cashier/order ${orderRes.status}`);
             let { id } = await orderRes.json();
             const orderId = id;
             //console.log(`= order id: ${orderId}`);
-            curOrders.map(async (order, orderIndex) => {
+            // Process all orders sequentially to avoid race conditions
+            for (const [orderIndex, order] of curOrders.entries()) {
                 const quantity = (order.quantity as number) || 1;
                 // Create multiple drink orders based on quantity
                 for (let qtyIndex = 0; qtyIndex < quantity; qtyIndex++) {
@@ -329,7 +330,7 @@ export default function CashierPage() {
                             drinkOrderId = id;
                         } else {
                             let ingredientAmmount = 0;
-                            let ingredientTemp: InventoryItem | any =
+                            let ingredientTemp: Ingredient | any =
                                 inventory[0];
                             if (key === "Ice" || key === "Sugar") {
                                 if (value === "100%") {
@@ -407,8 +408,11 @@ export default function CashierPage() {
                         }
                     }
                 }
-            });
-        } catch (e: any) {}
+            }
+        } catch (e: any) {
+            console.error("Checkout error:", e);
+            alert(`Checkout failed: ${e.message || "Unknown error"}`);
+        }
         setCurOrders([]);
     };
 

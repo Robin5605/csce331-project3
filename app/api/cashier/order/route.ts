@@ -1,13 +1,17 @@
 import { NextResponse } from "next/server";
-import { createOrder, CreateOrder, insert_into_orders_table } from "@/lib/db";
+import { insert_into_orders_table } from "@/lib/db";
 
 export async function POST(req: Request) {
-    const json = (await req.json()) as CreateOrder;
+    const json = await req.json() as { cost: number; employeeId: string; paymentMethod: string };
     console.log(json);
 
-    await createOrder(json);
+    const rows = await insert_into_orders_table(
+        json.cost,
+        parseInt(json.employeeId),
+        json.paymentMethod
+    );
 
     console.log("Successfully created order");
 
-    return NextResponse.json({ status: 204 });
+    return NextResponse.json(rows[0], { status: 201 });
 }

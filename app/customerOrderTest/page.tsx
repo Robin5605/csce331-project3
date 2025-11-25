@@ -504,7 +504,7 @@ function MenuItemCard({ item, onConfirm }: MenuItemCardProps) {
             </DialogTrigger>
             <DialogContent className="max-h-9/10 overflow-y-scroll">
                 <DialogHeader>
-                    <DialogTitle>Customize</DialogTitle>
+                    <DialogTitle>Customize {item.name}</DialogTitle>
                 </DialogHeader>
                 <div className="flex flex-col space-y-4">
                     <div>

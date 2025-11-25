@@ -641,9 +641,10 @@ export default function CashierPage() {
 
             <main className="flex-1 flex items-start justify-center mt-10">
                 <div className="flex flex-wrap gap-16 justify-around">
-                    {menuDataReady ? (menuData[selectedCategory].map((itemData) => {
+                    {menuDataReady ? (menuData[selectedCategory].map((itemData,itemDataIndex) => {
                         return (
                             <ItemCard
+                                key={itemDataIndex}
                                 itemName={itemData.name}
                                 whenClicked={() => menuItemClicked(itemData)}
                             />
@@ -651,7 +652,10 @@ export default function CashierPage() {
                     })) : (
                         <ItemCard
                             itemName={"loading"}
-                            //whenClicked={() => loadMenuData()}
+                            key={0}
+                            whenClicked={() => {
+                                console.log("don't touch me!");
+                            }}
                         />
                     )}
                 </div>

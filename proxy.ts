@@ -44,10 +44,5 @@ export default withAuth(
 
 export const config = {
     matcher: [
-        "/CashierPage/:path*",
-        "/employees/:path*",
-        "/ingredientManagementPage/:path*",
-        "/menuManagementPage/:path*",
-        "/x_and_z_reports/:path*",
     ],
 };

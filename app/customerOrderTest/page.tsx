@@ -480,14 +480,39 @@ interface MenuItemCardProps {
     item: MenuItem;
     onConfirm: (item: CartItem) => void;
 }
+// Helper function to convert ice servings (0-4) to percentage label
+const iceToPercentage = (servings: number): string => {
+    const mapping: { [key: number]: string } = {
+        0: "0%",
+        1: "25%",
+        2: "50%",
+        3: "75%",
+        4: "100%",
+    };
+    return mapping[servings] || "0%";
+};
+
 function MenuItemCard({ item, onConfirm }: MenuItemCardProps) {
-    const [ice, setIce] = useState(0);
+    const [open, setOpen] = useState(false);
+    const [ice, setIce] = useState(4); // Default to 100% (4 servings)
     const [size, setSize] = useState<DrinkSize>("medium");
     const [selectedToppings, setSelectedToppings] = useState<InventoryItem[]>(
         [],
     );
+
+    // Reset all customization state when dialog opens
+    const handleOpenChange = (isOpen: boolean) => {
+        setOpen(isOpen);
+        if (isOpen) {
+            // Reset to defaults when opening
+            setIce(4); // 100%
+            setSize("medium");
+            setSelectedToppings([]);
+        }
+    };
+
     return (
-        <Dialog>
+        <Dialog open={open} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>
                 <div className="flex flex-col gap-2 items-center bg-gray-100 p-2 rounded border">
                     {item.image_url !== "" ? (
@@ -534,28 +559,15 @@ function MenuItemCard({ item, onConfirm }: MenuItemCardProps) {
                     <div>
                         <p className="text-2xl">Ice</p>
                         <div className="flex space-x-4">
-                            <Button
-                                variant="outline"
-                                size="icon"
-                                className="rounded-full"
-                                onClick={() => setIce(ice > 0 ? ice - 1 : 0)}
-                            >
-                                <Minus />
-                            </Button>
-                            <Input
-                                type="number"
-                                className="rounded-full w-fit"
-                                value={ice}
-                                readOnly
-                            />
-                            <Button
-                                variant="outline"
-                                size="icon"
-                                className="rounded-full"
-                                onClick={() => setIce(ice < 5 ? ice + 1 : 5)}
-                            >
-                                <Plus />
-                            </Button>
+                            {[0, 1, 2, 3, 4].map((servings) => (
+                                <div
+                                    key={servings}
+                                    className={`cursor-pointer duration-300 border rounded-full p-4 text-xl ${ice === servings ? "bg-black text-white" : ""}`}
+                                    onClick={() => setIce(servings)}
+                                >
+                                    {iceToPercentage(servings)}
+                                </div>
+                            ))}
                         </div>
                     </div>
 
@@ -595,7 +607,7 @@ function MenuItemCard({ item, onConfirm }: MenuItemCardProps) {
                         <Button
                             variant="default"
                             className="w-full"
-                            onClick={() =>
+                            onClick={() => {
                                 onConfirm({
                                     id: item.id,
                                     size,
@@ -609,8 +621,9 @@ function MenuItemCard({ item, onConfirm }: MenuItemCardProps) {
                                             cost: t.cost,
                                         }),
                                     ),
-                                })
-                            }
+                                });
+                                setOpen(false);
+                            }}
                         >
                             Add to Order
                         </Button>
@@ -659,7 +672,7 @@ function CartItemCard({ item }: { item: CartItem }) {
                 {item.size.charAt(0).toUpperCase() + item.size.substring(1)}{" "}
                 {item.name}
             </p>
-            <p>Ice: {item.ice}</p>
+            <p>Ice: {iceToPercentage(item.ice)}</p>
             {item.customizations.map((c) => (
                 <p key={c.id}>{c.name}</p>
             ))}

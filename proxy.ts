@@ -8,7 +8,7 @@ export default withAuth(
 
         // If no session, redirect to login
         if (!req.nextauth.token) {
-            return NextResponse.redirect(new URL("/loginPage", req.url));
+            return NextResponse.redirect(new URL("/404", req.url));
         }
 
         // Manager-only pages

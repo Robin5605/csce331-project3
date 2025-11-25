@@ -233,20 +233,21 @@ export default function CashierPage() {
     // Handles whenever an order is finalized on the customization side
     const submitOrder = () => {
         // Add the current selection into the total orders
-        const existingQuantity = editingIndex !== null 
-            ? ((curOrders[editingIndex]?.quantity as number) || 1)
-            : 1;
-        
+        const existingQuantity =
+            editingIndex !== null
+                ? (curOrders[editingIndex]?.quantity as number) || 1
+                : 1;
+
         const order = {
             Drink: selectedItem,
             ...selectedCustomizationOptions,
             quantity: existingQuantity,
         };
-        
+
         if (editingIndex !== null) {
             // Replace the item being edited
             setCurOrders(
-                curOrders.map((o, i) => (i === editingIndex ? order : o))
+                curOrders.map((o, i) => (i === editingIndex ? order : o)),
             );
             setEditingIndex(null);
         } else {
@@ -266,9 +267,12 @@ export default function CashierPage() {
         setCurOrders(
             curOrders.map((order, i) =>
                 i === index
-                    ? { ...order, quantity: ((order.quantity as number) || 1) + 1 }
-                    : order
-            )
+                    ? {
+                          ...order,
+                          quantity: ((order.quantity as number) || 1) + 1,
+                      }
+                    : order,
+            ),
         );
     };
 
@@ -280,7 +284,7 @@ export default function CashierPage() {
                     return { ...order, quantity: Math.max(1, currentQty - 1) };
                 }
                 return order;
-            })
+            }),
         );
     };
 
@@ -291,7 +295,7 @@ export default function CashierPage() {
 
             const { Drink, quantity, ...customizations } = orderToEdit;
             setSelectedCustomizationOptions(
-                customizations as Record<string, string | string[]>
+                customizations as Record<string, string | string[]>,
             );
             setEditingIndex(index);
             setIsCustomizationOpen(true);
@@ -328,107 +332,116 @@ export default function CashierPage() {
                 // Create multiple drink orders based on quantity
                 for (let qtyIndex = 0; qtyIndex < quantity; qtyIndex++) {
                     let drinkOrderId = -1;
-                for (
-                    let index = 0;
-                    index < Object.entries(order).length;
-                    ++index
-                ) {
-                    let [key, value] = Object.entries(order)[index];
-                    //console.log(`\t= k: ${key}\tv: ${value}\tdo id: ${drinkOrderId}`);
-                    if (
-                        value === "None" ||
-                        value === null ||
-                        (Array.isArray(value) && value.length === 0)
+                    for (
+                        let index = 0;
+                        index < Object.entries(order).length;
+                        ++index
                     ) {
-                        continue;
-                    }
-                    if (key.toLowerCase() === "drink") {
-                        const drinkOrderBody = {
-                            menuId: (value as MenuItem).id,
-                            orderId: orderId,
-                        };
-                        const drinkOrderRes = await fetch(
-                            "api/cashier/drinks_order",
-                            {
-                                method: "POST",
-                                headers: { "Content-Type": "application/json" },
-                                body: JSON.stringify(drinkOrderBody),
-                            },
-                        );
-                        let { id } = await drinkOrderRes.json();
-                        drinkOrderId = id;
-                    } else {
-                        let ingredientAmmount = 0;
-                        let ingredientTemp: InventoryItem | any = inventory[0];
-                        if (key === "Ice" || key === "Sugar") {
-                            if (value === "100%") {
-                                ingredientAmmount = 4;
-                            } else if (value === "75%") {
-                                ingredientAmmount = 3;
-                            } else if (value === "50%") {
-                                ingredientAmmount = 2;
-                            } else if (value === "25%") {
-                                ingredientAmmount = 1;
-                            } else {
-                                continue;
-                            }
-                            ingredientTemp = { id: 28, name: "Ice" };
-                        } else if (key === "Size") {
+                        let [key, value] = Object.entries(order)[index];
+                        //console.log(`\t= k: ${key}\tv: ${value}\tdo id: ${drinkOrderId}`);
+                        if (
+                            value === "None" ||
+                            value === null ||
+                            (Array.isArray(value) && value.length === 0)
+                        ) {
                             continue;
-                        } else if (Array.isArray(value)) {
-                            ingredientAmmount = 1;
-                            value.forEach(async (ingredientName) => {
-                                ingredientTemp = inventory.find((cItem) => {
-                                    if (cItem.name == ingredientName) {
-                                        return cItem;
-                                    }
-                                });
-
-                                if (ingredientTemp == null) {
-                                    console.log("==bad ingredient name==");
-                                    return;
-                                }
-
-                                const drinkIngredientBody = {
-                                    drink_id: drinkOrderId,
-                                    ingredient_id: ingredientTemp.id,
-                                    servings: ingredientAmmount,
-                                };
-                                await fetch("api/cashier/drink_ingredients", {
+                        }
+                        if (key.toLowerCase() === "drink") {
+                            const drinkOrderBody = {
+                                menuId: (value as MenuItem).id,
+                                orderId: orderId,
+                            };
+                            const drinkOrderRes = await fetch(
+                                "api/cashier/drinks_order",
+                                {
                                     method: "POST",
                                     headers: {
                                         "Content-Type": "application/json",
                                     },
-                                    body: JSON.stringify(drinkIngredientBody),
-                                });
-                            });
-                            continue;
+                                    body: JSON.stringify(drinkOrderBody),
+                                },
+                            );
+                            let { id } = await drinkOrderRes.json();
+                            drinkOrderId = id;
                         } else {
-                            ingredientAmmount = 1;
-                            ingredientTemp = inventory.find((cItem) => {
-                                if (cItem.name == value) {
-                                    return cItem;
+                            let ingredientAmmount = 0;
+                            let ingredientTemp: InventoryItem | any =
+                                inventory[0];
+                            if (key === "Ice" || key === "Sugar") {
+                                if (value === "100%") {
+                                    ingredientAmmount = 4;
+                                } else if (value === "75%") {
+                                    ingredientAmmount = 3;
+                                } else if (value === "50%") {
+                                    ingredientAmmount = 2;
+                                } else if (value === "25%") {
+                                    ingredientAmmount = 1;
+                                } else {
+                                    continue;
                                 }
+                                ingredientTemp = { id: 28, name: "Ice" };
+                            } else if (key === "Size") {
+                                continue;
+                            } else if (Array.isArray(value)) {
+                                ingredientAmmount = 1;
+                                value.forEach(async (ingredientName) => {
+                                    ingredientTemp = inventory.find((cItem) => {
+                                        if (cItem.name == ingredientName) {
+                                            return cItem;
+                                        }
+                                    });
+
+                                    if (ingredientTemp == null) {
+                                        console.log("==bad ingredient name==");
+                                        return;
+                                    }
+
+                                    const drinkIngredientBody = {
+                                        drink_id: drinkOrderId,
+                                        ingredient_id: ingredientTemp.id,
+                                        servings: ingredientAmmount,
+                                    };
+                                    await fetch(
+                                        "api/cashier/drink_ingredients",
+                                        {
+                                            method: "POST",
+                                            headers: {
+                                                "Content-Type":
+                                                    "application/json",
+                                            },
+                                            body: JSON.stringify(
+                                                drinkIngredientBody,
+                                            ),
+                                        },
+                                    );
+                                });
+                                continue;
+                            } else {
+                                ingredientAmmount = 1;
+                                ingredientTemp = inventory.find((cItem) => {
+                                    if (cItem.name == value) {
+                                        return cItem;
+                                    }
+                                });
+                            }
+
+                            if (ingredientTemp == null) {
+                                console.log("\t\t==bad ingredient name==");
+                                continue;
+                            }
+
+                            const drinkIngredientBody = {
+                                drink_id: drinkOrderId,
+                                ingredient_id: ingredientTemp.id,
+                                servings: ingredientAmmount,
+                            };
+                            await fetch("api/cashier/drink_ingredients", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify(drinkIngredientBody),
                             });
                         }
-
-                        if (ingredientTemp == null) {
-                            console.log("\t\t==bad ingredient name==");
-                            continue;
-                        }
-
-                        const drinkIngredientBody = {
-                            drink_id: drinkOrderId,
-                            ingredient_id: ingredientTemp.id,
-                            servings: ingredientAmmount,
-                        };
-                        await fetch("api/cashier/drink_ingredients", {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify(drinkIngredientBody),
-                        });
                     }
-                }
                 }
             });
         } catch (e: any) {}
@@ -683,126 +696,159 @@ export default function CashierPage() {
                             </div>
                         ) : (
                             curOrders.map((order, orderIndex) => {
-                            const itemsJSX: JSX.Element[] = [];
+                                const itemsJSX: JSX.Element[] = [];
 
-                            Object.entries(order).forEach(([key, value]) => {
-                                if (
-                                    value === "None" ||
-                                    value === null ||
-                                    (Array.isArray(value) && value.length === 0)
-                                ) {
-                                    return;
-                                }
+                                Object.entries(order).forEach(
+                                    ([key, value]) => {
+                                        if (
+                                            value === "None" ||
+                                            value === null ||
+                                            (Array.isArray(value) &&
+                                                value.length === 0)
+                                        ) {
+                                            return;
+                                        }
 
-                                if (key.toLowerCase() === "drink" || key === "quantity") {
-                                    // we'll show the drink name in the header; price is added in getOrderPrice
-                                    // quantity is shown in the quantity controls, not as a customization item
-                                    return;
-                                } else if (key === "Ice" || key === "Sugar") {
-                                    itemsJSX.push(
-                                        <div
-                                            key={`suborder-${key}-${value}-single`}
-                                            className="bg-[#ffe5ea] px-2 py-1 rounded mb-2"
-                                        >
-                                            {key}: {value as string}
-                                        </div>,
-                                    );
-                                } else if (Array.isArray(value)) {
-                                    value.forEach((o: string) => {
-                                        const p = findInventoryCost(o);
-                                        itemsJSX.push(
-                                            <div
-                                                key={`suborder-${key}-${o}-single`}
-                                                className="bg-[#ffe5ea] px-2 py-1 rounded mb-2"
-                                            >
-                                                {o}{" "}
-                                                {p !== 0
-                                                    ? `($${p.toFixed(2)})`
-                                                    : ""}
-                                            </div>,
-                                        );
-                                    });
-                                } else {
-                                    const p = findInventoryCost(String(value));
-                                    itemsJSX.push(
-                                        <div
-                                            key={`suborder-${key}-${value}-single`}
-                                            className="bg-[#ffe5ea] px-2 py-1 rounded mb-2"
-                                        >
-                                            {String(value)}{" "}
-                                            {p !== 0
-                                                ? `($${p.toFixed(2)})`
-                                                : ""}
-                                        </div>,
-                                    );
-                                }
-                            });
-
-                            const order_price = getOrderPrice(order);
-                            const quantity = (order.quantity as number) || 1;
-
-                            return (
-                                <div
-                                    key={`order-${orderIndex}`}
-                                    className="bg-[#fffaf8] rounded-xl p-3 mb-4 shadow flex-col"
-                                >
-                                    <div className="flex justify-between items-start mb-2">
-                                        <h3 className="font-semibold text-lg">
-                                            Order {orderIndex + 1}:{" "}
-                                            {(order.Drink as MenuItem)?.name}
-                                        </h3>
-                                        <div className="flex gap-2">
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={() => handleEditItem(orderIndex)}
-                                                className="h-7 px-2 text-xs bg-[#ffe5ea] hover:bg-[#ffd6dd] border-[#9d8189] text-[#6d6875]"
-                                            >
-                                                Edit
-                                            </Button>
-                                            <Button
-                                                variant="destructive"
-                                                size="sm"
-                                                onClick={() => handleRemoveItem(orderIndex)}
-                                                className="h-7 px-2 text-xs"
-                                            >
-                                                Remove
-                                            </Button>
-                                        </div>
-                                    </div>
-                                    {itemsJSX}
-                                    <div className="mt-3 flex items-center justify-between">
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-sm font-medium">Quantity:</span>
-                                            <div className="flex items-center gap-1 border border-[#9d8189] rounded-md">
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon-sm"
-                                                    onClick={() => handleDecreaseQty(orderIndex)}
-                                                    className="h-6 w-6 p-0 hover:bg-[#ffe5ea] text-[#6d6875]"
-                                                    disabled={quantity <= 1}
+                                        if (
+                                            key.toLowerCase() === "drink" ||
+                                            key === "quantity"
+                                        ) {
+                                            // we'll show the drink name in the header; price is added in getOrderPrice
+                                            // quantity is shown in the quantity controls, not as a customization item
+                                            return;
+                                        } else if (
+                                            key === "Ice" ||
+                                            key === "Sugar"
+                                        ) {
+                                            itemsJSX.push(
+                                                <div
+                                                    key={`suborder-${key}-${value}-single`}
+                                                    className="bg-[#ffe5ea] px-2 py-1 rounded mb-2"
                                                 >
-                                                    -
+                                                    {key}: {value as string}
+                                                </div>,
+                                            );
+                                        } else if (Array.isArray(value)) {
+                                            value.forEach((o: string) => {
+                                                const p = findInventoryCost(o);
+                                                itemsJSX.push(
+                                                    <div
+                                                        key={`suborder-${key}-${o}-single`}
+                                                        className="bg-[#ffe5ea] px-2 py-1 rounded mb-2"
+                                                    >
+                                                        {o}{" "}
+                                                        {p !== 0
+                                                            ? `($${p.toFixed(2)})`
+                                                            : ""}
+                                                    </div>,
+                                                );
+                                            });
+                                        } else {
+                                            const p = findInventoryCost(
+                                                String(value),
+                                            );
+                                            itemsJSX.push(
+                                                <div
+                                                    key={`suborder-${key}-${value}-single`}
+                                                    className="bg-[#ffe5ea] px-2 py-1 rounded mb-2"
+                                                >
+                                                    {String(value)}{" "}
+                                                    {p !== 0
+                                                        ? `($${p.toFixed(2)})`
+                                                        : ""}
+                                                </div>,
+                                            );
+                                        }
+                                    },
+                                );
+
+                                const order_price = getOrderPrice(order);
+                                const quantity =
+                                    (order.quantity as number) || 1;
+
+                                return (
+                                    <div
+                                        key={`order-${orderIndex}`}
+                                        className="bg-[#fffaf8] rounded-xl p-3 mb-4 shadow flex-col"
+                                    >
+                                        <div className="flex justify-between items-start mb-2">
+                                            <h3 className="font-semibold text-lg">
+                                                Order {orderIndex + 1}:{" "}
+                                                {
+                                                    (order.Drink as MenuItem)
+                                                        ?.name
+                                                }
+                                            </h3>
+                                            <div className="flex gap-2">
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={() =>
+                                                        handleEditItem(
+                                                            orderIndex,
+                                                        )
+                                                    }
+                                                    className="h-7 px-2 text-xs bg-[#ffe5ea] hover:bg-[#ffd6dd] border-[#9d8189] text-[#6d6875]"
+                                                >
+                                                    Edit
                                                 </Button>
-                                                <span className="px-2 text-sm font-medium min-w-[2rem] text-center">
-                                                    {quantity}
-                                                </span>
                                                 <Button
-                                                    variant="ghost"
-                                                    size="icon-sm"
-                                                    onClick={() => handleIncreaseQty(orderIndex)}
-                                                    className="h-6 w-6 p-0 hover:bg-[#ffe5ea] text-[#6d6875]"
+                                                    variant="destructive"
+                                                    size="sm"
+                                                    onClick={() =>
+                                                        handleRemoveItem(
+                                                            orderIndex,
+                                                        )
+                                                    }
+                                                    className="h-7 px-2 text-xs"
                                                 >
-                                                    +
+                                                    Remove
                                                 </Button>
                                             </div>
                                         </div>
-                                        <div className="font-semibold">
-                                            Total: ${order_price.toFixed(2)}
+                                        {itemsJSX}
+                                        <div className="mt-3 flex items-center justify-between">
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-sm font-medium">
+                                                    Quantity:
+                                                </span>
+                                                <div className="flex items-center gap-1 border border-[#9d8189] rounded-md">
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon-sm"
+                                                        onClick={() =>
+                                                            handleDecreaseQty(
+                                                                orderIndex,
+                                                            )
+                                                        }
+                                                        className="h-6 w-6 p-0 hover:bg-[#ffe5ea] text-[#6d6875]"
+                                                        disabled={quantity <= 1}
+                                                    >
+                                                        -
+                                                    </Button>
+                                                    <span className="px-2 text-sm font-medium min-w-[2rem] text-center">
+                                                        {quantity}
+                                                    </span>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon-sm"
+                                                        onClick={() =>
+                                                            handleIncreaseQty(
+                                                                orderIndex,
+                                                            )
+                                                        }
+                                                        className="h-6 w-6 p-0 hover:bg-[#ffe5ea] text-[#6d6875]"
+                                                    >
+                                                        +
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                            <div className="font-semibold">
+                                                Total: ${order_price.toFixed(2)}
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            );
+                                );
                             })
                         )}
                     </div>

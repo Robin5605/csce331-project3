@@ -62,35 +62,155 @@ interface MenuData {
 
 const menuData: MenuData = {
     "Fruit Tea": [
-        { id: 1, name: "Mango Green Tea", stock: 80, cost: 6.5, image_url: "/drinks/mango_green_tea.png" },
-        { id: 2, name: "Peach Tea With Honey Jelly", stock: 75, cost: 6.25, image_url: "/drinks/peach_tea_with_honey_jelly.png" },
-        { id: 3, name: "Passion Chess", stock: 75, cost: 6.25, image_url: "/drinks/passion_chess.png" },
-        { id: 5, name: "Mango & Passion Fruit", stock: 75, cost: 6.25, image_url: "/drinks/mango_passion_fruit.png" },
-        { id: 6, name: "Honey Lemonade", stock: 75, cost: 5.2, image_url: "/drinks/honey_lemonade.png" },
-        { id: 4, name: "Berry Lychee Burst", stock: 74, cost: 6.25, image_url: "/drinks/berry_lychee_burst.png" },
+        {
+            id: 1,
+            name: "Mango Green Tea",
+            stock: 80,
+            cost: 6.5,
+            image_url: "/drinks/mango_green_tea.png",
+        },
+        {
+            id: 2,
+            name: "Peach Tea With Honey Jelly",
+            stock: 75,
+            cost: 6.25,
+            image_url: "/drinks/peach_tea_with_honey_jelly.png",
+        },
+        {
+            id: 3,
+            name: "Passion Chess",
+            stock: 75,
+            cost: 6.25,
+            image_url: "/drinks/passion_chess.png",
+        },
+        {
+            id: 5,
+            name: "Mango & Passion Fruit",
+            stock: 75,
+            cost: 6.25,
+            image_url: "/drinks/mango_passion_fruit.png",
+        },
+        {
+            id: 6,
+            name: "Honey Lemonade",
+            stock: 75,
+            cost: 5.2,
+            image_url: "/drinks/honey_lemonade.png",
+        },
+        {
+            id: 4,
+            name: "Berry Lychee Burst",
+            stock: 74,
+            cost: 6.25,
+            image_url: "/drinks/berry_lychee_burst.png",
+        },
     ],
 
     "Ice Blended": [
-        { id: 7, name: "Oreo w/ Pearl", stock: 75, cost: 6.75, image_url: "/drinks/oreo_w_pearl.png" },
-        { id: 8, name: "Taro w/ Pudding", stock: 75, cost: 6.95, image_url: "/drinks/taro_w_pudding.png" },
-        { id: 9, name: "Thai Tea w/ Pearl", stock: 75, cost: 6.95, image_url: "/drinks/thai_tea_w_pearl.png" },
-        { id: 10, name: "Coffee w/ Ice Cream", stock: 75, cost: 6.95, image_url: "/drinks/coffee_w_ice_cream.png" },
-        { id: 11, name: "Mango w/ Ice Cream", stock: 75, cost: 6.95, image_url: "/drinks/mango_w_ice_cream.png" },
-        { id: 12, name: "Strawberry w/ Ice Cream", stock: 75, cost: 6.95, image_url: "/drinks/strawberry_w_ice_cream.png" },
+        {
+            id: 7,
+            name: "Oreo w/ Pearl",
+            stock: 75,
+            cost: 6.75,
+            image_url: "/drinks/oreo_w_pearl.png",
+        },
+        {
+            id: 8,
+            name: "Taro w/ Pudding",
+            stock: 75,
+            cost: 6.95,
+            image_url: "/drinks/taro_w_pudding.png",
+        },
+        {
+            id: 9,
+            name: "Thai Tea w/ Pearl",
+            stock: 75,
+            cost: 6.95,
+            image_url: "/drinks/thai_tea_w_pearl.png",
+        },
+        {
+            id: 10,
+            name: "Coffee w/ Ice Cream",
+            stock: 75,
+            cost: 6.95,
+            image_url: "/drinks/coffee_w_ice_cream.png",
+        },
+        {
+            id: 11,
+            name: "Mango w/ Ice Cream",
+            stock: 75,
+            cost: 6.95,
+            image_url: "/drinks/mango_w_ice_cream.png",
+        },
+        {
+            id: 12,
+            name: "Strawberry w/ Ice Cream",
+            stock: 75,
+            cost: 6.95,
+            image_url: "/drinks/strawberry_w_ice_cream.png",
+        },
     ],
 
-    "Milky": [
-        { id: 13, name: "Clasic Pearl Milk Tea", stock: 75, cost: 5.8, image_url: "/drinks/classic_pearl_milk_tea.png" },
-        { id: 14, name: "Honey Pearl Milk Tea", stock: 75, cost: 6.0, image_url: "/drinks/honey_pearl_milk_tea.png" },
-        { id: 15, name: "Coffe Creama", stock: 75, cost: 6.5, image_url: "/drinks/coffe_creama.png" },
-        { id: 16, name: "Hokaido Pearl Milk Tea", stock: 75, cost: 6.25, image_url: "/drinks/hokaido_pearl_milk_tea.png" },
-        { id: 17, name: "Mango Green Milk Tea", stock: 75, cost: 6.5, image_url: "/drinks/mango_green_milk_tea.png" },
-        { id: 18, name: "Golden Retriever", stock: 75, cost: 6.75, image_url: "/drinks/golden_retriever.png" },
+    Milky: [
+        {
+            id: 13,
+            name: "Clasic Pearl Milk Tea",
+            stock: 75,
+            cost: 5.8,
+            image_url: "/drinks/classic_pearl_milk_tea.png",
+        },
+        {
+            id: 14,
+            name: "Honey Pearl Milk Tea",
+            stock: 75,
+            cost: 6.0,
+            image_url: "/drinks/honey_pearl_milk_tea.png",
+        },
+        {
+            id: 15,
+            name: "Coffe Creama",
+            stock: 75,
+            cost: 6.5,
+            image_url: "/drinks/coffe_creama.png",
+        },
+        {
+            id: 16,
+            name: "Hokaido Pearl Milk Tea",
+            stock: 75,
+            cost: 6.25,
+            image_url: "/drinks/hokaido_pearl_milk_tea.png",
+        },
+        {
+            id: 17,
+            name: "Mango Green Milk Tea",
+            stock: 75,
+            cost: 6.5,
+            image_url: "/drinks/mango_green_milk_tea.png",
+        },
+        {
+            id: 18,
+            name: "Golden Retriever",
+            stock: 75,
+            cost: 6.75,
+            image_url: "/drinks/golden_retriever.png",
+        },
     ],
 
     "Non Caffenated": [
-        { id: 19, name: "Tiger Boba", stock: 75, cost: 6.5, image_url: "/drinks/tiger_boba.png" },
-        { id: 20, name: "Strawberry Coconut", stock: 75, cost: 6.5, image_url: "/drinks/strawberry_coconut.png" },
+        {
+            id: 19,
+            name: "Tiger Boba",
+            stock: 75,
+            cost: 6.5,
+            image_url: "/drinks/tiger_boba.png",
+        },
+        {
+            id: 20,
+            name: "Strawberry Coconut",
+            stock: 75,
+            cost: 6.5,
+            image_url: "/drinks/strawberry_coconut.png",
+        },
         {
             id: 21,
             name: "Strawberry Coconut Ice Blended",
@@ -98,15 +218,51 @@ const menuData: MenuData = {
             cost: 6.5,
             image_url: "/drinks/strawberry_coconut_ice_blended.png",
         },
-        { id: 22, name: "Halo Halo", stock: 75, cost: 6.95, image_url: "/drinks/halo_halo.png" },
-        { id: 23, name: "Wintermellon Lemonade", stock: 75, cost: 5.8, image_url: "/drinks/wintermellon_lemonade.png" },
-        { id: 24, name: "Wintermellon w/ Fresh Milk", stock: 75, cost: 5.2, image_url: "/drinks/wintermellon_w_fresh_milk.png" },
+        {
+            id: 22,
+            name: "Halo Halo",
+            stock: 75,
+            cost: 6.95,
+            image_url: "/drinks/halo_halo.png",
+        },
+        {
+            id: 23,
+            name: "Wintermellon Lemonade",
+            stock: 75,
+            cost: 5.8,
+            image_url: "/drinks/wintermellon_lemonade.png",
+        },
+        {
+            id: 24,
+            name: "Wintermellon w/ Fresh Milk",
+            stock: 75,
+            cost: 5.2,
+            image_url: "/drinks/wintermellon_w_fresh_milk.png",
+        },
     ],
 
     "Fall Seasonals": [
-        { id: 25, name: "Red Bean Matcha", stock: 75, cost: 6.95, image_url: "/drinks/red_bean_matcha.png" },
-        { id: 26, name: "Pumpkin Chai", stock: 75, cost: 6.95, image_url: "/drinks/pumpkin_chai.png" },
-        { id: 27, name: "Honey and Cinnamon Milk Tea", stock: 75, cost: 6.95, image_url: "/drinks/honey_and_cinnamon_milk_tea.png" },
+        {
+            id: 25,
+            name: "Red Bean Matcha",
+            stock: 75,
+            cost: 6.95,
+            image_url: "/drinks/red_bean_matcha.png",
+        },
+        {
+            id: 26,
+            name: "Pumpkin Chai",
+            stock: 75,
+            cost: 6.95,
+            image_url: "/drinks/pumpkin_chai.png",
+        },
+        {
+            id: 27,
+            name: "Honey and Cinnamon Milk Tea",
+            stock: 75,
+            cost: 6.95,
+            image_url: "/drinks/honey_and_cinnamon_milk_tea.png",
+        },
         { id: 31, name: "temp", stock: 99, cost: 5.0, image_url: "" },
         { id: 32, name: "temp2", stock: 99, cost: 1.0, image_url: "" },
     ],
@@ -143,9 +299,27 @@ const inventory: InventoryItem[] = [
     { id: 6, name: "Aloe Vera", stock: 89, cost: 0.75, ingredient_type: 100 },
 
     { id: 20, name: "Crystal Boba", stock: 92, cost: 1, ingredient_type: 20 },
-    { id: 18, name: "Strawberry Popping Boba", stock: 98, cost: 1, ingredient_type: 20 },
-    { id: 17, name: "Mango Popping Boba", stock: 89, cost: 1, ingredient_type: 20 },
-    { id: 19, name: "Peach Popping Boba", stock: 96, cost: 1, ingredient_type: 20 },
+    {
+        id: 18,
+        name: "Strawberry Popping Boba",
+        stock: 98,
+        cost: 1,
+        ingredient_type: 20,
+    },
+    {
+        id: 17,
+        name: "Mango Popping Boba",
+        stock: 89,
+        cost: 1,
+        ingredient_type: 20,
+    },
+    {
+        id: 19,
+        name: "Peach Popping Boba",
+        stock: 96,
+        cost: 1,
+        ingredient_type: 20,
+    },
 
     { id: 3, name: "Oolong Tea", stock: 13, cost: 0, ingredient_type: 30 },
     { id: 2, name: "Green Tea", stock: 0, cost: 0, ingredient_type: 30 },
@@ -154,7 +328,13 @@ const inventory: InventoryItem[] = [
     { id: 13, name: "Herb Jelly", stock: 100, cost: 0.75, ingredient_type: 40 },
     { id: 7, name: "Lychee Jelly", stock: 37, cost: 0.75, ingredient_type: 40 },
     { id: 14, name: "Alyu Jelly", stock: 96, cost: 0.75, ingredient_type: 40 },
-    { id: 15, name: "Coffee Jelly", stock: 93, cost: 0.75, ingredient_type: 40 },
+    {
+        id: 15,
+        name: "Coffee Jelly",
+        stock: 93,
+        cost: 0.75,
+        ingredient_type: 40,
+    },
     { id: 16, name: "Honey Jelly", stock: 96, cost: 0.75, ingredient_type: 40 },
 
     { id: 28, name: "Ice", stock: 813, cost: 0.0, ingredient_type: 1 },
@@ -162,7 +342,6 @@ const inventory: InventoryItem[] = [
     { id: 10, name: "Creama", stock: 84, cost: 1.25, ingredient_type: 100 },
     { id: 11, name: "Ice Cream", stock: 36, cost: 1.25, ingredient_type: 100 },
 ];
-
 
 // configurable tax rate for UI display (8.25% default)
 const TAX_RATE = parseFloat(process.env.NEXT_PUBLIC_TAX_RATE ?? "0.0825");
@@ -248,11 +427,11 @@ function ToppingCard({ item, onSelect, onUnselect }: InventoryItemCardProps) {
             }}
         >
             <p className="text-center select-none">{item.name}</p>
-                {item.cost > 0 ? (
-                    <p className="text-center select-none">(${item.cost})</p>
-                ) : (
-                    <></>
-                )}
+            {item.cost > 0 ? (
+                <p className="text-center select-none">(${item.cost})</p>
+            ) : (
+                <></>
+            )}
         </div>
     );
 }
@@ -261,33 +440,38 @@ interface ToppingSelectorProps {
     onToppingSelect: (toppings: InventoryItem[]) => void;
     ingredientType: number;
 }
-function ToppingSelector({ onToppingSelect, ingredientType }: ToppingSelectorProps) {
+function ToppingSelector({
+    onToppingSelect,
+    ingredientType,
+}: ToppingSelectorProps) {
     const [selected, setSelected] = useState<InventoryItem[]>([]);
     return (
         <div className="grid grid-cols-4 gap-2">
-            {inventory.filter((i) => {
-                if(i.ingredient_type === ingredientType){
-                    return true;
-                }
-                return false;
-            }).map((i) => (
-                <ToppingCard
-                    key={i.id}
-                    item={i}
-                    onSelect={() => {
-                        const newArr = [...selected, i];
-                        setSelected(newArr);
-                        onToppingSelect(newArr);
-                    }}
-                    onUnselect={() => {
-                        const newArr = selected.filter(
-                            (item) => item.id !== i.id,
-                        );
-                        setSelected(newArr);
-                        onToppingSelect(newArr);
-                    }}
-                />
-            ))}
+            {inventory
+                .filter((i) => {
+                    if (i.ingredient_type === ingredientType) {
+                        return true;
+                    }
+                    return false;
+                })
+                .map((i) => (
+                    <ToppingCard
+                        key={i.id}
+                        item={i}
+                        onSelect={() => {
+                            const newArr = [...selected, i];
+                            setSelected(newArr);
+                            onToppingSelect(newArr);
+                        }}
+                        onUnselect={() => {
+                            const newArr = selected.filter(
+                                (item) => item.id !== i.id,
+                            );
+                            setSelected(newArr);
+                            onToppingSelect(newArr);
+                        }}
+                    />
+                ))}
         </div>
     );
 }
@@ -378,23 +562,23 @@ function MenuItemCard({ item, onConfirm }: MenuItemCardProps) {
                     <div className="flex flex-col space-y-4">
                         <div>
                             <p className="text-2xl mb-3">Boba</p>
-                                <ToppingSelector
-                                    onToppingSelect={setSelectedToppings}
-                                    ingredientType={20}
+                            <ToppingSelector
+                                onToppingSelect={setSelectedToppings}
+                                ingredientType={20}
                             />
                         </div>
                         <div>
                             <p className="text-2xl mb-3">Tea</p>
-                                <ToppingSelector
-                                    onToppingSelect={setSelectedToppings}
-                                    ingredientType={30}
+                            <ToppingSelector
+                                onToppingSelect={setSelectedToppings}
+                                ingredientType={30}
                             />
                         </div>
                         <div>
                             <p className="text-2xl mb-3">Jelly</p>
-                                <ToppingSelector
-                                    onToppingSelect={setSelectedToppings}
-                                    ingredientType={40}
+                            <ToppingSelector
+                                onToppingSelect={setSelectedToppings}
+                                ingredientType={40}
                             />
                         </div>
                         <div>
@@ -485,7 +669,13 @@ function CartItemCard({ item }: { item: CartItem }) {
     );
 }
 
-function Cart({ items, setItems }: { items: CartItem[], setItems: React.Dispatch<React.SetStateAction<CartItem[]>> }) {
+function Cart({
+    items,
+    setItems,
+}: {
+    items: CartItem[];
+    setItems: React.Dispatch<React.SetStateAction<CartItem[]>>;
+}) {
     const subtotal = calculateSubtotal(items);
     const tax = TAX_RATE * subtotal;
     const total = subtotal + tax;
@@ -502,7 +692,7 @@ function Cart({ items, setItems }: { items: CartItem[], setItems: React.Dispatch
                 paymentMethod: "CARD",
             }),
         });
-        setItems([])
+        setItems([]);
     }
 
     return (
@@ -527,9 +717,7 @@ function Cart({ items, setItems }: { items: CartItem[], setItems: React.Dispatch
                 <Dialog>
                     {/* Button that opens the dialog */}
                     <DialogTrigger asChild>
-                        <Button className="col-span-2">
-                            Checkout
-                        </Button>
+                        <Button className="col-span-2">Checkout</Button>
                     </DialogTrigger>
 
                     <DialogContent className="max-h-[90vh]">
@@ -600,7 +788,7 @@ export default function CashierPage() {
                 onItemOrder={(item) => setCartItems([...cartItems, item])}
             />
 
-            <Cart items={cartItems} setItems={setCartItems}/>
+            <Cart items={cartItems} setItems={setCartItems} />
         </div>
     );
 }

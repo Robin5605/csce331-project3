@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode, useState, JSX, useMemo } from "react";
+import { ReactNode, useState, JSX, useMemo, useEffect } from "react";
 import Image from "next/image";
 import IdleLogout from "@/components/idleLogout";
 
@@ -17,109 +17,24 @@ import {
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import CustomizationCard from "@/components/CustomizationCard";
+import { MenuItem, Category, Ingredient } from "@/lib/models";
 import { Button } from "@/components/ui/button";
 
 //[REMOVE WHEN API IS IMPLEMENTED] Temporary data for now
-interface MenuItem {
-    id: number;
-    name: string;
-    stock: number;
-    cost: number;
-}
+//interface MenuItem {
+//    id: number;
+//    name: string;
+//    stock: number;
+//    cost: number;
+//}
 
 interface MenuData {
     [categoryName: string]: MenuItem[];
 }
 
-const menuData: MenuData = {
-    "Fruit Tea": [
-        { id: 1, name: "Mango Green Tea", stock: 80, cost: 6.5 },
-        { id: 2, name: "Peach Tea With Honey Jelly", stock: 75, cost: 6.25 },
-        { id: 3, name: "Passion Chess", stock: 75, cost: 6.25 },
-        { id: 5, name: "Mango & Passion Fruit", stock: 75, cost: 6.25 },
-        { id: 6, name: "Honey Lemonade", stock: 75, cost: 5.2 },
-        { id: 4, name: "Berry Lychee Burst", stock: 74, cost: 6.25 },
-    ],
-    "Ice Blended": [
-        { id: 7, name: "Oreo w/ Pearl", stock: 75, cost: 6.75 },
-        { id: 8, name: "Taro w/ Pudding", stock: 75, cost: 6.95 },
-        { id: 9, name: "Thai Tea w/ Pearl", stock: 75, cost: 6.95 },
-        { id: 10, name: "Coffee w/ Ice Cream", stock: 75, cost: 6.95 },
-        { id: 11, name: "Mango w/ Ice Cream", stock: 75, cost: 6.95 },
-        { id: 12, name: "Strawberry w/ Ice Cream", stock: 75, cost: 6.95 },
-    ],
-    Milky: [
-        { id: 13, name: "Clasic Pearl Milk Tea", stock: 75, cost: 5.8 },
-        { id: 14, name: "Honey Pearl Milk Tea", stock: 75, cost: 6.0 },
-        { id: 15, name: "Coffe Creama", stock: 75, cost: 6.5 },
-        { id: 16, name: "Hokaido Pearl Milk Tea", stock: 75, cost: 6.25 },
-        { id: 17, name: "Mango Green Milk Tea", stock: 75, cost: 6.5 },
-        { id: 18, name: "Golden Retriever", stock: 75, cost: 6.75 },
-    ],
-    "Non Caffenated": [
-        { id: 19, name: "Tiger Boba", stock: 75, cost: 6.5 },
-        { id: 20, name: "Strawberry Coconut", stock: 75, cost: 6.5 },
-        {
-            id: 21,
-            name: "Strawberry Coconut Ice Blended",
-            stock: 75,
-            cost: 6.5,
-        },
-        { id: 22, name: "Halo Halo", stock: 75, cost: 6.95 },
-        { id: 23, name: "Wintermellon Lemonade", stock: 75, cost: 5.8 },
-        { id: 24, name: "Wintermellon w/ Fresh Milk", stock: 75, cost: 5.2 },
-    ],
-    "Fall Seasonals": [
-        { id: 25, name: "Red Bean Matcha", stock: 75, cost: 6.95 },
-        { id: 26, name: "Pumpkin Chai", stock: 75, cost: 6.95 },
-        { id: 27, name: "Honey and Cinnamon Milk Tea", stock: 75, cost: 6.95 },
-        { id: 31, name: "temp", stock: 99, cost: 5.0 },
-        { id: 32, name: "temp2", stock: 99, cost: 1.0 },
-    ],
-    Uncategorized: [
-        { id: 33, name: "New Item", stock: 0, cost: 0 },
-        { id: 34, name: "New Item", stock: 0, cost: 0 },
-        { id: 35, name: "New Item", stock: 0, cost: 0 },
-    ],
-};
-
-interface InventoryItem {
-    id: number;
-    name: string;
-    stock: number;
-    cost: number;
-}
-
-const inventory: InventoryItem[] = [
-    { id: 9, name: "Red Bean", stock: 100, cost: 0.75 },
-    { id: 12, name: "Pudding", stock: 100, cost: 0.75 },
-    { id: 13, name: "Herb Jelly", stock: 100, cost: 0.75 },
-    { id: 14, name: "Alyu Jelly", stock: 100, cost: 0.75 },
-    { id: 15, name: "Coffee Jelly", stock: 100, cost: 0.75 },
-    { id: 16, name: "Honey Jelly", stock: 100, cost: 0.75 },
-    { id: 18, name: "Strawberry Popping Boba", stock: 100, cost: 1 },
-    { id: 19, name: "Peach Popping Boba", stock: 100, cost: 1 },
-    { id: 20, name: "Crystal Boba", stock: 100, cost: 1 },
-    { id: 21, name: "Napkins", stock: 2000, cost: 0 },
-    { id: 22, name: "Large Cups", stock: 1000, cost: 0 },
-    { id: 23, name: "Small Cups", stock: 1000, cost: 0 },
-    { id: 24, name: "Medium Cups", stock: 1000, cost: 0 },
-    { id: 25, name: "Straws", stock: 1000, cost: 0 },
-    { id: 26, name: "Seal", stock: 1000, cost: 0 },
-    { id: 27, name: "Bag", stock: 1000, cost: 0 },
-    { id: 7, name: "Lychee Jelly", stock: 40, cost: 0.75 },
-    { id: 1, name: "Black Tea", stock: 100, cost: 0 },
-    { id: 10, name: "Creama", stock: 94, cost: 1.25 },
-    { id: 17, name: "Mango Popping Boba", stock: 95, cost: 1 },
-    { id: 8, name: "Mini Pearl", stock: 0, cost: 0.75 },
-    { id: 2, name: "Green Tea", stock: 4, cost: 0 },
-    { id: 6, name: "Aloe Vera", stock: 94, cost: 0.75 },
-    { id: 28, name: "Ice", stock: 988, cost: 0.0 },
-    { id: 11, name: "Ice Cream", stock: 49, cost: 1.25 },
-    { id: 4, name: "Sugar", stock: 86, cost: 0 },
-    { id: 5, name: "Pearl", stock: 35, cost: 0.75 },
-    { id: 3, name: "Oolong Tea", stock: 20, cost: 0 },
-];
+const emptyMenuData: MenuData = {};
+const emptyInventory: Ingredient[] = [];
+const inventory: Ingredient[] = [];
 
 // configurable tax rate for UI display (8.25% default)
 const TAX_RATE = parseFloat(process.env.NEXT_PUBLIC_TAX_RATE ?? "0.0825");
@@ -196,6 +111,55 @@ export default function CashierPage() {
             total: Math.round(tot * 100) / 100,
         };
     }, [curOrders]);
+    const [menuData, setMenuData] = useState<MenuData>(emptyMenuData);
+    const [menuDataReady, setMenuDataReady] = useState<boolean>(false);
+    const [inventory, setInventory] = useState<Ingredient[]>(emptyInventory);
+
+    const loadMenuData = async () => {
+        setMenuDataReady(false);
+        setMenuData({});
+        let menuTempData: MenuData = {};
+        console.log("loading menu");
+        const catRes = await fetch("api/cashier/categories", {
+            method: "GET",
+            headers: { "Content-Type": "application/json" },
+        });
+        if(!catRes.ok){
+            throw new Error(`GET /api/cashier/categories ${catRes.status}`);
+        }
+        //console.log("hey");
+        const cats: Category[] = await catRes.json();
+        //console.log(`cats length: ${cats.length}`);
+        for (let cat_idx = 0; cat_idx < cats.length; cat_idx++) {
+            //console.log(`c idx:${cat_idx}`);
+            const cat = cats[cat_idx];
+            //console.log(cat);
+            const queryBody = {
+                id: cat.id,
+            };
+            const queryRes = await fetch("/api/cashier/menu_by_category", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(queryBody),
+            });
+            const items: MenuItem[] = await queryRes.json();
+            //console.log(cat.name);
+            menuTempData = {...menuTempData, [cat.name]: items};
+        }
+        setMenuData(menuTempData);
+        console.log("loading ingredients");
+        const ingrRes = await fetch("api/ingredient",{
+            method: "GET",
+            headers: { "Content-Type": "application/json" },
+        });
+        const ingr: Ingredient[] = await ingrRes.json();
+        setInventory(ingr);
+        setMenuDataReady(true);
+    };
+    
+    useEffect(() => {
+        loadMenuData();
+    }, []);
 
     //Handles whenever a MenuItem is clicked to bring up the customization menu
     const menuItemClicked = (item: MenuItem) => {
@@ -316,7 +280,7 @@ export default function CashierPage() {
                 employeeId: "1",
                 paymentMethod: "CARD",
             };
-            console.log(orderBody.cost);
+            //console.log(orderBody.cost);
             const orderRes = await fetch("api/cashier/order", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -663,22 +627,29 @@ export default function CashierPage() {
                     Categories
                 </h2>
                 <div className="flex flex-col items-center w-full gap-10">
-                    {Object.entries(menuData).map(([category]) => (
+                    {menuDataReady ? (Object.entries(menuData).map(([category]) => (
                         <Category key={category} name={category} />
-                    ))}
+                    ))) : (
+                        <Category name={"loading"}/>
+                    )}
                 </div>
             </aside>
 
             <main className="flex-1 flex items-start justify-center mt-10">
                 <div className="flex flex-wrap gap-16 justify-around">
-                    {menuData[selectedCategory].map((itemData) => {
+                    {menuDataReady ? (menuData[selectedCategory].map((itemData) => {
                         return (
                             <ItemCard
                                 itemName={itemData.name}
                                 whenClicked={() => menuItemClicked(itemData)}
                             />
                         );
-                    })}
+                    })) : (
+                        <ItemCard
+                            itemName={"loading"}
+                            //whenClicked={() => loadMenuData()}
+                        />
+                    )}
                 </div>
             </main>
 

@@ -3,6 +3,7 @@ import { Client } from "pg";
 import {
     MenuItem,
     Ingredient,
+    Category,
     Employee,
     SalesDatum,
     InventoryUsageDatum,
@@ -154,7 +155,7 @@ export async function populate_ingredient_management_table(): Promise<
     await ensureConnected();
     const { rows } = await client.query<Ingredient>(
         `
-    SELECT id, name, stock, cost::float8 AS cost
+    SELECT id, name, stock, cost::float8 AS cost, ingredient_type
     FROM ingredients
     ORDER BY id
     `,
@@ -384,6 +385,17 @@ export async function updateEmployee(
     return rows.length === 0 ? null : rows[0];
 }
 
+export async function fetch_categories(): Promise<Category[]>{
+    const { rows } = await client.query<Category>(`SELECT id, name, stock FROM categories ORDER BY id`);
+    return rows;
+}
+
+export async function fetch_menu_by_category(
+    categoryId: number,
+): Promise<MenuItem[]> {
+    const { rows } = await client.query<MenuItem>(`SELECT id, name, category_id, stock, cost::float8 AS cost FROM menu WHERE category_id = $1 ORDER BY id`, [categoryId],);
+    return rows;
+}
 //  X REPORTS AND Z REPORTS
 
 /**

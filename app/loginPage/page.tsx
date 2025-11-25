@@ -56,6 +56,7 @@ export default function LoginPage() {
             role: data.is_manager ? "manager" : "cashier",
             redirect: false,
         });
+        console.log(result);
 
         if (result?.error) {
             alert(`Sign in error: ${result.error}`);

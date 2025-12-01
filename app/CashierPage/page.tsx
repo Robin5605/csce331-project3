@@ -553,7 +553,7 @@ export default function CashierPage() {
                 }}
             >
                 {/* The reason we override small is because that's the only way we can adjust the width of the AlertDialog */}
-                <AlertDialogContent className="w-[90vw] max-w-none sm:max-w-4xl p-8 ">
+                <AlertDialogContent className="w-[90vw] h-[90vh] max-w-none sm:max-w-4xl p-8 ">
                     <AlertDialogTitle className="font-semibold text-3xl">
                         Customize Order
                     </AlertDialogTitle>

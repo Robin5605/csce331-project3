@@ -3,13 +3,22 @@
 import MenuBoard from "@/components/MenuBoard";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
+import Image from "next/image";
 
 export default function Home() {
     const router = useRouter();
 
     return (
-        <div className="flex min-h-screen items-center justify-center bg-zinc-50 px-4 font-sans dark:bg-zinc-950">
-            <main className="flex w-full max-w-6xl flex-col gap-10 py-10 md:flex-row md:items-center md:justify-between">
+        <div className="min-h-screen bg-zinc-50 pb-10 font-sans dark:bg-zinc-950">
+            {/* NAVBAR */}
+            <nav className="flex w-full items-center justify-start border-b border-zinc-200 bg-white/80 px-6 py-3 shadow-sm backdrop-blur-sm dark:border-zinc-800 dark:bg-zinc-900/70">
+                <div className="flex items-center gap-3">
+                    <Image src="/sharetea.png" alt="ShareTea" width={120} height={30} /> 
+                </div>
+            </nav>
+
+            {/* PAGE CONTENT */}
+            <main className="mx-auto flex w-full max-w-6xl flex-col gap-10 px-4 py-10 md:flex-row md:items-center md:justify-between">
                 {/* Left: Branding + intro + menu preview */}
                 <section className="flex flex-1 flex-col gap-6">
                     <div>
@@ -19,10 +28,11 @@ export default function Home() {
                         <p className="mt-2 max-w-xl text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
                             A unified interface for staff and customers. Cashiers and managers can
                             log in to manage orders and inventory, while customers can browse the
-                            digital menu and place their orders with ease.
+                            digital menu and place orders easily.
                         </p>
                     </div>
 
+                    {/* Menu preview card */}
                     <div className="mt-2 rounded-2xl border border-zinc-200 bg-white/90 p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900/90">
                         <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
                             Menu Preview
@@ -38,7 +48,7 @@ export default function Home() {
                             Continue
                         </h2>
                         <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-                            Choose the option that best matches how you&apos;re using the system.
+                            Select how you want to use the system.
                         </p>
 
                         <div className="mt-6 flex flex-col gap-3">
@@ -49,7 +59,7 @@ export default function Home() {
                             >
                                 Login for Cashier or Manager
                                 <p className="mt-1 text-[11px] font-normal text-zinc-300 dark:text-zinc-300/90">
-                                    Staff PIN login to access POS features and manager dashboard.
+                                    Enter staff PIN to access POS or dashboard.
                                 </p>
                             </button>
 
@@ -59,8 +69,8 @@ export default function Home() {
                                 className="w-full rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-medium text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-emerald-600 hover:shadow-md active:translate-y-0"
                             >
                                 Customer (Guest)
-                                <p className="mt-1 text-[11px] font-normal text-emerald-100/95">
-                                    Browse the digital menu and place an order without signing in.
+                                <p className="mt-1 text-[11px] font-normal text-emerald-100/90">
+                                    Browse the menu and order.
                                 </p>
                             </button>
 
@@ -75,14 +85,10 @@ export default function Home() {
                             >
                                 Sign in with Google
                                 <p className="mt-1 text-[11px] font-normal text-zinc-500 dark:text-zinc-400">
-                                    Use your Google account to save preferences and order history.
+                                    Save your preferences and history.
                                 </p>
                             </button>
                         </div>
-
-                        <p className="mt-4 text-[11px] text-zinc-400 dark:text-zinc-500">
-                            Designed for both front-counter terminals and self-service kiosks.
-                        </p>
                     </div>
                 </section>
             </main>

@@ -3,7 +3,7 @@
 import { ReactNode, useState, JSX, useMemo } from "react";
 import Image from "next/image";
 import IdleLogout from "@/components/idleLogout";
-
+import TopNav from "@/components/TopNav";
 import ItemCard from "../../components/ItemCard";
 import {
     AlertDialog,
@@ -668,7 +668,6 @@ function CartItemCard({ item }: { item: CartItem }) {
         </div>
     );
 }
-
 function Cart({
     items,
     setItems,
@@ -696,28 +695,39 @@ function Cart({
     }
 
     return (
-        <div className="grid grid-rows-[1fr_8fr_1fr] min-h-0 gap-4">
-            <p className="text-xl mb-4 text-center">Cart</p>
-            <ScrollArea className="h-120">
-                <div className="space-y-4">
+        <div className="flex flex-col h-full gap-3">
+            {/* Cart title */}
+            <p className="text-xl text-center">Cart</p>
+
+            {/* Scrollable list of items */}
+            <ScrollArea className="flex-1 min-h-0">
+                <div className="space-y-3">
                     {items.map((i, idx) => (
                         <CartItemCard key={idx} item={i} />
                     ))}
                 </div>
             </ScrollArea>
-            <div className="grid grid-rows-4 grid-cols-2 p-4 border rounded">
-                <p>Subtotal</p>
-                <p className="text-right">${subtotal.toFixed(2)}</p>
 
-                <p>Tax</p>
-                <p className="text-right">${tax.toFixed(2)}</p>
+            {/* Totals + Checkout (always visible at bottom) */}
+            <div className="border rounded p-3 space-y-2">
+                <div className="flex justify-between text-sm">
+                    <span>Subtotal</span>
+                    <span>${subtotal.toFixed(2)}</span>
+                </div>
 
-                <p>Total</p>
-                <p className="text-right">${total.toFixed(2)}</p>
+                <div className="flex justify-between text-sm">
+                    <span>Tax</span>
+                    <span>${tax.toFixed(2)}</span>
+                </div>
+
+                <div className="flex justify-between font-semibold">
+                    <span>Total</span>
+                    <span>${total.toFixed(2)}</span>
+                </div>
+
                 <Dialog>
-                    {/* Button that opens the dialog */}
                     <DialogTrigger asChild>
-                        <Button className="col-span-2">Checkout</Button>
+                        <Button className="w-full mt-1">Checkout</Button>
                     </DialogTrigger>
 
                     <DialogContent className="max-h-[90vh]">
@@ -773,22 +783,27 @@ export default function CashierPage() {
             ],
         },
     ];
-
     return (
-        <div className="grid grid-cols-[1fr_7fr_2fr] gap-8 p-8 h-screen">
-            <CategorySelector
-                categories={Object.keys(menuData)}
-                selectedCategory={selectedCategory}
-                onSelectedCategoryChange={setSelectedCategory}
-            />
+        <div className="min-h-screen bg-[#ffddd233] font-sans dark:bg-black flex flex-col">
+            {/* Top navigation bar */}
+            <TopNav subtitle="Self-Service Kiosk" />
 
-            <MenuItems
-                menuData={menuData}
-                selectedCategory={selectedCategory}
-                onItemOrder={(item) => setCartItems([...cartItems, item])}
-            />
+            {/* Main 3-column layout under the nav */}
+            <div className="grid grid-cols-[1fr_7fr_2fr] gap-8 p-8 flex-1">
+                <CategorySelector
+                    categories={Object.keys(menuData)}
+                    selectedCategory={selectedCategory}
+                    onSelectedCategoryChange={setSelectedCategory}
+                />
 
-            <Cart items={cartItems} setItems={setCartItems} />
+                <MenuItems
+                    menuData={menuData}
+                    selectedCategory={selectedCategory}
+                    onItemOrder={(item) => setCartItems([...cartItems, item])}
+                />
+
+                <Cart items={cartItems} setItems={setCartItems} />
+            </div>
         </div>
-    );
+);
 }

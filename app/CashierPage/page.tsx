@@ -3,6 +3,7 @@
 import { ReactNode, useState, JSX, useMemo, useEffect } from "react";
 import Image from "next/image";
 import IdleLogout from "@/components/idleLogout";
+import TopNav from "@/components/TopNav";
 
 import ItemCard from "../../components/ItemCard";
 import {
@@ -540,129 +541,143 @@ export default function CashierPage() {
     };
 
     return (
-        <div className="flex min-h-screen bg-[#ffddd233] font-sans dark:bg-black gap-6 justify-between">
-            <AlertDialog
-                open={isCustomizationOpen}
-                onOpenChange={(open) => {
-                    setIsCustomizationOpen(open);
-                    if (!open) {
-                        // Reset editing state when dialog closes (cancel, ESC, etc.)
-                        setEditingIndex(null);
-                    }
-                }}
-            >
-                {/* The reason we override small is because that's the only way we can adjust the width of the AlertDialog */}
-                <AlertDialogContent className="w-[90vw] max-w-none sm:max-w-4xl p-8 ">
-                    <AlertDialogTitle className="font-semibold text-3xl">
-                        Customize Order
-                    </AlertDialogTitle>
+    <div className="min-h-screen bg-[#ffddd233] font-sans dark:bg-black flex flex-col">
+        {/* Top navigation bar */}
+        <TopNav subtitle="Cashier POS" variant="cashier" />
 
-                    <div className="max-h-[800px] overflow-y-auto pr-2">
-                        <CustomizationCategory name="Size">
-                            <CustomizationData
-                                isOneItem={false}
-                                toFilterBy="cups"
-                                category="Size"
-                                allowsMultipleSelections={false}
-                            />
-                        </CustomizationCategory>
+        {/* Customization dialog (overlay) */}
+        <AlertDialog
+            open={isCustomizationOpen}
+            onOpenChange={(open) => {
+                setIsCustomizationOpen(open);
+                if (!open) {
+                    // Reset editing state when dialog closes (cancel, ESC, etc.)
+                    setEditingIndex(null);
+                }
+            }}
+        >
+            {/* The reason we override small is because that's the only way we can adjust the width of the AlertDialog */}
+            <AlertDialogContent className="w-[90vw] h-[90vh] max-w-none sm:max-w-4xl p-8 ">
+                <AlertDialogTitle className="font-semibold text-3xl">
+                    Customize Order
+                </AlertDialogTitle>
 
-                        <CustomizationCategory name="Ice">
-                            <CustomizationData
-                                isOneItem={true}
-                                toFilterBy="ice"
-                                category="Ice"
-                                allowsMultipleSelections={false}
-                            />
-                        </CustomizationCategory>
+                <div className="max-h-[800px] overflow-y-auto pr-2">
+                    <CustomizationCategory name="Size">
+                        <CustomizationData
+                            isOneItem={false}
+                            toFilterBy="cups"
+                            category="Size"
+                            allowsMultipleSelections={false}
+                        />
+                    </CustomizationCategory>
 
-                        <CustomizationCategory name="Tea">
-                            <CustomizationData
-                                isOneItem={false}
-                                toFilterBy="tea"
-                                category="Tea"
-                                allowsMultipleSelections={false}
-                            />
-                        </CustomizationCategory>
+                    <CustomizationCategory name="Ice">
+                        <CustomizationData
+                            isOneItem={true}
+                            toFilterBy="ice"
+                            category="Ice"
+                            allowsMultipleSelections={false}
+                        />
+                    </CustomizationCategory>
 
-                        <CustomizationCategory name="Boba">
-                            <CustomizationData
-                                isOneItem={false}
-                                toFilterBy="boba"
-                                category="Boba"
-                                allowsMultipleSelections={false}
-                            />
-                        </CustomizationCategory>
+                    <CustomizationCategory name="Tea">
+                        <CustomizationData
+                            isOneItem={false}
+                            toFilterBy="tea"
+                            category="Tea"
+                            allowsMultipleSelections={false}
+                        />
+                    </CustomizationCategory>
 
-                        <CustomizationCategory name="Jelly">
-                            <CustomizationData
-                                isOneItem={false}
-                                toFilterBy="jelly"
-                                category="Jelly"
-                                allowsMultipleSelections={false}
-                            />
-                        </CustomizationCategory>
+                    <CustomizationCategory name="Boba">
+                        <CustomizationData
+                            isOneItem={false}
+                            toFilterBy="boba"
+                            category="Boba"
+                            allowsMultipleSelections={false}
+                        />
+                    </CustomizationCategory>
 
-                        <CustomizationCategory name="Toppings">
-                            <CustomizationData
-                                isOneItem={false}
-                                toFilterBy="topping"
-                                category="Toppings"
-                                allowsMultipleSelections={true}
-                            />
-                        </CustomizationCategory>
-                    </div>
+                    <CustomizationCategory name="Jelly">
+                        <CustomizationData
+                            isOneItem={false}
+                            toFilterBy="jelly"
+                            category="Jelly"
+                            allowsMultipleSelections={false}
+                        />
+                    </CustomizationCategory>
 
-                    <AlertDialogFooter>
-                        <AlertDialogCancel
-                            onClick={() => setIsCustomizationOpen(false)}
-                        >
-                            Cancel
-                        </AlertDialogCancel>
-                        <AlertDialogAction onClick={() => submitOrder()}>
-                            Continue
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
-            <aside className="w-[300px] h-screen bg-gradient-to-b from-[#9d8189] to-[#ffe5d9] flex-col justify-center">
+                    <CustomizationCategory name="Toppings">
+                        <CustomizationData
+                            isOneItem={false}
+                            toFilterBy="topping"
+                            category="Toppings"
+                            allowsMultipleSelections={true}
+                        />
+                    </CustomizationCategory>
+                </div>
+
+                <AlertDialogFooter>
+                    <AlertDialogCancel
+                        onClick={() => setIsCustomizationOpen(false)}
+                    >
+                        Cancel
+                    </AlertDialogCancel>
+                    <AlertDialogAction onClick={submitOrder}>
+                        Continue
+                    </AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Main content row under the top nav */}
+        <div className="flex flex-1 gap-6 justify-between px-6 py-4">
+            {/* Left: Categories */}
+            <aside className="w-[300px] h-full bg-gradient-to-b from-[#9d8189] to-[#ffe5d9] flex flex-col justify-center rounded-xl">
                 <h2 className="font-semibold text-3xl mt-3 mb-10 text-center">
                     Categories
                 </h2>
-                <div className="flex flex-col items-center w-full gap-10">
+                <div className="flex flex-col items-center w-full gap-10 pb-6">
                     {menuDataReady ? (
                         Object.entries(menuData).map(([category]) => (
                             <Category key={category} name={category} />
                         ))
                     ) : (
-                        <Category name={"loading"} />
+                        <Category name="loading" />
                     )}
                 </div>
             </aside>
 
-            <main className="flex-1 flex items-start justify-center mt-10">
+            {/* Middle: Menu items */}
+            <main className="flex-1 flex items-start justify-center mt-6">
                 <div className="flex flex-wrap gap-16 justify-around">
-                    {menuDataReady ? (
-                        menuData[selectedCategory].map((itemData) => {
-                            return (
+                    {menuDataReady && menuData[selectedCategory] ? (
+                        menuData[selectedCategory].map(
+                            (itemData, itemDataIndex) => (
                                 <ItemCard
+                                    key={itemDataIndex}
                                     itemName={itemData.name}
                                     whenClicked={() =>
                                         menuItemClicked(itemData)
                                     }
                                 />
-                            );
-                        })
+                            ),
+                        )
                     ) : (
                         <ItemCard
-                            itemName={"loading"}
-                            //whenClicked={() => loadMenuData()}
+                            itemName="loading"
+                            key={0}
+                            whenClicked={() => {
+                                console.log("don't touch me!");
+                            }}
                         />
                     )}
                 </div>
             </main>
 
-            <aside className="w-[300px] h-screen bg-gradient-to-b from-[#9d8189] to-[#ffe5d9] flex flex-col justify-between p-4">
+            {/* Right: Checkout */}
+            <aside className="w-[300px] h-full bg-gradient-to-b from-[#9d8189] to-[#ffe5d9] flex flex-col justify-between p-4 rounded-xl">
                 <div>
                     <h2 className="font-semibold text-3xl text-center mt-3 mb-4">
                         Checkout
@@ -693,8 +708,6 @@ export default function CashierPage() {
                                             key.toLowerCase() === "drink" ||
                                             key === "quantity"
                                         ) {
-                                            // we'll show the drink name in the header; price is added in getOrderPrice
-                                            // quantity is shown in the quantity controls, not as a customization item
                                             return;
                                         } else if (
                                             key === "Ice" ||
@@ -718,7 +731,9 @@ export default function CashierPage() {
                                                     >
                                                         {o}{" "}
                                                         {p !== 0
-                                                            ? `($${p.toFixed(2)})`
+                                                            ? `($${p.toFixed(
+                                                                  2,
+                                                              )})`
                                                             : ""}
                                                     </div>,
                                                 );
@@ -856,5 +871,6 @@ export default function CashierPage() {
                 </div>
             </aside>
         </div>
-    );
+    </div>
+);
 }

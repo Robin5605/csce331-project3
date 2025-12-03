@@ -4,6 +4,7 @@ import React, { memo } from "react";
 
 interface ItemCardProps {
     itemName: string;
+    key: number;
     whenClicked?: () => void; // optional callback prop
 }
 

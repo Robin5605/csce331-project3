@@ -579,7 +579,7 @@ function MenuItemCard({ item, onConfirm }: MenuItemCardProps) {
                                 className={`cursor-pointer duration-300 border rounded-full p-4 text-xl 
                                     ${
                                         isHighContrast ?
-                                            size === "small" ? "bg-black text-blue-300" : ""
+                                            size === "small" ? "bg-black text-blue-500" : ""
                                         :
                                             size === "small" ? "bg-black text-white" : ""
                                     }`
@@ -592,7 +592,7 @@ function MenuItemCard({ item, onConfirm }: MenuItemCardProps) {
                                 className={`cursor-pointer duration-300 border rounded-full p-4 text-xl 
                                      ${
                                         isHighContrast ?
-                                            size === "medium" ? "bg-black text-blue-300" : ""
+                                            size === "medium" ? "bg-black text-blue-500" : ""
                                         :
                                             size === "medium" ? "bg-black text-white" : ""
                                     }`}
@@ -603,7 +603,7 @@ function MenuItemCard({ item, onConfirm }: MenuItemCardProps) {
                             <div
                                 className={`cursor-pointer duration-300 border rounded-full p-4 text-xl  ${
                                         isHighContrast ?
-                                            size === "large" ? "bg-black text-blue-300" : ""
+                                            size === "large" ? "bg-black text-blue-500" : ""
                                         :
                                             size === "large" ? "bg-black text-white" : ""
                                     }`}
@@ -789,14 +789,14 @@ function Cart({
     return (
         <div className={`grid grid-rows-[1fr_8fr_1fr] min-h-0 max-h-full gap-4 ${isHighContrast ? "bg-black text-white border-8 border-yellow-200" : ""}`}>
             <p className="text-xl mb-4 text-center">Cart</p>
-            <ScrollArea className="h-120">
+            <ScrollArea className="h-90">
                 <div className="space-y-4">
                     {items.map((i, idx) => (
                         <CartItemCard key={idx} item={i} />
                     ))}
                 </div>
             </ScrollArea>
-            <div className={`grid grid-rows-4 grid-cols-2 p-4 border rounded 
+            <div className={`grid grid-rows-4 grid-cols-2 p-4 border rounded  max-h-40
                 ${
                 isHighContrast ? "bg-black text-white border-4  border-blue-500" : "bg-white text-black border"
                 }`}>
@@ -870,11 +870,11 @@ export default function CashierPage() {
         },
     ];
 
-    return (
+return (
         <div
-        className={`grid w-full grid-cols-[1fr_7fr_2fr] gap-8 p-8 h-dvh  ${
-            isHighContrast ? "bg-black" : ""
-        }`}
+            className={`grid w-full grid-cols-[1fr_7fr_2fr] gap-8 p-8 h-dvh overflow-y-auto ${
+                isHighContrast ? "bg-black" : ""
+            }`}
         >
             <CategorySelector
                 categories={Object.keys(menuData)}

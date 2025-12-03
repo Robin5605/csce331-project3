@@ -685,11 +685,14 @@ export async function createOrder({
         let total = 0;
         console.log(drinks);
         for (const drink of drinks) {
-            const drinkCost = (
-                await client.query(`SELECT cost FROM menu WHERE id = $1`, [
-                    drink.id,
-                ])
-            ).rows[0].cost as number;
+            const drinkCost = Number(
+                (
+                    await client.query(
+                        `SELECT cost FROM menu WHERE id = $1`,
+                        [drink.id],
+                    )
+                ).rows[0].cost
+            );
 
             const customizationsCost = await client
                 .query(`SELECT SUM(cost) FROM ingredients WHERE id = ANY($1)`, [

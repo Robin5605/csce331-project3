@@ -685,23 +685,22 @@ export async function createOrder({
         let total = 0;
         console.log(drinks);
         for (const drink of drinks) {
-            const res = await client.query(
-                `SELECT SUM(cost) FROM ingredients WHERE id = ANY($1)`,
-                [drink.customizations],
-            );
+            const drinkCost = (
+                await client.query(`SELECT cost FROM menu WHERE id = $1`, [
+                    drink.id,
+                ])
+            ).rows[0].cost as number;
 
-            const customizationsCost = Number(res.rows[0].sum);
-            total += customizationsCost;
+            const customizationsCost = await client
+                .query(`SELECT SUM(cost) FROM ingredients WHERE id = ANY($1)`, [
+                    drink.customizations,
+                ])
+                .then((res) => res.rows[0].sum)
+                .then(Number);
+
+            total += drinkCost + customizationsCost;
         }
 
-        const menuIDs = drinks.map((drink) => drink.id); // Menu IDs of all the ordered drins
-        const res = await client.query(
-            `SELECT SUM(cost) FROM menu WHERE id = ANY($1)`,
-            [menuIDs],
-        );
-
-        const baseDrinksCost = Number(res.rows[0].sum);
-        total += baseDrinksCost;
         total += total * TAX_RATE;
 
         const orderId = (

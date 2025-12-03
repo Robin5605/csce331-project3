@@ -6,6 +6,7 @@ import MenuBoard from "@/components/MenuBoard";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 
+
 export default function Home() {
     const router = useRouter();
     return (

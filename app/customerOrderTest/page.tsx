@@ -32,6 +32,8 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
+import { useAccessibility } from "@/contexts/AccessibilityContext";
+
 type DrinkSize = "small" | "medium" | "large";
 
 interface CartItem {
@@ -395,8 +397,22 @@ function CategorySelector({
     selectedCategory,
     onSelectedCategoryChange,
 }: CategorySelectorProps) {
+    const { isHighContrast, setIsHighContrast } = useAccessibility();
+
     return (
         <div className="w-fit space-y-4">
+            <Button
+                variant="default"
+                className="w-full"
+                onClick={() => {
+                        let t = isHighContrast
+                        console.log(t)
+                        setIsHighContrast(!t)
+                    }
+                }
+            >
+                Toggle High Contrast
+            </Button>
             <p className="text-xl">Categories</p>
             {categories.map((c, i) => (
                 <CategoryCard

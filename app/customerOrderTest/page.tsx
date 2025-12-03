@@ -31,6 +31,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useTextToSpeech } from "@/hooks/useTextToSpeech";
 
 interface CartItem {
     id: number;
@@ -522,11 +523,14 @@ interface MenuItemCardProps {
     item: MenuItem;
     onConfirm: (item: CartItem) => void;
     addToOrderLabel: string;
+    speak: (text: string) => void;
 }
+
 function MenuItemCard({
     item,
     onConfirm,
     addToOrderLabel,
+    speak
 }: MenuItemCardProps) {
     const [ice, setIce] = useState(0);
     const [size, setSize] = useState<DrinkSize>("medium");
@@ -536,7 +540,19 @@ function MenuItemCard({
     return (
         <Dialog>
             <DialogTrigger asChild>
-                <div className="flex flex-col gap-2 items-center bg-gray-100 p-2 rounded border">
+                <div className="relative flex flex-col gap-2 items-center bg-gray-100 p-2 rounded border">
+                    <button
+                        type="button"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            speak(`${item.name}. $${item.cost.toFixed(2)}`);
+                        }}
+                        className="absolute top-1 right-1 w-8 h-8 flex items-center justify-center
+                                bg-white/90 rounded-full text-sm shadow z-10"
+                    >
+                        🔊
+                    </button>
+
                     {item.image_url !== "" ? (
                         <img
                             src={item.image_url}
@@ -546,9 +562,11 @@ function MenuItemCard({
                     ) : (
                         <CupSoda width={120} height={120} />
                     )}
-                    {item.name}
+                    <span className="font-semibold text-center">{item.name}</span>
+                    <span className="text-sm font-medium">${item.cost.toFixed(2)}</span>
                 </div>
             </DialogTrigger>
+
             <DialogContent className="max-h-9/10 overflow-y-scroll">
                 <DialogHeader>
                     <DialogTitle>Customize {item.name}</DialogTitle>
@@ -674,6 +692,7 @@ interface MenuItemsInterface {
     onItemOrder: (item: CartItem) => void;
     title: string;
     addToOrderLabel: string;
+    speak: (text: string) => void;
 }
 
 function MenuItems({
@@ -682,6 +701,7 @@ function MenuItems({
     onItemOrder,
     title,
     addToOrderLabel,
+    speak,
 }: MenuItemsInterface) {
     return (
         <div className="space-y-4">
@@ -696,6 +716,7 @@ function MenuItems({
                                 item={item}
                                 onConfirm={onItemOrder}
                                 addToOrderLabel={addToOrderLabel}
+                                speak={speak}
                             />
                         )),
                     )}
@@ -818,6 +839,15 @@ export default function CashierPage() {
     const [selectedLanguage, setSelectedLanguage] = useState("en");
     const [labels, setLabels] = useState<Labels>(EN_LABELS);
     const [isTranslating, setIsTranslating] = useState(false);
+    
+
+    const LANGUAGE_TO_TTS_LANG: Record<string, string> = {
+        en: "en-US",
+        es: "es-ES",
+        ar: "ar-SA",
+    };
+
+    const { speak, setLang } = useTextToSpeech(LANGUAGE_TO_TTS_LANG["en"]);
 
     const [translatedMenuData, setTranslatedMenuData] =
     useState<MenuData>(menuData);
@@ -1060,6 +1090,7 @@ export default function CashierPage() {
                         onItemOrder={(item) => setCartItems([...cartItems, item])}
                         title={labels.drinks}
                         addToOrderLabel={labels.addToOrder}
+                        speak={speak}
                     />
 
 

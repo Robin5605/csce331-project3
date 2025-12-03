@@ -551,7 +551,10 @@ function MenuItemCard({ item, onConfirm, addToOrderLabel, speak }: MenuItemCardP
             // Reset to defaults when opening
             setIce(4); // 100%
             setSize("medium");
-            setSelectedToppings([]);
+            setSelectedBoba([]);
+            setSelectedTea([]);
+            setSelectedJelly([]);
+            setSelectedOther([]);
         }
     };
 

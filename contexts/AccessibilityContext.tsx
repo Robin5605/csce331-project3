@@ -7,6 +7,8 @@ type AccessibilityContextValue = {
   setIsHighContrast: React.Dispatch<React.SetStateAction<boolean>>;
   textMultipler: number;
   setTextMultipler: React.Dispatch<React.SetStateAction<number>>;
+  isZoom: boolean;
+  setIsZoom: React.Dispatch<React.SetStateAction<boolean>>
 };
 
 const AccessibilityContext = createContext<AccessibilityContextValue | undefined>(
@@ -15,6 +17,7 @@ const AccessibilityContext = createContext<AccessibilityContextValue | undefined
 
 export function AccessibilityProvider({ children }: { children: React.ReactNode }) {
   const [isHighContrast, setIsHighContrast] = useState<boolean>(false);
+  const [isZoom, setIsZoom] = useState<boolean>(false);
   const [textMultipler, setTextMultipler] = useState<number>(1);
 
   const value = useMemo(
@@ -23,8 +26,10 @@ export function AccessibilityProvider({ children }: { children: React.ReactNode 
       setIsHighContrast,
       textMultipler,
       setTextMultipler,
+      isZoom,
+      setIsZoom
     }),
-    [isHighContrast, textMultipler]
+    [isHighContrast, textMultipler, isZoom]
   );
 
   return (

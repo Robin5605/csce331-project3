@@ -408,8 +408,7 @@ function CategorySelector({
     selectedCategory,
     onSelectedCategoryChange,
 }: CategorySelectorProps) {
-    const { isHighContrast, setIsHighContrast } = useAccessibility();
-
+    const { isHighContrast, setIsHighContrast, isZoom, setIsZoom, textMultipler, setTextMultipler } = useAccessibility();
     return (
         <div className="w-fit space-y-4">
             <Button
@@ -417,12 +416,37 @@ function CategorySelector({
                 className="w-full"
                 onClick={() => {
                         let t = isHighContrast
-                        console.log(t)
                         setIsHighContrast(!t)
                     }
                 }
             >
                 Toggle High Contrast
+            </Button>
+            <Button
+                variant="default"
+                className="w-full"
+                onClick={() => {
+                        let t = isZoom
+                        let z;
+
+                        //Switch text to not be zoomed
+                        if(isZoom){
+                            z = 1
+                        } 
+
+                        //Switch text to be zoomed
+                        else {
+                            z = 1.75
+                        }
+                        setIsZoom(!t)
+                        setTextMultipler(z) 
+
+                        //We use z bcuz state might not update before this is ran
+                        document.documentElement.style.fontSize = `${16 * z}px`; 
+                    }
+                }
+            >
+                Toggle Zoom
             </Button>
             <p className={`text-xl ${isHighContrast ? "text-white" : "text-black"}`}>Categories</p>
             {categories.map((c, i) => (
@@ -763,7 +787,7 @@ function Cart({
     }
 
     return (
-        <div className={`grid grid-rows-[1fr_8fr_1fr] min-h-0 gap-4 ${isHighContrast ? "bg-black text-white border-8 border-yellow-200" : ""}`}>
+        <div className={`grid grid-rows-[1fr_8fr_1fr] min-h-0 max-h-full gap-4 ${isHighContrast ? "bg-black text-white border-8 border-yellow-200" : ""}`}>
             <p className="text-xl mb-4 text-center">Cart</p>
             <ScrollArea className="h-120">
                 <div className="space-y-4">
@@ -847,7 +871,11 @@ export default function CashierPage() {
     ];
 
     return (
-        <div className={`grid grid-cols-[1fr_7fr_2fr] gap-8 p-8 h-screen ${isHighContrast ? "bg-black" : ""}`}>
+        <div
+        className={`grid w-full grid-cols-[1fr_7fr_2fr] gap-8 p-8 h-dvh  ${
+            isHighContrast ? "bg-black" : ""
+        }`}
+        >
             <CategorySelector
                 categories={Object.keys(menuData)}
                 selectedCategory={selectedCategory}

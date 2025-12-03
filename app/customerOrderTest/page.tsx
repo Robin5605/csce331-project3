@@ -376,15 +376,26 @@ interface CategoryCardProps {
 }
 
 function CategoryCard({ category, isSelected, onClick }: CategoryCardProps) {
-    return (
-        <div
-            className={`border p-4 rounded hover:border-black cursor-pointer transition duration-300 ${isSelected ? "bg-black text-white" : ""}`}
-            onClick={onClick}
-        >
-            <p>{category}</p>
-        </div>
-    );
+  const { isHighContrast } = useAccessibility();
+
+  const base = "border p-4 rounded cursor-pointer";
+
+  const normal =
+    `hover:border-black transition duration-300 ${isSelected ? "bg-black text-white" : ""}`;
+
+  const highContrast =
+    `bg-black ${isSelected ? "text-blue-400" : "text-white"} border-2 border-white`;
+
+  return (
+    <div
+      className={`${base} ${isHighContrast ? highContrast : normal}`}
+      onClick={onClick}
+    >
+      <p>{category}</p>
+    </div>
+  );
 }
+
 
 interface CategorySelectorProps {
     categories: string[];
@@ -413,7 +424,7 @@ function CategorySelector({
             >
                 Toggle High Contrast
             </Button>
-            <p className="text-xl">Categories</p>
+            <p className={`text-xl ${isHighContrast ? "text-white" : "text-black"}`}>Categories</p>
             {categories.map((c, i) => (
                 <CategoryCard
                     key={i}
@@ -588,7 +599,7 @@ function MenuItemCard({ item, onConfirm }: MenuItemCardProps) {
                                 className="rounded-full"
                                 onClick={() => setIce(ice > 0 ? ice - 1 : 0)}
                             >
-                                <Minus />
+                                <Minus color={`${isHighContrast ? "blue" : "black"}`}/>
                             </Button>
                             <Input
                                 type="number"
@@ -602,7 +613,7 @@ function MenuItemCard({ item, onConfirm }: MenuItemCardProps) {
                                 className="rounded-full"
                                 onClick={() => setIce(ice < 5 ? ice + 1 : 5)}
                             >
-                                <Plus />
+                                <Plus color={`${isHighContrast ? "blue" : "black"}`} />
                             </Button>
                         </div>
                     </div>
@@ -701,8 +712,14 @@ function MenuItems({
 }
 
 function CartItemCard({ item }: { item: CartItem }) {
+    const { isHighContrast } = useAccessibility();
+
     return (
-        <div className="border rounded p-4">
+        <div
+            className={`rounded p-4 border ${
+            isHighContrast ? "bg-black text-white border-4  border-blue-500" : "bg-white text-black border"
+            }`}
+        >
             <p className="text-xl font-bold">
                 {item.size.charAt(0).toUpperCase() + item.size.substring(1)}{" "}
                 {item.name}
@@ -724,6 +741,8 @@ function Cart({
     items: CartItem[];
     setItems: React.Dispatch<React.SetStateAction<CartItem[]>>;
 }) {
+    const { isHighContrast } = useAccessibility();
+
     const subtotal = calculateSubtotal(items);
     const tax = TAX_RATE * subtotal;
     const total = subtotal + tax;
@@ -744,7 +763,7 @@ function Cart({
     }
 
     return (
-        <div className="grid grid-rows-[1fr_8fr_1fr] min-h-0 gap-4">
+        <div className={`grid grid-rows-[1fr_8fr_1fr] min-h-0 gap-4 ${isHighContrast ? "bg-black text-white border-8 border-yellow-200" : ""}`}>
             <p className="text-xl mb-4 text-center">Cart</p>
             <ScrollArea className="h-120">
                 <div className="space-y-4">
@@ -753,7 +772,10 @@ function Cart({
                     ))}
                 </div>
             </ScrollArea>
-            <div className="grid grid-rows-4 grid-cols-2 p-4 border rounded">
+            <div className={`grid grid-rows-4 grid-cols-2 p-4 border rounded 
+                ${
+                isHighContrast ? "bg-black text-white border-4  border-blue-500" : "bg-white text-black border"
+                }`}>
                 <p>Subtotal</p>
                 <p className="text-right">${subtotal.toFixed(2)}</p>
 
@@ -765,12 +787,12 @@ function Cart({
                 <Dialog>
                     {/* Button that opens the dialog */}
                     <DialogTrigger asChild>
-                        <Button className="col-span-2">Checkout</Button>
+                        <Button className={`col-span-2 ${isHighContrast ? "border-4 border-green-400" : ""}`}>Checkout</Button>
                     </DialogTrigger>
 
-                    <DialogContent className="max-h-[90vh]">
+                    <DialogContent className={`max-h-[90vh] ${isHighContrast ? "text-white bg-black" : "text-black"}`}>
                         <DialogHeader>
-                            <DialogTitle className="text-center text-2xl">
+                            <DialogTitle className={`text-center text-2xl`}>
                                 Confirm Order?
                             </DialogTitle>
                         </DialogHeader>
@@ -779,7 +801,7 @@ function Cart({
                             <DialogClose asChild>
                                 <Button
                                     variant="default"
-                                    className="w-full"
+                                    className={`w-full  ${isHighContrast ? "border-4 border-green-400" : ""}`}
                                     onClick={handleCheckout}
                                 >
                                     Yes, Place Order
@@ -796,6 +818,8 @@ function Cart({
 export default function CashierPage() {
     const [selectedCategory, setSelectedCategory] = useState("Fruit Tea");
     const [cartItems, setCartItems] = useState<CartItem[]>([]);
+    const { isHighContrast } = useAccessibility();
+
     console.log(cartItems);
     //Sets default selection for customization options
     const defaultCustomizations = {
@@ -823,7 +847,7 @@ export default function CashierPage() {
     ];
 
     return (
-        <div className="grid grid-cols-[1fr_7fr_2fr] gap-8 p-8 h-screen">
+        <div className={`grid grid-cols-[1fr_7fr_2fr] gap-8 p-8 h-screen ${isHighContrast ? "bg-black" : ""}`}>
             <CategorySelector
                 categories={Object.keys(menuData)}
                 selectedCategory={selectedCategory}

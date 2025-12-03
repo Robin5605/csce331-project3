@@ -3,8 +3,14 @@ import { NextResponse } from "next/server";
 
 export default withAuth(
     function middleware(req) {
-        const { pathname } = req.nextUrl;
         const role = req.nextauth.token?.role;
+
+        const { pathname } = req.nextUrl;
+
+        // Allow NextAuth API routes (login, callback, session)
+        if (pathname.startsWith("/api/auth")) {
+            return NextResponse.next();
+}
 
         // If no session, redirect to login
         if (!req.nextauth.token) {
@@ -44,10 +50,8 @@ export default withAuth(
 
 export const config = {
     matcher: [
+        "/api/auth/:path*",
+        "/managerPage",
         "/CashierPage/:path*",
-        "/employees/:path*",
-        "/ingredientManagementPage/:path*",
-        "/menuManagementPage/:path*",
-        "/x_and_z_reports/:path*",
     ],
 };

@@ -396,7 +396,7 @@ export async function fetch_menu_by_category(
     categoryId: number,
 ): Promise<MenuItem[]> {
     const { rows } = await client.query<MenuItem>(
-        `SELECT id, name, category_id, stock, cost::float8 AS cost FROM menu WHERE category_id = $1 ORDER BY id`,
+        `SELECT id, name, category_id, stock, cost::float8 AS cost, image_url FROM menu WHERE category_id = $1 ORDER BY id`,
         [categoryId],
     );
     return rows;

@@ -1,21 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import TopNav from "@/components/TopNav";
 import { CupSoda } from "lucide-react";
+import { MenuItem, Category } from "@/lib/models";
 
-interface MenuItem {
-    id: number;
-    name: string;
-    stock: number;
-    cost: number;
-    image_url: string;
-}
+
 
 interface MenuData {
     [categoryName: string]: MenuItem[];
 }
 
+const emptyMenuData: MenuData = {};
+
+/*
 const menuData: MenuData = {
     "Fruit Tea": [
         {
@@ -228,7 +226,7 @@ const menuData: MenuData = {
         { id: 34, name: "New Item", stock: 0, cost: 0, image_url: "" },
         { id: 35, name: "New Item", stock: 0, cost: 0, image_url: "" },
     ],
-};
+};*/
 
 const CATEGORY_ORDER = [
     "Fruit Tea",
@@ -303,9 +301,50 @@ export default function MenuBoardPage() {
         CATEGORY_ORDER[0],
     );
 
-    const categories = CATEGORY_ORDER.filter((c) => menuData[c]);
+    const [menuData, setMenuData] = useState<MenuData>(emptyMenuData);
+    const [menuDataReady, setMenuDataReady] = useState<boolean>(false);
+
+    const loadMenuData = async () => {
+        setMenuDataReady(false);
+        setMenuData({});
+        let menuTempData: MenuData = {};
+        console.log("loading menu");
+        const catRes = await fetch("api/cashier/categories", {
+            method: "GET",
+            headers: { "Content-Type": "application/json" },
+        });
+        if (!catRes.ok) {
+            throw new Error(`GET /api/cashier/categories ${catRes.status}`);
+        }
+        const cats: Category[] = await catRes.json();
+        console.log(`cats length: ${cats.length}`);
+        for (let cat_idx = 0; cat_idx < cats.length; cat_idx++) {
+            //console.log(`c idx:${cat_idx}`);
+            const cat = cats[cat_idx];
+            //console.log(cat);
+            const queryBody = {
+                id: cat.id,
+            };
+            const queryRes = await fetch("/api/cashier/menu_by_category", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(queryBody),
+            });
+            const items: MenuItem[] = await queryRes.json();
+            //console.log(cat.name);
+            menuTempData = { ...menuTempData, [cat.name]: items };
+        }
+        setMenuData(menuTempData);
+        setMenuDataReady(true);
+        console.log("done");
+    };
+
+    useEffect(() => {
+        loadMenuData();
+    }, []);
 
     const drinksToShow = menuData[selectedCategory] ?? [];
+    const categories = CATEGORY_ORDER.filter((c) => menuData[c]);
 
     return (
         <div className="min-h-screen bg-[#ffddd233] dark:bg-black font-sans flex flex-col">
@@ -327,13 +366,24 @@ export default function MenuBoardPage() {
                     </div>
 
                     {/* Category pills */}
-                    <div className="mt-2">
-                        <CategoryPills
-                            categories={categories}
-                            selected={selectedCategory}
-                            onSelect={setSelectedCategory}
-                        />
-                    </div>
+                    {menuDataReady ? (
+                        <div className="mt-2">
+                            <CategoryPills
+                                categories={categories}
+                                selected={selectedCategory}
+                                onSelect={setSelectedCategory}
+                            />
+                        </div>
+                    ):(
+                        <div className="mt-2">
+                            <CategoryPills
+                                categories={["loading"]}
+                                selected={"string"}
+                                onSelect={() => {}}
+                            />
+                        </div>
+                    )}
+                    
 
                     {/* Category label */}
                     <div className="flex items-center justify-between mt-4">

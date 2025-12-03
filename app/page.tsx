@@ -34,10 +34,10 @@ export default function Home() {
 
                     {/* Menu preview card */}
                     <div className="mt-2 rounded-2xl border border-zinc-200 bg-white/90 p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900/90">
-                        <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
-                            Menu Preview
-                        </h2>
-                        <MenuBoard />
+                        <button
+                                onClick={() => router.push("/menuBoard")}
+                                className="w-full rounded-2xl bg-zinc-900 px-4 py-3 text-sm font-medium text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-zinc-800 hover:shadow-md active:translate-y-0 dark:bg-zinc-800 dark:hover:bg-zinc-700"
+                        >Menu Board</button>
                     </div>
                 </section>
 

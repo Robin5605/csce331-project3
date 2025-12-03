@@ -920,53 +920,58 @@ function Cart({
                     ))}
                 </div>
             </ScrollArea>
-            <div className={`grid grid-rows-4 grid-cols-2 p-4 border rounded  max-h-40 ${
+            
+            <div className={`grid grid-rows-4 grid-cols-2 p-4 border rounded  max-h-40 ${
                 textMultipler >= 1.75 ? "text-sm" : "text-md"
             }
                 ${
-                isHighContrast ? "bg-black text-white border-4  border-blue-500" : "bg-white text-black border"
+                isHighContrast ? "bg-black text-white border-4 border-blue-500" : "bg-white text-black border"
                 }`}>
-            <div className="border rounded p-3 space-y-2">
-                <div className="flex justify-between text-sm">
-                    <span>{labels.subtotal}</span>
-                    <span>${subtotal.toFixed(2)}</span>
+                
+                <div className="col-span-2 space-y-2"> 
+                    <div className="flex justify-between text-sm">
+                        <span>{labels.subtotal}</span>
+                        <span>${subtotal.toFixed(2)}</span>
+                    </div>
+
+                    <div className="flex justify-between text-sm">
+                        <span>{labels.tax}</span>
+                        <span>${tax.toFixed(2)}</span>
+                    </div>
+
+                    <div className="flex justify-between font-semibold">
+                        <span>{labels.total}</span>
+                        <span>${total.toFixed(2)}</span>
+                    </div>
+
+                    <Dialog>
+                        <DialogTrigger asChild>
+                            {/* Removed col-span-2 from Button as it should be inside the column structure */}
+                            <Button className={`w-full ${isHighContrast ? "border-4 border-green-400" : ""}`}>{labels.checkout}</Button> 
+                        </DialogTrigger>
+
+                        <DialogContent className={`max-h-[90vh] ${isHighContrast ? "text-white bg-black" : "text-black"}`}>
+                            <DialogHeader>
+                                <DialogTitle className={`text-center text-2xl`}>
+                                    {labels.confirmOrder}
+                                </DialogTitle>
+                            </DialogHeader>
+
+                            <DialogFooter>
+                                <DialogClose asChild>
+                                    <Button
+                                        variant="default"
+                                        className={`w-full  ${isHighContrast ? "border-4 border-green-400" : ""}`}
+                                        onClick={handleCheckout}
+                                    >
+                                        {labels.yesPlaceOrder}
+                                    </Button>
+                                </DialogClose>
+                            </DialogFooter>
+                        </DialogContent>
+                    </Dialog>
                 </div>
-
-                <div className="flex justify-between text-sm">
-                    <span>{labels.tax}</span>
-                    <span>${tax.toFixed(2)}</span>
-                </div>
-
-                <div className="flex justify-between font-semibold">
-                    <span>{labels.total}</span>
-                    <span>${total.toFixed(2)}</span>
-                </div>
-
-                <Dialog>
-                    <DialogTrigger asChild>
-                        <Button className={`col-span-2 ${isHighContrast ? "border-4 border-green-400" : ""}`}>{labels.checkout}</Button>
-                    </DialogTrigger>
-
-                    <DialogContent className={`max-h-[90vh] ${isHighContrast ? "text-white bg-black" : "text-black"}`}>
-                        <DialogHeader>
-                            <DialogTitle className={`text-center text-2xl`}>
-                                {labels.confirmOrder}
-                            </DialogTitle>
-                        </DialogHeader>
-
-                        <DialogFooter>
-                            <DialogClose asChild>
-                                <Button
-                                    variant="default"
-                                    className={`w-full  ${isHighContrast ? "border-4 border-green-400" : ""}`}
-                                    onClick={handleCheckout}
-                                >
-                                    {labels.yesPlaceOrder}
-                                </Button>
-                            </DialogClose>
-                        </DialogFooter>
-                    </DialogContent>
-                </Dialog>
+                
             </div>
         </div>
     );

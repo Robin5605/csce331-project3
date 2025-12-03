@@ -273,7 +273,7 @@ function DrinkCard({ item }: { item: MenuItem }) {
     return (
         <div className="group rounded-2xl bg-white/80 shadow-md hover:shadow-xl transition transform hover:-translate-y-1 flex flex-col overflow-hidden border border-[#f1c4d8]">
             <div className="relative w-full aspect-[4/3] bg-[#ffe5f1] flex items-center justify-center">
-                {hasImage ? (
+                {hasImage && item.image_url ?(
                     <img
                         src={item.image_url}
                         alt={item.name}
@@ -305,37 +305,46 @@ export default function MenuBoardPage() {
     const [menuDataReady, setMenuDataReady] = useState<boolean>(false);
 
     const loadMenuData = async () => {
-        setMenuDataReady(false);
-        setMenuData({});
-        let menuTempData: MenuData = {};
-        console.log("loading menu");
-        const catRes = await fetch("api/cashier/categories", {
+        try {
+            setMenuDataReady(false);
+            setMenuData({});
+            let menuTempData: MenuData = {};
+            console.log("loading menu");
+            const catRes = await fetch("/api/cashier/categories", {
             method: "GET",
             headers: { "Content-Type": "application/json" },
-        });
-        if (!catRes.ok) {
-            throw new Error(`GET /api/cashier/categories ${catRes.status}`);
-        }
-        const cats: Category[] = await catRes.json();
-        console.log(`cats length: ${cats.length}`);
-        for (let cat_idx = 0; cat_idx < cats.length; cat_idx++) {
-            //console.log(`c idx:${cat_idx}`);
-            const cat = cats[cat_idx];
-            //console.log(cat);
-            const queryBody = {
-                id: cat.id,
-            };
-            const queryRes = await fetch("/api/cashier/menu_by_category", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(queryBody),
             });
-            const items: MenuItem[] = await queryRes.json();
-            //console.log(cat.name);
-            menuTempData = { ...menuTempData, [cat.name]: items };
-        }
-        setMenuData(menuTempData);
+            if (!catRes.ok) {
+                throw new Error(`GET /api/cashier/categories ${catRes.status}`);
+            }
+            const cats: Category[] = await catRes.json();
+
+            const entries = await Promise.all(
+                cats.map(async (cat) => {
+                    const queryRes = await fetch("/api/cashier/menu_by_category", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ id: cat.id }),
+                    });
+
+                    if (!queryRes.ok) {
+                        throw new Error(
+                            `POST /api/cashier/menu_by_category ${queryRes.status}`,
+                        );
+                    }
+
+                    const items: MenuItem[] = await queryRes.json();
+                    return [cat.name, items] as const;
+                }),
+            );
+            setMenuData(Object.fromEntries(entries));
+            
+    }   catch (err) {
+        console.error("Failed to load menu data:", err);
+    } finally {
         setMenuDataReady(true);
+    }
+    
         console.log("done");
     };
 

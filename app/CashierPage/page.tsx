@@ -124,7 +124,7 @@ export default function CashierPage() {
             method: "GET",
             headers: { "Content-Type": "application/json" },
         });
-        if(!catRes.ok){
+        if (!catRes.ok) {
             throw new Error(`GET /api/cashier/categories ${catRes.status}`);
         }
         //console.log("hey");
@@ -144,11 +144,11 @@ export default function CashierPage() {
             });
             const items: MenuItem[] = await queryRes.json();
             //console.log(cat.name);
-            menuTempData = {...menuTempData, [cat.name]: items};
+            menuTempData = { ...menuTempData, [cat.name]: items };
         }
         setMenuData(menuTempData);
         console.log("loading ingredients");
-        const ingrRes = await fetch("api/ingredient",{
+        const ingrRes = await fetch("api/ingredient", {
             method: "GET",
             headers: { "Content-Type": "application/json" },
         });
@@ -156,7 +156,7 @@ export default function CashierPage() {
         setInventory(ingr);
         setMenuDataReady(true);
     };
-    
+
     useEffect(() => {
         loadMenuData();
     }, []);
@@ -330,8 +330,7 @@ export default function CashierPage() {
                             drinkOrderId = id;
                         } else {
                             let ingredientAmmount = 0;
-                            let ingredientTemp: Ingredient | any =
-                                inventory[0];
+                            let ingredientTemp: Ingredient | any = inventory[0];
                             if (key === "Ice" || key === "Sugar") {
                                 if (value === "100%") {
                                     ingredientAmmount = 4;
@@ -631,24 +630,30 @@ export default function CashierPage() {
                     Categories
                 </h2>
                 <div className="flex flex-col items-center w-full gap-10">
-                    {menuDataReady ? (Object.entries(menuData).map(([category]) => (
-                        <Category key={category} name={category} />
-                    ))) : (
-                        <Category name={"loading"}/>
+                    {menuDataReady ? (
+                        Object.entries(menuData).map(([category]) => (
+                            <Category key={category} name={category} />
+                        ))
+                    ) : (
+                        <Category name={"loading"} />
                     )}
                 </div>
             </aside>
 
             <main className="flex-1 flex items-start justify-center mt-10">
                 <div className="flex flex-wrap gap-16 justify-around">
-                    {menuDataReady ? (menuData[selectedCategory].map((itemData) => {
-                        return (
-                            <ItemCard
-                                itemName={itemData.name}
-                                whenClicked={() => menuItemClicked(itemData)}
-                            />
-                        );
-                    })) : (
+                    {menuDataReady ? (
+                        menuData[selectedCategory].map((itemData) => {
+                            return (
+                                <ItemCard
+                                    itemName={itemData.name}
+                                    whenClicked={() =>
+                                        menuItemClicked(itemData)
+                                    }
+                                />
+                            );
+                        })
+                    ) : (
                         <ItemCard
                             itemName={"loading"}
                             //whenClicked={() => loadMenuData()}

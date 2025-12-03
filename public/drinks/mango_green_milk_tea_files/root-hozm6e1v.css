@@ -158,20 +158,20 @@
         --content-gradient: linear-gradient(
             0deg,
             color(display-p3 0.851 0.851 0.851),
-            color(display-p3 0.8488 0.8488 0.8488/.99) 8.07%,
-            color(display-p3 0.8423 0.8423 0.8423/.98) 15.54%,
-            color(display-p3 0.8317 0.8317 0.8317/.95) 22.5%,
-            color(display-p3 0.8171 0.8171 0.8171/.92) 29.04%,
-            color(display-p3 0.7988 0.7988 0.7988/.87) 35.26%,
-            color(display-p3 0.777 0.777 0.777/.82) 41.25%,
-            color(display-p3 0.7518 0.7518 0.7518/.75) 47.1%,
-            color(display-p3 0.7234 0.7234 0.7234/.68) 52.9%,
-            color(display-p3 0.692 0.692 0.692/.6) 58.75%,
-            color(display-p3 0.6578 0.6578 0.6578/.52) 64.74%,
-            color(display-p3 0.621 0.621 0.621/.42) 70.96%,
-            color(display-p3 0.5817 0.5817 0.5817/.33) 77.5%,
-            color(display-p3 0.5401 0.5401 0.5401/.22) 84.46%,
-            color(display-p3 0.4965 0.4965 0.4965/.11) 91.93%,
+            color(display-p3 0.8488 0.8488 0.8488/0.99) 8.07%,
+            color(display-p3 0.8423 0.8423 0.8423/0.98) 15.54%,
+            color(display-p3 0.8317 0.8317 0.8317/0.95) 22.5%,
+            color(display-p3 0.8171 0.8171 0.8171/0.92) 29.04%,
+            color(display-p3 0.7988 0.7988 0.7988/0.87) 35.26%,
+            color(display-p3 0.777 0.777 0.777/0.82) 41.25%,
+            color(display-p3 0.7518 0.7518 0.7518/0.75) 47.1%,
+            color(display-p3 0.7234 0.7234 0.7234/0.68) 52.9%,
+            color(display-p3 0.692 0.692 0.692/0.6) 58.75%,
+            color(display-p3 0.6578 0.6578 0.6578/0.52) 64.74%,
+            color(display-p3 0.621 0.621 0.621/0.42) 70.96%,
+            color(display-p3 0.5817 0.5817 0.5817/0.33) 77.5%,
+            color(display-p3 0.5401 0.5401 0.5401/0.22) 84.46%,
+            color(display-p3 0.4965 0.4965 0.4965/0.11) 91.93%,
             color(display-p3 0.451 0.451 0.451/0)
         );
     }
@@ -2401,7 +2401,7 @@
         --default-theme-secondary-btn-bg: #ececec;
         --default-theme-secondary-btn-text: var(--text-primary);
         --default-theme-user-selection-bg: oklab(
-            68.2034% -0.0561513 -0.164103/.35
+            68.2034% -0.0561513 -0.164103/0.35
         );
         --default-theme-attribution-highlight-bg: #ffeeb8;
         --default-theme-entity-accent: #0169cc;
@@ -2412,7 +2412,7 @@
         --blue-theme-secondary-btn-bg: #e5f3ff;
         --blue-theme-secondary-btn-text: #00284d;
         --blue-theme-user-selection-bg: oklab(
-            68.2034% -0.0561513 -0.164103/.35
+            68.2034% -0.0561513 -0.164103/0.35
         );
         --blue-theme-entity-accent: #0169cc;
         --green-theme-user-msg-bg: #d9f4e4;
@@ -2421,7 +2421,9 @@
         --green-theme-submit-btn-text: #fff;
         --green-theme-secondary-btn-bg: #d9f4e4;
         --green-theme-secondary-btn-text: #003716;
-        --green-theme-user-selection-bg: oklab(74.2964% -0.148167 0.075817/.35);
+        --green-theme-user-selection-bg: oklab(
+            74.2964% -0.148167 0.075817/0.35
+        );
         --green-theme-entity-accent: #00a240;
         --yellow-theme-user-msg-bg: #fff6d9;
         --yellow-theme-user-msg-text: #4d3b00;
@@ -2430,7 +2432,7 @@
         --yellow-theme-secondary-btn-bg: #fff6d9;
         --yellow-theme-secondary-btn-text: #4d3b00;
         --yellow-theme-user-selection-bg: oklab(
-            87.8976% -0.00245366 0.161177/.35
+            87.8976% -0.00245366 0.161177/0.35
         );
         --yellow-theme-entity-accent: #e0ac00;
         --purple-theme-user-msg-bg: #efe5fe;
@@ -2440,7 +2442,7 @@
         --purple-theme-secondary-btn-bg: #efe5fe;
         --purple-theme-secondary-btn-text: #2c184a;
         --purple-theme-user-selection-bg: oklab(
-            68.7131% 0.0911746 -0.158316/.35
+            68.7131% 0.0911746 -0.158316/0.35
         );
         --purple-theme-entity-accent: #8046d9;
         --pink-theme-user-msg-bg: #ffe8f3;
@@ -2449,7 +2451,9 @@
         --pink-theme-submit-btn-text: #fff;
         --pink-theme-secondary-btn-bg: #ffe8f3;
         --pink-theme-secondary-btn-text: #4d1f34;
-        --pink-theme-user-selection-bg: oklab(77.9427% 0.149185 -0.0206243/.35);
+        --pink-theme-user-selection-bg: oklab(
+            77.9427% 0.149185 -0.0206243/0.35
+        );
         --pink-theme-entity-accent: #e04c91;
         --orange-theme-user-msg-bg: #ffe7d9;
         --orange-theme-user-msg-text: #4a2206;
@@ -2457,7 +2461,9 @@
         --orange-theme-submit-btn-text: #fff;
         --orange-theme-secondary-btn-bg: #ffe7d9;
         --orange-theme-secondary-btn-text: #4a2206;
-        --orange-theme-user-selection-bg: oklab(74.3347% 0.116982 0.117424/.35);
+        --orange-theme-user-selection-bg: oklab(
+            74.3347% 0.116982 0.117424/0.35
+        );
         --orange-theme-entity-accent: #e25507;
         --black-theme-user-msg-bg: #000;
         --black-theme-user-msg-text: #fff;
@@ -2475,7 +2481,7 @@
         --default-theme-secondary-btn-bg: #424242;
         --default-theme-secondary-btn-text: #fff;
         --default-theme-user-selection-bg: oklab(
-            75.3343% -0.0485353 -0.1236/.4
+            75.3343% -0.0485353 -0.1236/0.4
         );
         --default-theme-attribution-highlight-bg: #6e5400;
         --blue-theme-user-msg-bg: #003f7a;
@@ -2483,42 +2489,48 @@
         --blue-theme-submit-btn-bg: #0169cc;
         --blue-theme-secondary-btn-bg: #004f99;
         --blue-theme-secondary-btn-text: #f5faff;
-        --blue-theme-user-selection-bg: oklab(62.5814% -0.0532435 -0.197972/.6);
+        --blue-theme-user-selection-bg: oklab(
+            62.5814% -0.0532435 -0.197972/0.6
+        );
         --default-theme-entity-accent: #339cff;
         --green-theme-user-msg-bg: #00692a;
         --green-theme-user-msg-text: #edfaf2;
         --green-theme-submit-btn-bg: #00a240;
         --green-theme-secondary-btn-bg: #008635;
         --green-theme-secondary-btn-text: #edfaf2;
-        --green-theme-user-selection-bg: oklab(68.3034% -0.166226 0.102662/.6);
+        --green-theme-user-selection-bg: oklab(68.3034% -0.166226 0.102662/0.6);
         --green-theme-entity-accent: #40c977;
         --yellow-theme-user-msg-bg: #916f00;
         --yellow-theme-user-msg-text: #fffbed;
         --yellow-theme-submit-btn-bg: #e0ac00;
         --yellow-theme-secondary-btn-bg: #ba8e00;
         --yellow-theme-secondary-btn-text: #fffbed;
-        --yellow-theme-user-selection-bg: oklab(84.7886% 0.0119218 0.173144/.5);
+        --yellow-theme-user-selection-bg: oklab(
+            84.7886% 0.0119218 0.173144/0.5
+        );
         --yellow-theme-entity-accent: #ffd240;
         --purple-theme-user-msg-bg: #532d8d;
         --purple-theme-user-msg-text: #f9f5fe;
         --purple-theme-submit-btn-bg: #8046d9;
         --purple-theme-secondary-btn-bg: #6b3ab4;
         --purple-theme-secondary-btn-text: #f9f5fe;
-        --purple-theme-user-selection-bg: oklab(59.5965% 0.106744 -0.210896/.6);
+        --purple-theme-user-selection-bg: oklab(
+            59.5965% 0.106744 -0.210896/0.6
+        );
         --purple-theme-entity-accent: #ad7bf9;
         --pink-theme-user-msg-bg: #963c67;
         --pink-theme-user-msg-text: #fff4f9;
         --pink-theme-submit-btn-bg: #e04c91;
         --pink-theme-secondary-btn-bg: #ba437a;
         --pink-theme-secondary-btn-text: #fff4f9;
-        --pink-theme-user-selection-bg: oklab(72.2423% 0.197093 -0.0195113/.6);
+        --pink-theme-user-selection-bg: oklab(72.2423% 0.197093 -0.0195113/0.6);
         --pink-theme-entity-accent: #ff8cc1;
         --orange-theme-user-msg-bg: #923b0f;
         --orange-theme-user-msg-text: #fff5f0;
         --orange-theme-submit-btn-bg: #e25507;
         --orange-theme-secondary-btn-bg: #b9480d;
         --orange-theme-secondary-btn-text: #fff5f0;
-        --orange-theme-user-selection-bg: oklab(69.5972% 0.142407 0.130968/.6);
+        --orange-theme-user-selection-bg: oklab(69.5972% 0.142407 0.130968/0.6);
         --orange-theme-entity-accent: #ff8549;
         --black-theme-user-msg-bg: #ececec;
         --black-theme-user-msg-text: #000;
@@ -10908,10 +10920,9 @@
         grid-template-rows: minmax(10px, 1fr) auto minmax(10px, 1fr);
     }
     .grid-rows-\[minmax\(10px\,auto\)_minmax\(200px\,1fr\)_minmax\(0\,auto\)_minmax\(min-content\,86px\)_minmax\(10px\,auto\)\] {
-        grid-template-rows: minmax(10px, auto) minmax(200px, 1fr) minmax(
-                0,
-                auto
-            ) minmax(min-content, 86px) minmax(10px, auto);
+        grid-template-rows:
+            minmax(10px, auto) minmax(200px, 1fr) minmax(0, auto)
+            minmax(min-content, 86px) minmax(10px, auto);
     }
     .grid-rows-subgrid {
         grid-template-rows: subgrid;
@@ -18423,13 +18434,13 @@
         --tw-ring-color: #66b5ff;
     }
     .ring-blue-400\/40 {
-        --tw-ring-color: oklab(62.5814% -0.0532435 -0.197972/.4);
+        --tw-ring-color: oklab(62.5814% -0.0532435 -0.197972/0.4);
     }
     .ring-blue-500 {
         --tw-ring-color: #0169cc;
     }
     .ring-blue-500\/60 {
-        --tw-ring-color: oklab(52.8649% -0.0449645 -0.167517/.6);
+        --tw-ring-color: oklab(52.8649% -0.0449645 -0.167517/0.6);
     }
     .ring-gray-200 {
         --tw-ring-color: #e3e3e3;
@@ -22890,7 +22901,7 @@
         --tw-ring-color: #0169cc;
     }
     .focus-visible\:ring-blue-500\/60:focus-visible {
-        --tw-ring-color: oklab(52.8649% -0.0449645 -0.167517/.6);
+        --tw-ring-color: oklab(52.8649% -0.0449645 -0.167517/0.6);
     }
     .focus-visible\:ring-token-text-primary:focus-visible {
         --tw-ring-color: var(--text-primary);

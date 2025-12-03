@@ -357,7 +357,7 @@ const findInventoryCost = (name: string) => {
 };
 
 function calculateSubtotal(cartItems: CartItem[]): number {
-    console.log(JSON.stringify(cartItems));
+    //console.log(JSON.stringify(cartItems));
     let total = 0;
 
     for (const item of cartItems) {
@@ -472,12 +472,14 @@ function CategorySelector({
 
 interface InventoryItemCardProps {
     item: InventoryItem;
+    isSelected: boolean;
     onSelect: () => void;
     onUnselect: () => void;
 }
-function ToppingCard({ item, onSelect, onUnselect }: InventoryItemCardProps) {
+function ToppingCard({ item, isSelected, onSelect, onUnselect }: InventoryItemCardProps) {
     const { isHighContrast } = useAccessibility();
-    const [selected, setSelected] = useState(false);
+    // const [selected, setSelected] = useState(isSelected);
+    let selected = isSelected
     return (
         <div
             className={`flex-col items-center justify-center border rounded p-4 cursor-pointer ${
@@ -487,9 +489,16 @@ function ToppingCard({ item, onSelect, onUnselect }: InventoryItemCardProps) {
                     selected ? "bg-black text-white" : ""
             }`}
             onClick={() => {
-                setSelected(!selected);
-                if (!selected) onSelect();
-                else onUnselect();
+                if(selected){
+                    // setSelected(false)
+                    onUnselect()
+                } else {
+                    // setSelected(true)
+                    onSelect()
+                }
+                // setSelected(!selected);
+                // if (!selected) onSelect();
+                // else onUnselect();
             }}
         >
             <p className="text-center select-none">{item.name}</p>
@@ -503,14 +512,21 @@ function ToppingCard({ item, onSelect, onUnselect }: InventoryItemCardProps) {
 }
 
 interface ToppingSelectorProps {
-    onToppingSelect: (toppings: InventoryItem[]) => void;
+    onToppingSelect: (        
+        list: InventoryItem[],
+        id: number
+    ) => void;
     ingredientType: number;
+    multiSelect: boolean;
+    globalToppings: Record<number, InventoryItem[]>
 }
 function ToppingSelector({
     onToppingSelect,
     ingredientType,
+    multiSelect,
+    globalToppings
 }: ToppingSelectorProps) {
-    const [selected, setSelected] = useState<InventoryItem[]>([]);
+    const [selected, setSelected] = useState<InventoryItem[]>([]); //This is for local selections
     return (
         <div className={`grid grid-cols-4 gap-2`}>
             {inventory
@@ -524,17 +540,18 @@ function ToppingSelector({
                     <ToppingCard
                         key={i.id}
                         item={i}
+                        isSelected = {selected.includes(i)}
                         onSelect={() => {
-                            const newArr = [...selected, i];
-                            setSelected(newArr);
-                            onToppingSelect(newArr);
+                            let localArr = multiSelect ? [...selected, i] : [i];
+                            setSelected(localArr);
+                            onToppingSelect(localArr, ingredientType);
                         }}
                         onUnselect={() => {
-                            const newArr = selected.filter(
+                            const localArr = selected.filter(
                                 (item) => item.id !== i.id,
                             );
-                            setSelected(newArr);
-                            onToppingSelect(newArr);
+                            setSelected(localArr);
+                            onToppingSelect(localArr, ingredientType);
                         }}
                     />
                 ))}
@@ -550,9 +567,22 @@ function MenuItemCard({ item, onConfirm }: MenuItemCardProps) {
     const { isHighContrast, textMultipler } = useAccessibility();
     const [ice, setIce] = useState(0);
     const [size, setSize] = useState<DrinkSize>("medium");
-    const [selectedToppings, setSelectedToppings] = useState<InventoryItem[]>(
-        [],
+    const [selectedToppings, setSelectedToppings] = useState<Record<number, InventoryItem[]>>(
+        {
+            20: [],
+            30: [],
+            40: [],
+            100: []
+        }
     );
+
+    function setToppingsForType(list: InventoryItem[], id: number){
+        setSelectedToppings(prev => ({
+            ...prev,    
+            [id]: list, 
+        }));
+    }
+
     return (
         <Dialog>
             <DialogTrigger asChild>
@@ -655,29 +685,37 @@ function MenuItemCard({ item, onConfirm }: MenuItemCardProps) {
                         <div>
                             <p className="text-2xl mb-3">Boba</p>
                             <ToppingSelector
-                                onToppingSelect={setSelectedToppings}
+                                globalToppings={selectedToppings}
+                                onToppingSelect={setToppingsForType}
                                 ingredientType={20}
+                                multiSelect={false}
                             />
                         </div>
                         <div>
                             <p className="text-2xl mb-3">Tea</p>
                             <ToppingSelector
-                                onToppingSelect={setSelectedToppings}
+                                globalToppings={selectedToppings}
+                                onToppingSelect={setToppingsForType}
                                 ingredientType={30}
+                                multiSelect={false}
                             />
                         </div>
                         <div>
                             <p className="text-2xl mb-3">Jelly</p>
                             <ToppingSelector
-                                onToppingSelect={setSelectedToppings}
+                                globalToppings={selectedToppings}
+                                onToppingSelect={setToppingsForType}
                                 ingredientType={40}
+                                multiSelect={false}
                             />
                         </div>
                         <div>
                             <p className="text-2xl mb-3">Other Toppings</p>
                             <ToppingSelector
-                                onToppingSelect={setSelectedToppings}
+                                globalToppings={selectedToppings}
+                                onToppingSelect={setToppingsForType}
                                 ingredientType={100}
+                                multiSelect={true}
                             />
                         </div>
                     </div>
@@ -687,22 +725,24 @@ function MenuItemCard({ item, onConfirm }: MenuItemCardProps) {
                         <Button
                             variant="default"
                             className="w-full"
-                            onClick={() =>
+                            onClick={() => {
+                                const allCustomizations = Object.values(selectedToppings).flatMap(topArr =>
+                                    topArr.map(t => ({
+                                        id: t.id,
+                                        name: t.name,
+                                        cost: t.cost,
+                                    }))
+                                );
+
                                 onConfirm({
                                     id: item.id,
                                     size,
                                     ice,
                                     name: item.name,
                                     cost: item.cost,
-                                    customizations: selectedToppings.map(
-                                        (t) => ({
-                                            id: t.id,
-                                            name: t.name,
-                                            cost: t.cost,
-                                        }),
-                                    ),
-                                })
-                            }
+                                    customizations: allCustomizations,
+                                });
+                            }}
                         >
                             Add to Order
                         </Button>
@@ -855,7 +895,7 @@ export default function CashierPage() {
     const [cartItems, setCartItems] = useState<CartItem[]>([]);
     const { isHighContrast, textMultipler } = useAccessibility();
 
-    console.log(cartItems);
+    //console.log(cartItems);
     //Sets default selection for customization options
     const defaultCustomizations = {
         Size: "Medium Cups",

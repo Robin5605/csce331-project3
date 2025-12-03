@@ -432,10 +432,16 @@ interface InventoryItemCardProps {
     onUnselect: () => void;
 }
 function ToppingCard({ item, onSelect, onUnselect }: InventoryItemCardProps) {
+    const { isHighContrast } = useAccessibility();
     const [selected, setSelected] = useState(false);
     return (
         <div
-            className={`flex-col items-center justify-center border rounded p-4 cursor-pointer ${selected ? "bg-black text-white" : ""}`}
+            className={`flex-col items-center justify-center border rounded p-4 cursor-pointer ${
+                isHighContrast ? 
+                    selected ? "text-blue-400" : ""          
+                : 
+                    selected ? "bg-black text-white" : ""
+            }`}
             onClick={() => {
                 setSelected(!selected);
                 if (!selected) onSelect();
@@ -462,7 +468,7 @@ function ToppingSelector({
 }: ToppingSelectorProps) {
     const [selected, setSelected] = useState<InventoryItem[]>([]);
     return (
-        <div className="grid grid-cols-4 gap-2">
+        <div className={`grid grid-cols-4 gap-2`}>
             {inventory
                 .filter((i) => {
                     if (i.ingredient_type === ingredientType) {
@@ -497,6 +503,7 @@ interface MenuItemCardProps {
     onConfirm: (item: CartItem) => void;
 }
 function MenuItemCard({ item, onConfirm }: MenuItemCardProps) {
+    const { isHighContrast } = useAccessibility();
     const [ice, setIce] = useState(0);
     const [size, setSize] = useState<DrinkSize>("medium");
     const [selectedToppings, setSelectedToppings] = useState<InventoryItem[]>(
@@ -505,7 +512,11 @@ function MenuItemCard({ item, onConfirm }: MenuItemCardProps) {
     return (
         <Dialog>
             <DialogTrigger asChild>
-                <div className="flex flex-col gap-2 items-center bg-gray-100 p-2 rounded border">
+                <div className={`flex flex-col gap-2 items-center 
+                    ${isHighContrast ? "bg-black" : "bg-gray-100"} p-2 rounded border
+                    ${isHighContrast ? "text-white" : "text-black"}
+                `}
+                >
                     {item.image_url !== "" ? (
                         <img
                             src={item.image_url}
@@ -518,7 +529,10 @@ function MenuItemCard({ item, onConfirm }: MenuItemCardProps) {
                     {item.name}
                 </div>
             </DialogTrigger>
-            <DialogContent className="max-h-9/10 overflow-y-scroll">
+            <DialogContent className={`max-h-9/10 overflow-y-scroll
+                    ${isHighContrast ? "text-white" : "text-black"}
+                    ${isHighContrast ? "bg-black" : "bg-gray-100"}
+                `}>
                 <DialogHeader>
                     <DialogTitle>Customize {item.name}</DialogTitle>
                 </DialogHeader>
@@ -527,19 +541,37 @@ function MenuItemCard({ item, onConfirm }: MenuItemCardProps) {
                         <p className="text-2xl">Size</p>
                         <div className="flex space-x-4">
                             <div
-                                className={`cursor-pointer duration-300 border rounded-full p-4 text-xl ${size === "small" ? "bg-black text-white" : ""}`}
+                                className={`cursor-pointer duration-300 border rounded-full p-4 text-xl 
+                                    ${
+                                        isHighContrast ?
+                                            size === "small" ? "bg-black text-blue-300" : ""
+                                        :
+                                            size === "small" ? "bg-black text-white" : ""
+                                    }`
+                                }
                                 onClick={() => setSize("small")}
                             >
                                 S
                             </div>
                             <div
-                                className={`cursor-pointer duration-300 border rounded-full p-4 text-xl ${size === "medium" ? "bg-black text-white" : ""}`}
+                                className={`cursor-pointer duration-300 border rounded-full p-4 text-xl 
+                                     ${
+                                        isHighContrast ?
+                                            size === "medium" ? "bg-black text-blue-300" : ""
+                                        :
+                                            size === "medium" ? "bg-black text-white" : ""
+                                    }`}
                                 onClick={() => setSize("medium")}
                             >
                                 M
                             </div>
                             <div
-                                className={`cursor-pointer duration-300 border rounded-full p-4 text-xl ${size === "large" ? "bg-black text-white" : ""}`}
+                                className={`cursor-pointer duration-300 border rounded-full p-4 text-xl  ${
+                                        isHighContrast ?
+                                            size === "large" ? "bg-black text-blue-300" : ""
+                                        :
+                                            size === "large" ? "bg-black text-white" : ""
+                                    }`}
                                 onClick={() => setSize("large")}
                             >
                                 L

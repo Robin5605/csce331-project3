@@ -917,6 +917,7 @@ function Cart({
                 drinks: items.map((i) => ({
                     id: i.id,
                     customizations: i.customizations.map((i) => i.id),
+                    ice: i.ice, // Send ice servings (0-4)
                 })),
                 employeeId: 1,
                 paymentMethod: "CARD",

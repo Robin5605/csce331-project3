@@ -911,9 +911,9 @@ function Cart({
     }
 
     return (
-        <div className={`grid grid-rows-[1fr_8fr_1fr] min-h-0 max-h-full gap-4 ${isHighContrast ? "bg-black text-white border-8 border-yellow-200" : ""}`}>
+        <div className={`grid grid-rows-[1fr_8fr_1fr] min-h-0 h-[900] gap-4 ${isHighContrast ? "bg-black text-white border-8 border-yellow-200" : ""}`}>
             <p className="text-xl mb-4 text-center">{labels.cart}</p>
-            <ScrollArea className="h-90">
+            <ScrollArea className="h-150">
                 <div className="space-y-4">
                     {items.map((i, idx) => (
                         <CartItemCard key={idx} item={i} />
@@ -921,7 +921,7 @@ function Cart({
                 </div>
             </ScrollArea>
             
-            <div className={`grid grid-rows-4 grid-cols-2 p-4 border rounded  max-h-40 ${
+            <div className={`grid grid-rows-4 grid-cols-2 p-4 border rounded h-50 ${
                 textMultipler >= 1.75 ? "text-sm" : "text-md"
             }
                 ${
@@ -1206,10 +1206,10 @@ export default function CashierPage() {
     ];
 
     return (
-        <div className="min-h-screen bg-[#ffddd233] font-sans dark:bg-black flex flex-col">
+        <div className="min-h-screen bg-[#ffddd233] font-sans dark:bg-black flex flex-col text-white">
             <TopNav subtitle={labels.kioskTitle} />
 
-            <div className="flex justify-end px-8 pt-4 gap-2 items-center">
+            <div className={`flex justify-end px-8 pt-4 gap-2 items-center ${isHighContrast ? "bg-black" : ""}`}>
                 <span className="text-sm font-medium">{labels.language}</span>
                 <select
                     className="border rounded px-2 py-1 text-sm"
@@ -1230,7 +1230,7 @@ export default function CashierPage() {
                 )}
             </div>
 
-            <div className="flex-1 px-6 py-4">
+            <div className={`flex-1 px-6 py-4 ${isHighContrast ? "bg-black" : ""}`}>
                 <div className="mx-auto max-w-6xl grid grid-cols-[1.1fr_2fr_1.2fr] gap-6">
                     <CategorySelector
                         categories={Object.keys(menuData)}

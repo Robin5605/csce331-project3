@@ -385,15 +385,20 @@ export async function updateEmployee(
     return rows.length === 0 ? null : rows[0];
 }
 
-export async function fetch_categories(): Promise<Category[]>{
-    const { rows } = await client.query<Category>(`SELECT id, name, stock FROM categories ORDER BY id`);
+export async function fetch_categories(): Promise<Category[]> {
+    const { rows } = await client.query<Category>(
+        `SELECT id, name, stock FROM categories ORDER BY id`,
+    );
     return rows;
 }
 
 export async function fetch_menu_by_category(
     categoryId: number,
 ): Promise<MenuItem[]> {
-    const { rows } = await client.query<MenuItem>(`SELECT id, name, category_id, stock, cost::float8 AS cost FROM menu WHERE category_id = $1 ORDER BY id`, [categoryId],);
+    const { rows } = await client.query<MenuItem>(
+        `SELECT id, name, category_id, stock, cost::float8 AS cost FROM menu WHERE category_id = $1 ORDER BY id`,
+        [categoryId],
+    );
     return rows;
 }
 //  X REPORTS AND Z REPORTS
@@ -613,7 +618,7 @@ export async function fetch_kitchen_orders_by_status(
                                     )
                                     FROM drinks_ingredients di
                                     JOIN ingredients i ON i.id = di.ingredient_id
-                                    WHERE di.drink_id = m.id
+                                    WHERE di.drink_id = dord.id
                                 ),
                                 '[]'
                             )
@@ -678,7 +683,7 @@ export async function createOrder({
     ensureConnected();
     try {
         let total = 0;
-        console.log(drinks)
+        console.log(drinks);
         for (const drink of drinks) {
             const res = await client.query(
                 `SELECT SUM(cost) FROM ingredients WHERE id = ANY($1)`,

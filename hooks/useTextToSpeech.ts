@@ -15,7 +15,7 @@ export function useTextToSpeech(defaultLang: string = "en-US") {
     const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
     const [lang, setLang] = useState(defaultLang);
 
-    // now lets load the voice we want 
+    // now lets load the voice we want
     useEffect(() => {
         // if the window doesn't have speech systhesis then set state of supported to false so nothing tries to run.
         if (typeof window === "undefined" || !("speechSynthesis" in window)) {
@@ -24,21 +24,20 @@ export function useTextToSpeech(defaultLang: string = "en-US") {
         }
 
         const synth = window.speechSynthesis;
-        
+
         const loadVoices = () => {
             const v = synth.getVoices();
-            setVoices(v); 
+            setVoices(v);
             setSupported(v.length > 0);
         };
 
-        loadVoices(); 
+        loadVoices();
 
-        synth.onvoiceschanged = loadVoices; 
+        synth.onvoiceschanged = loadVoices;
 
         return () => {
             synth.onvoiceschanged = null;
         };
-
     }, []);
 
     const getVoiceForLang = useCallback(
@@ -47,27 +46,35 @@ export function useTextToSpeech(defaultLang: string = "en-US") {
             // try exact match
             return (
                 voices.find((v) => v.lang === targetLang) ||
-                voices.find((v) => v.lang.startsWith(targetLang.split("-")[0])) || 
+                voices.find((v) =>
+                    v.lang.startsWith(targetLang.split("-")[0]),
+                ) ||
                 voices[0]
             );
-        }, [voices],
+        },
+        [voices],
     );
 
     const speak = useCallback(
         (text: string, options: SpeakOptions = {}) => {
-            if (typeof window === "undefined" || !("speechSynthesis" in window)) {
-                console.warn("Speech synthesis is not supported in this browser!");
+            if (
+                typeof window === "undefined" ||
+                !("speechSynthesis" in window)
+            ) {
+                console.warn(
+                    "Speech synthesis is not supported in this browser!",
+                );
                 return;
             }
 
-            if(!text.trim()) return;
+            if (!text.trim()) return;
 
             const synth = window.speechSynthesis;
-            synth.cancel(); 
+            synth.cancel();
 
             const utterance = new SpeechSynthesisUtterance(text);
 
-            const targetLang = options.lang || lang; 
+            const targetLang = options.lang || lang;
             utterance.lang = targetLang;
 
             const voice = getVoiceForLang(targetLang);
@@ -93,7 +100,7 @@ export function useTextToSpeech(defaultLang: string = "en-US") {
         speak,
         cancel,
         setLang,
-        voices, 
+        voices,
         currentLang: lang,
     };
 }

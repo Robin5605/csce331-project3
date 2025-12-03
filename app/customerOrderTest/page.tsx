@@ -408,9 +408,9 @@ function CategorySelector({
     selectedCategory,
     onSelectedCategoryChange,
 }: CategorySelectorProps) {
-    const { isHighContrast, setIsHighContrast, isZoom, setIsZoom, textMultipler, setTextMultipler } = useAccessibility();
+    const { isHighContrast, setIsHighContrast, textMultipler, setTextMultipler } = useAccessibility();
     return (
-        <div className="w-fit space-y-4">
+        <div className={`w-fit space-y-4 flex-col items-center ${isHighContrast ? "text-white" : "text-black"} ${textMultipler >= 1.75 ? "max-w-50" : ""}`}>
             <Button
                 variant="default"
                 className="w-full"
@@ -422,32 +422,41 @@ function CategorySelector({
             >
                 Toggle High Contrast
             </Button>
-            <Button
-                variant="default"
-                className="w-full"
-                onClick={() => {
-                        let t = isZoom
-                        let z;
-
-                        //Switch text to not be zoomed
-                        if(isZoom){
-                            z = 1
-                        } 
-
-                        //Switch text to be zoomed
-                        else {
-                            z = 1.75
-                        }
-                        setIsZoom(!t)
-                        setTextMultipler(z) 
-
-                        //We use z bcuz state might not update before this is ran
-                        document.documentElement.style.fontSize = `${16 * z}px`; 
-                    }
-                }
-            >
-                Toggle Zoom
-            </Button>
+            <p className="text-center">Zoom</p>
+            <div className="flex space-x-4">
+                <Button
+                    variant="outline"
+                    size="icon"
+                    className="rounded-full"
+                    onClick={() => {
+                        if(textMultipler <= 1) return;
+                        let z = textMultipler - .25
+                        document.documentElement.style.fontSize = `${16 * z}px`; //This changes the magnification of the page
+                        setTextMultipler(z);
+                    }}
+                >
+                    <Minus color={`${isHighContrast ? "blue" : "black"}`}/>
+                </Button>
+                <Input
+                    type="number"
+                    className="rounded-full w-fit"
+                    value={textMultipler}
+                    readOnly
+                />
+                <Button
+                    variant="outline"
+                    size="icon"
+                    className="rounded-full"
+                    onClick={() => {
+                        if(textMultipler >= 2) return;
+                        let z = textMultipler + .25
+                        document.documentElement.style.fontSize = `${16 * z}px`; //This changes the magnification of the page
+                        setTextMultipler(z);
+                    }}
+                >
+                    <Plus color={`${isHighContrast ? "blue" : "black"}`} />
+                </Button>
+            </div>
             <p className={`text-xl ${isHighContrast ? "text-white" : "text-black"}`}>Categories</p>
             {categories.map((c, i) => (
                 <CategoryCard
@@ -538,7 +547,7 @@ interface MenuItemCardProps {
     onConfirm: (item: CartItem) => void;
 }
 function MenuItemCard({ item, onConfirm }: MenuItemCardProps) {
-    const { isHighContrast } = useAccessibility();
+    const { isHighContrast, textMultipler } = useAccessibility();
     const [ice, setIce] = useState(0);
     const [size, setSize] = useState<DrinkSize>("medium");
     const [selectedToppings, setSelectedToppings] = useState<InventoryItem[]>(
@@ -556,7 +565,7 @@ function MenuItemCard({ item, onConfirm }: MenuItemCardProps) {
                         <img
                             src={item.image_url}
                             alt={"drink image"}
-                            className="w-[120] h-[120] object-cover"
+                            className={`w-40 h-40 object-cover`}
                         />
                     ) : (
                         <CupSoda width={120} height={120} />
@@ -765,7 +774,7 @@ function Cart({
     items: CartItem[];
     setItems: React.Dispatch<React.SetStateAction<CartItem[]>>;
 }) {
-    const { isHighContrast } = useAccessibility();
+    const { isHighContrast, textMultipler } = useAccessibility();
 
     const subtotal = calculateSubtotal(items);
     const tax = TAX_RATE * subtotal;
@@ -796,7 +805,9 @@ function Cart({
                     ))}
                 </div>
             </ScrollArea>
-            <div className={`grid grid-rows-4 grid-cols-2 p-4 border rounded  max-h-40
+            <div className={`grid grid-rows-4 grid-cols-2 p-4 border rounded  max-h-40 ${
+                textMultipler >= 1.75 ? "text-sm" : "text-md"
+            }
                 ${
                 isHighContrast ? "bg-black text-white border-4  border-blue-500" : "bg-white text-black border"
                 }`}>
@@ -842,7 +853,7 @@ function Cart({
 export default function CashierPage() {
     const [selectedCategory, setSelectedCategory] = useState("Fruit Tea");
     const [cartItems, setCartItems] = useState<CartItem[]>([]);
-    const { isHighContrast } = useAccessibility();
+    const { isHighContrast, textMultipler } = useAccessibility();
 
     console.log(cartItems);
     //Sets default selection for customization options
@@ -872,7 +883,7 @@ export default function CashierPage() {
 
 return (
         <div
-            className={`grid w-full grid-cols-[1fr_7fr_2fr] gap-8 p-8 h-dvh overflow-y-auto ${
+            className={`grid w-full ${textMultipler >= 1.75 ? "grid-cols-[1fr_8fr_4fr]" : "grid-cols-[1fr_7fr_2fr]"} gap-8 p-8 h-dvh overflow-y-auto ${
                 isHighContrast ? "bg-black" : ""
             }`}
         >

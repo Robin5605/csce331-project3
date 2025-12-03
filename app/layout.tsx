@@ -26,10 +26,12 @@ export default function RootLayout({
     return (
         <html lang="en">
             <body
-                className={`${geistSans.variable} ${geistMono.variable} antialiased `}
+                className={`${geistSans.variable} ${geistMono.variable} antialiased m-0 min-h-dvh w-full`}
             >
                 <AccessibilityProvider>
-                    {children}
+                    <div className="min-h-dvh w-full">
+                        {children}
+                    </div>
                 </AccessibilityProvider>
             </body>
         </html>

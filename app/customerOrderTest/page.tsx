@@ -31,6 +31,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useTextToSpeech } from "@/hooks/useTextToSpeech";
 
 interface CartItem {
     id: number;
@@ -86,8 +87,6 @@ const EN_LABELS: Labels = {
     addToOrder: "Add to Order",
 };
 
-
-//[REMOVE WHEN API IS IMPLEMENTED] Temporary data for now
 interface MenuItem {
     id: number;
     name: string;
@@ -330,15 +329,12 @@ const inventory: InventoryItem[] = [
     { id: 25, name: "Straws", stock: 1000, cost: 0, ingredient_type: 0 },
     { id: 26, name: "Seal", stock: 1000, cost: 0, ingredient_type: 0 },
     { id: 27, name: "Bag", stock: 1000, cost: 0, ingredient_type: 0 },
-
     { id: 4, name: "Sugar", stock: 86, cost: 0, ingredient_type: 1 },
-
     { id: 9, name: "Red Bean", stock: 96, cost: 0.75, ingredient_type: 100 },
     { id: 12, name: "Pudding", stock: 92, cost: 0.75, ingredient_type: 100 },
     { id: 8, name: "Mini Pearl", stock: 51, cost: 0.75, ingredient_type: 100 },
     { id: 5, name: "Pearl", stock: 28, cost: 0.75, ingredient_type: 100 },
     { id: 6, name: "Aloe Vera", stock: 89, cost: 0.75, ingredient_type: 100 },
-
     { id: 20, name: "Crystal Boba", stock: 92, cost: 1, ingredient_type: 20 },
     {
         id: 18,
@@ -361,11 +357,9 @@ const inventory: InventoryItem[] = [
         cost: 1,
         ingredient_type: 20,
     },
-
     { id: 3, name: "Oolong Tea", stock: 13, cost: 0, ingredient_type: 30 },
     { id: 2, name: "Green Tea", stock: 0, cost: 0, ingredient_type: 30 },
     { id: 1, name: "Black Tea", stock: 70, cost: 1, ingredient_type: 30 },
-
     { id: 13, name: "Herb Jelly", stock: 100, cost: 0.75, ingredient_type: 40 },
     { id: 7, name: "Lychee Jelly", stock: 37, cost: 0.75, ingredient_type: 40 },
     { id: 14, name: "Alyu Jelly", stock: 96, cost: 0.75, ingredient_type: 40 },
@@ -377,17 +371,13 @@ const inventory: InventoryItem[] = [
         ingredient_type: 40,
     },
     { id: 16, name: "Honey Jelly", stock: 96, cost: 0.75, ingredient_type: 40 },
-
     { id: 28, name: "Ice", stock: 813, cost: 0.0, ingredient_type: 1 },
-
     { id: 10, name: "Creama", stock: 84, cost: 1.25, ingredient_type: 100 },
     { id: 11, name: "Ice Cream", stock: 36, cost: 1.25, ingredient_type: 100 },
 ];
 
-// configurable tax rate for UI display (8.25% default)
 const TAX_RATE = parseFloat(process.env.NEXT_PUBLIC_TAX_RATE ?? "0.0825");
 
-// price helpers
 const findInventoryCost = (name: string) => {
     const item = inventory.find(
         (it) => it.name.trim().toLowerCase() === name.trim().toLowerCase(),
@@ -414,7 +404,12 @@ interface CategoryCardProps {
     onClick: () => void;
 }
 
-function CategoryCard({ category, label, isSelected, onClick }: CategoryCardProps) {
+function CategoryCard({
+    category,
+    label,
+    isSelected,
+    onClick,
+}: CategoryCardProps) {
     return (
         <div
             className={`border p-4 rounded hover:border-black cursor-pointer transition duration-300 ${
@@ -426,7 +421,6 @@ function CategoryCard({ category, label, isSelected, onClick }: CategoryCardProp
         </div>
     );
 }
-
 
 interface CategorySelectorProps {
     categories: string[];
@@ -464,11 +458,14 @@ interface InventoryItemCardProps {
     onSelect: () => void;
     onUnselect: () => void;
 }
+
 function ToppingCard({ item, onSelect, onUnselect }: InventoryItemCardProps) {
     const [selected, setSelected] = useState(false);
     return (
         <div
-            className={`flex-col items-center justify-center border rounded p-4 cursor-pointer ${selected ? "bg-black text-white" : ""}`}
+            className={`flex-col items-center justify-center border rounded p-4 cursor-pointer ${
+                selected ? "bg-black text-white" : ""
+            }`}
             onClick={() => {
                 setSelected(!selected);
                 if (!selected) onSelect();
@@ -487,6 +484,7 @@ interface ToppingSelectorProps {
     onToppingSelect: (toppings: InventoryItem[]) => void;
     ingredientType: number;
 }
+
 function ToppingSelector({
     onToppingSelect,
     ingredientType,
@@ -522,6 +520,7 @@ interface MenuItemCardProps {
     item: MenuItem;
     onConfirm: (item: CartItem) => void;
     addToOrderLabel: string;
+    speak: (text: string) => void;
 }
 // Helper function to convert ice servings (0-4) to percentage label
 const iceToPercentage = (servings: number): string => {
@@ -535,13 +534,15 @@ const iceToPercentage = (servings: number): string => {
     return mapping[servings] || "0%";
 };
 
-function MenuItemCard({ item, onConfirm }: MenuItemCardProps) {
+function MenuItemCard({ item, onConfirm, addToOrderLabel, speak }: MenuItemCardProps) {
     const [open, setOpen] = useState(false);
     const [ice, setIce] = useState(4); // Default to 100% (4 servings)
     const [size, setSize] = useState<DrinkSize>("medium");
-    const [selectedToppings, setSelectedToppings] = useState<InventoryItem[]>(
-        [],
-    );
+    const [selectedBoba, setSelectedBoba] = useState<InventoryItem[]>([]);
+    const [selectedTea, setSelectedTea] = useState<InventoryItem[]>([]);
+    const [selectedJelly, setSelectedJelly] = useState<InventoryItem[]>([]);
+    const [selectedOther, setSelectedOther] = useState<InventoryItem[]>([]);
+    
 
     // Reset all customization state when dialog opens
     const handleOpenChange = (isOpen: boolean) => {
@@ -557,7 +558,18 @@ function MenuItemCard({ item, onConfirm }: MenuItemCardProps) {
     return (
         <Dialog open={open} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>
-                <div className="flex flex-col gap-2 items-center bg-gray-100 p-2 rounded border">
+                <div className="relative flex flex-col gap-2 items-center bg-gray-100 p-2 rounded border">
+                    <button
+                        type="button"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            speak(`${item.name}. $${item.cost.toFixed(2)}`);
+                        }}
+                        className="absolute top-1 right-1 w-8 h-8 flex items-center justify-center bg-white/90 rounded-full text-sm shadow z-10"
+                    >
+                        🔊
+                    </button>
+
                     {item.image_url !== "" ? (
                         <img
                             src={item.image_url}
@@ -567,9 +579,15 @@ function MenuItemCard({ item, onConfirm }: MenuItemCardProps) {
                     ) : (
                         <CupSoda width={120} height={120} />
                     )}
-                    {item.name}
+                    <span className="font-semibold text-center">
+                        {item.name}
+                    </span>
+                    <span className="text-sm font-medium">
+                        ${item.cost.toFixed(2)}
+                    </span>
                 </div>
             </DialogTrigger>
+
             <DialogContent className="max-h-9/10 overflow-y-scroll">
                 <DialogHeader>
                     <DialogTitle>Customize {item.name}</DialogTitle>
@@ -579,19 +597,31 @@ function MenuItemCard({ item, onConfirm }: MenuItemCardProps) {
                         <p className="text-2xl">Size</p>
                         <div className="flex space-x-4">
                             <div
-                                className={`cursor-pointer duration-300 border rounded-full p-4 text-xl ${size === "small" ? "bg-black text-white" : ""}`}
+                                className={`cursor-pointer duration-300 border rounded-full p-4 text-xl ${
+                                    size === "small"
+                                        ? "bg-black text-white"
+                                        : ""
+                                }`}
                                 onClick={() => setSize("small")}
                             >
                                 S
                             </div>
                             <div
-                                className={`cursor-pointer duration-300 border rounded-full p-4 text-xl ${size === "medium" ? "bg-black text-white" : ""}`}
+                                className={`cursor-pointer duration-300 border rounded-full p-4 text-xl ${
+                                    size === "medium"
+                                        ? "bg-black text-white"
+                                        : ""
+                                }`}
                                 onClick={() => setSize("medium")}
                             >
                                 M
                             </div>
                             <div
-                                className={`cursor-pointer duration-300 border rounded-full p-4 text-xl ${size === "large" ? "bg-black text-white" : ""}`}
+                                className={`cursor-pointer duration-300 border rounded-full p-4 text-xl ${
+                                    size === "large"
+                                        ? "bg-black text-white"
+                                        : ""
+                                }`}
                                 onClick={() => setSize("large")}
                             >
                                 L
@@ -618,28 +648,28 @@ function MenuItemCard({ item, onConfirm }: MenuItemCardProps) {
                         <div>
                             <p className="text-2xl mb-3">Boba</p>
                             <ToppingSelector
-                                onToppingSelect={setSelectedToppings}
+                                onToppingSelect={setSelectedBoba}
                                 ingredientType={20}
                             />
                         </div>
                         <div>
                             <p className="text-2xl mb-3">Tea</p>
                             <ToppingSelector
-                                onToppingSelect={setSelectedToppings}
+                                onToppingSelect={setSelectedTea}
                                 ingredientType={30}
                             />
                         </div>
                         <div>
                             <p className="text-2xl mb-3">Jelly</p>
                             <ToppingSelector
-                                onToppingSelect={setSelectedToppings}
+                                onToppingSelect={setSelectedJelly}
                                 ingredientType={40}
                             />
                         </div>
                         <div>
                             <p className="text-2xl mb-3">Other Toppings</p>
                             <ToppingSelector
-                                onToppingSelect={setSelectedToppings}
+                                onToppingSelect={setSelectedOther}
                                 ingredientType={100}
                             />
                         </div>
@@ -651,21 +681,24 @@ function MenuItemCard({ item, onConfirm }: MenuItemCardProps) {
                             variant="default"
                             className="w-full"
                             onClick={() => {
+                                const allToppings = [
+                                    ...selectedBoba,
+                                    ...selectedTea,
+                                    ...selectedJelly,
+                                    ...selectedOther,
+                                ];
                                 onConfirm({
                                     id: item.id,
                                     size,
                                     ice,
                                     name: item.name,
                                     cost: item.cost,
-                                    customizations: selectedToppings.map(
-                                        (t) => ({
-                                            id: t.id,
-                                            name: t.name,
-                                            cost: t.cost,
-                                        }),
-                                    ),
+                                    customizations: allToppings.map((t) => ({
+                                        id: t.id,
+                                        name: t.name,
+                                        cost: t.cost,
+                                    })),
                                 });
-                                setOpen(false);
                             }}
                         >
                             {addToOrderLabel}
@@ -683,6 +716,7 @@ interface MenuItemsInterface {
     onItemOrder: (item: CartItem) => void;
     title: string;
     addToOrderLabel: string;
+    speak: (text: string) => void;
 }
 
 function MenuItems({
@@ -691,6 +725,7 @@ function MenuItems({
     onItemOrder,
     title,
     addToOrderLabel,
+    speak,
 }: MenuItemsInterface) {
     return (
         <div className="space-y-4">
@@ -705,6 +740,7 @@ function MenuItems({
                                 item={item}
                                 onConfirm={onItemOrder}
                                 addToOrderLabel={addToOrderLabel}
+                                speak={speak}
                             />
                         )),
                     )}
@@ -760,10 +796,7 @@ function Cart({
 
     return (
         <div className="flex flex-col h-full gap-3">
-            {/* Cart title */}
             <p className="text-xl text-center">{labels.cart}</p>
-
-            {/* Scrollable list of items */}
             <ScrollArea className="flex-1 min-h-0">
                 <div className="space-y-3">
                     {items.map((i, idx) => (
@@ -771,8 +804,6 @@ function Cart({
                     ))}
                 </div>
             </ScrollArea>
-
-            {/* Totals + Checkout (always visible at bottom) */}
             <div className="border rounded p-3 space-y-2">
                 <div className="flex justify-between text-sm">
                     <span>{labels.subtotal}</span>
@@ -828,15 +859,21 @@ export default function CashierPage() {
     const [labels, setLabels] = useState<Labels>(EN_LABELS);
     const [isTranslating, setIsTranslating] = useState(false);
 
+    const LANGUAGE_TO_TTS_LANG: Record<string, string> = {
+        en: "en-US",
+        es: "es-ES",
+        ar: "ar-SA",
+    };
+
+    const { speak, setLang } = useTextToSpeech(LANGUAGE_TO_TTS_LANG["en"]);
+
     const [translatedMenuData, setTranslatedMenuData] =
-    useState<MenuData>(menuData);
+        useState<MenuData>(menuData);
 
-    const [categoryLabels, setCategoryLabels] = useState<Record<string, string>>(
-    () => Object.fromEntries(Object.keys(menuData).map((c) => [c, c]))
-    );
+    const [categoryLabels, setCategoryLabels] = useState<
+        Record<string, string>
+    >(() => Object.fromEntries(Object.keys(menuData).map((c) => [c, c])));
 
-
-    // translate labels when language changes
     useEffect(() => {
         if (selectedLanguage === "en") {
             setLabels(EN_LABELS);
@@ -858,7 +895,6 @@ export default function CashierPage() {
                 });
 
                 if (!res.ok) {
-                    console.error("Translation failed");
                     setLabels(EN_LABELS);
                     return;
                 }
@@ -875,7 +911,6 @@ export default function CashierPage() {
 
                 setLabels(updated);
             } catch (err) {
-                console.error("Error translating labels:", err);
                 setLabels(EN_LABELS);
             } finally {
                 setIsTranslating(false);
@@ -884,152 +919,144 @@ export default function CashierPage() {
 
         translateLabels();
     }, [selectedLanguage]);
-    
+
     useEffect(() => {
-    // English: just reset to original menuData
-    if (selectedLanguage === "en") {
-        setTranslatedMenuData(menuData);
-        return;
-    }
-
-    const translateMenuItems = async () => {
-        try {
-            // Flatten all item names, but remember where they came from
-            const flatItems: { category: string; index: number; name: string }[] = [];
-
-            Object.entries(menuData).forEach(([category, items]) => {
-                items.forEach((item, index) => {
-                    flatItems.push({ category, index, name: item.name });
-                });
-            });
-
-            const texts = flatItems.map((x) => x.name);
-
-            const res = await fetch("/api/translate", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    texts,
-                    targetLanguage: selectedLanguage,
-                }),
-            });
-
-            if (!res.ok) {
-                console.error("Menu translation failed");
-                setTranslatedMenuData(menuData);
-                return;
-            }
-
-            const data = await res.json();
-            const translatedTexts: string[] = data.translatedTexts ?? [];
-
-            // Clone base menuData so we don't mutate the original
-            const newMenu: MenuData = {};
-            Object.entries(menuData).forEach(([category, items]) => {
-                newMenu[category] = items.map((item) => ({ ...item }));
-            });
-
-            // Fill in translated names
-            translatedTexts.forEach((text, i) => {
-                const { category, index } = flatItems[i];
-                if (newMenu[category] && newMenu[category][index]) {
-                    newMenu[category][index].name = text;
-                }
-            });
-
-            setTranslatedMenuData(newMenu);
-        } catch (err) {
-            console.error("Error translating menu items:", err);
+        if (selectedLanguage === "en") {
             setTranslatedMenuData(menuData);
+            return;
         }
-    };
 
+        const translateMenuItems = async () => {
+            try {
+                const flatItems: {
+                    category: string;
+                    index: number;
+                    name: string;
+                }[] = [];
 
-    translateMenuItems();
+                Object.entries(menuData).forEach(([category, items]) => {
+                    items.forEach((item, index) => {
+                        flatItems.push({ category, index, name: item.name });
+                    });
+                });
+
+                const texts = flatItems.map((x) => x.name);
+
+                const res = await fetch("/api/translate", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        texts,
+                        targetLanguage: selectedLanguage,
+                    }),
+                });
+
+                if (!res.ok) {
+                    setTranslatedMenuData(menuData);
+                    return;
+                }
+
+                const data = await res.json();
+                const translatedTexts: string[] = data.translatedTexts ?? [];
+
+                const newMenu: MenuData = {};
+                Object.entries(menuData).forEach(([category, items]) => {
+                    newMenu[category] = items.map((item) => ({ ...item }));
+                });
+
+                translatedTexts.forEach((text, i) => {
+                    const { category, index } = flatItems[i];
+                    if (newMenu[category] && newMenu[category][index]) {
+                        newMenu[category][index].name = text;
+                    }
+                });
+
+                setTranslatedMenuData(newMenu);
+            } catch (err) {
+                setTranslatedMenuData(menuData);
+            }
+        };
+
+        translateMenuItems();
     }, [selectedLanguage]);
 
     useEffect(() => {
-    if (selectedLanguage === "en") {
-        setLabels(EN_LABELS);
-        setCategoryLabels(
-            Object.fromEntries(Object.keys(menuData).map((c) => [c, c]))
-        );
-        return;
-    }
+        if (selectedLanguage === "en") {
+            setLabels(EN_LABELS);
+            setCategoryLabels(
+                Object.fromEntries(Object.keys(menuData).map((c) => [c, c])),
+            );
+            setLang(LANGUAGE_TO_TTS_LANG["en"]);
+            return;
+        }
 
-    const translateLabels = async () => {
-        setIsTranslating(true);
-        try {
-            const labelTexts = LABEL_KEYS.map((key) => EN_LABELS[key]);
-            const categoryNames = Object.keys(menuData);
+        const translateLabels = async () => {
+            setIsTranslating(true);
+            try {
+                const labelTexts = LABEL_KEYS.map((key) => EN_LABELS[key]);
+                const categoryNames = Object.keys(menuData);
 
-            // 1) First all UI labels, then all category names
-            const texts = [...labelTexts, ...categoryNames];
+                const texts = [...labelTexts, ...categoryNames];
 
-            const res = await fetch("/api/translate", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    texts,
-                    targetLanguage: selectedLanguage,
-                }),
-            });
+                const res = await fetch("/api/translate", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        texts,
+                        targetLanguage: selectedLanguage,
+                    }),
+                });
 
-            if (!res.ok) {
-                console.error("Translation failed");
+                if (!res.ok) {
+                    setLabels(EN_LABELS);
+                    setCategoryLabels(
+                        Object.fromEntries(
+                            Object.keys(menuData).map((c) => [c, c]),
+                        ),
+                    );
+                    setLang(LANGUAGE_TO_TTS_LANG["en"]);
+                    return;
+                }
+
+                const data = await res.json();
+                const translatedTexts: string[] = data.translatedTexts ?? [];
+
+                const updated: Labels = { ...EN_LABELS };
+                LABEL_KEYS.forEach((key, idx) => {
+                    if (translatedTexts[idx]) {
+                        updated[key] = translatedTexts[idx];
+                    }
+                });
+
+                const newCategoryLabels: Record<string, string> = {};
+                categoryNames.forEach((name, idx) => {
+                    const tIdx = LABEL_KEYS.length + idx;
+                    newCategoryLabels[name] = translatedTexts[tIdx] ?? name;
+                });
+
+                setLabels(updated);
+                setCategoryLabels(newCategoryLabels);
+                setLang(LANGUAGE_TO_TTS_LANG[selectedLanguage]);
+            } catch (err) {
                 setLabels(EN_LABELS);
                 setCategoryLabels(
                     Object.fromEntries(
                         Object.keys(menuData).map((c) => [c, c]),
                     ),
                 );
-                return;
+                setLang(LANGUAGE_TO_TTS_LANG["en"]);
+            } finally {
+                setIsTranslating(false);
             }
+        };
 
-            const data = await res.json();
-            const translatedTexts: string[] = data.translatedTexts ?? [];
-
-            // 2) First part → UI labels
-            const updated: Labels = { ...EN_LABELS };
-            LABEL_KEYS.forEach((key, idx) => {
-                if (translatedTexts[idx]) {
-                    updated[key] = translatedTexts[idx];
-                }
-            });
-
-            // 3) Second part → category labels
-            const newCategoryLabels: Record<string, string> = {};
-            categoryNames.forEach((name, idx) => {
-                const tIdx = LABEL_KEYS.length + idx;
-                newCategoryLabels[name] =
-                    translatedTexts[tIdx] ?? name;
-            });
-
-            setLabels(updated);
-            setCategoryLabels(newCategoryLabels);
-        } catch (err) {
-            console.error("Error translating labels:", err);
-            setLabels(EN_LABELS);
-            setCategoryLabels(
-                Object.fromEntries(
-                    Object.keys(menuData).map((c) => [c, c]),
-                ),
-            );
-        } finally {
-            setIsTranslating(false);
-        }
-    };
-
-    translateLabels();
-    }, [selectedLanguage]);
-
+        translateLabels();
+    }, [selectedLanguage, setLang]);
 
     return (
         <div className="min-h-screen bg-[#ffddd233] font-sans dark:bg-black flex flex-col">
-            {/* Top navigation bar */}
             <TopNav subtitle={labels.kioskTitle} />
 
-            {/* Language Selector */}
             <div className="flex justify-end px-8 pt-4 gap-2 items-center">
                 <span className="text-sm font-medium">{labels.language}</span>
                 <select
@@ -1051,7 +1078,6 @@ export default function CashierPage() {
                 )}
             </div>
 
-            {/* Main 3-column layout with better spacing */}
             <div className="flex-1 px-6 py-4">
                 <div className="mx-auto max-w-6xl grid grid-cols-[1.1fr_2fr_1.2fr] gap-6">
                     <CategorySelector
@@ -1062,15 +1088,16 @@ export default function CashierPage() {
                         categoryLabels={categoryLabels}
                     />
 
-
                     <MenuItems
                         menuData={translatedMenuData}
                         selectedCategory={selectedCategory}
-                        onItemOrder={(item) => setCartItems([...cartItems, item])}
+                        onItemOrder={(item) =>
+                            setCartItems([...cartItems, item])
+                        }
                         title={labels.drinks}
                         addToOrderLabel={labels.addToOrder}
+                        speak={speak}
                     />
-
 
                     <Cart
                         items={cartItems}

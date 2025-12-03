@@ -618,7 +618,7 @@ export async function fetch_kitchen_orders_by_status(
                                     )
                                     FROM drinks_ingredients di
                                     JOIN ingredients i ON i.id = di.ingredient_id
-                                    WHERE di.drink_id = m.id
+                                    WHERE di.drink_id = dord.id
                                 ),
                                 '[]'
                             )

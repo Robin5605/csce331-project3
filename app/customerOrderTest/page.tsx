@@ -31,6 +31,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
+
+import { useAccessibility } from "@/contexts/AccessibilityContext";
 import { useTextToSpeech } from "@/hooks/useTextToSpeech";
 
 interface CartItem {
@@ -386,6 +388,7 @@ const findInventoryCost = (name: string) => {
 };
 
 function calculateSubtotal(cartItems: CartItem[]): number {
+    //console.log(JSON.stringify(cartItems));
     let total = 0;
 
     for (const item of cartItems) {
@@ -410,17 +413,28 @@ function CategoryCard({
     isSelected,
     onClick,
 }: CategoryCardProps) {
-    return (
-        <div
-            className={`border p-4 rounded hover:border-black cursor-pointer transition duration-300 ${
-                isSelected ? "bg-black text-white" : ""
+  const { isHighContrast } = useAccessibility();
+
+  const base = "border p-4 rounded cursor-pointer";
+
+  const normal =
+    `hover:border-black transition duration-300 ${isSelected ? "bg-black text-white" : ""}`;
+
+  const highContrast =
+    `bg-black ${isSelected ? "text-blue-400" : "text-white"} border-2 border-white`;
+
+  return (
+    <div
+      className={`${base} ${
+                isHighContrast ? highContrast : normal
             }`}
-            onClick={onClick}
-        >
-            <p>{label}</p>
-        </div>
-    );
+      onClick={onClick}
+    >
+      <p>{label}</p>
+    </div>
+  );
 }
+
 
 interface CategorySelectorProps {
     categories: string[];
@@ -437,9 +451,56 @@ function CategorySelector({
     title,
     categoryLabels,
 }: CategorySelectorProps) {
+    const { isHighContrast, setIsHighContrast, textMultipler, setTextMultipler } = useAccessibility();
     return (
-        <div className="w-fit space-y-4">
-            <p className="text-xl">{title}</p>
+        <div className={`w-fit space-y-4 flex-col items-center ${isHighContrast ? "text-white" : "text-black"} ${textMultipler >= 1.75 ? "max-w-50" : ""}`}>
+            <Button
+                variant="default"
+                className="w-full"
+                onClick={() => {
+                        let t = isHighContrast
+                        setIsHighContrast(!t)
+                    }
+                }
+            >
+                Toggle High Contrast
+            </Button>
+            <p className="text-center">Zoom</p>
+            <div className="flex space-x-4">
+                <Button
+                    variant="outline"
+                    size="icon"
+                    className="rounded-full"
+                    onClick={() => {
+                        if(textMultipler <= 1) return;
+                        let z = textMultipler - .25
+                        document.documentElement.style.fontSize = `${16 * z}px`; //This changes the magnification of the page
+                        setTextMultipler(z);
+                    }}
+                >
+                    <Minus color={`${isHighContrast ? "blue" : "black"}`}/>
+                </Button>
+                <Input
+                    type="number"
+                    className="rounded-full w-fit"
+                    value={textMultipler}
+                    readOnly
+                />
+                <Button
+                    variant="outline"
+                    size="icon"
+                    className="rounded-full"
+                    onClick={() => {
+                        if(textMultipler >= 2) return;
+                        let z = textMultipler + .25
+                        document.documentElement.style.fontSize = `${16 * z}px`; //This changes the magnification of the page
+                        setTextMultipler(z);
+                    }}
+                >
+                    <Plus color={`${isHighContrast ? "blue" : "black"}`} />
+                </Button>
+            </div>
+            <p className={`text-xl ${isHighContrast ? "text-white" : "text-black"}`}>{title}</p>
             {categories.map((c, i) => (
                 <CategoryCard
                     key={i}
@@ -455,21 +516,36 @@ function CategorySelector({
 
 interface InventoryItemCardProps {
     item: InventoryItem;
+    isSelected: boolean;
     onSelect: () => void;
     onUnselect: () => void;
 }
 
-function ToppingCard({ item, onSelect, onUnselect }: InventoryItemCardProps) {
-    const [selected, setSelected] = useState(false);
+function ToppingCard({ item, isSelected, onSelect, onUnselect }: InventoryItemCardProps) {
+    const { isHighContrast } = useAccessibility();
+    // const [selected, setSelected] = useState(isSelected);
+    let selected = isSelected
     return (
         <div
             className={`flex-col items-center justify-center border rounded p-4 cursor-pointer ${
-                selected ? "bg-black text-white" : ""
+                
+                isHighContrast ? 
+                    selected ? "text-blue-400" : ""          
+                : 
+                    selected ? "bg-black text-white" : ""
+            
             }`}
             onClick={() => {
-                setSelected(!selected);
-                if (!selected) onSelect();
-                else onUnselect();
+                if(selected){
+                    // setSelected(false)
+                    onUnselect()
+                } else {
+                    // setSelected(true)
+                    onSelect()
+                }
+                // setSelected(!selected);
+                // if (!selected) onSelect();
+                // else onUnselect();
             }}
         >
             <p className="text-center select-none">{item.name}</p>
@@ -481,34 +557,42 @@ function ToppingCard({ item, onSelect, onUnselect }: InventoryItemCardProps) {
 }
 
 interface ToppingSelectorProps {
-    onToppingSelect: (toppings: InventoryItem[]) => void;
+    onToppingSelect: (        
+        list: InventoryItem[],
+        id: number
+    ) => void;
     ingredientType: number;
+    multiSelect: boolean;
+    globalToppings: Record<number, InventoryItem[]>
 }
 
 function ToppingSelector({
     onToppingSelect,
     ingredientType,
+    multiSelect,
+    globalToppings
 }: ToppingSelectorProps) {
-    const [selected, setSelected] = useState<InventoryItem[]>([]);
+    const [selected, setSelected] = useState<InventoryItem[]>([]); //This is for local selections
     return (
-        <div className="grid grid-cols-4 gap-2">
+        <div className={`grid grid-cols-4 gap-2`}>
             {inventory
                 .filter((i) => i.ingredient_type === ingredientType)
                 .map((i) => (
                     <ToppingCard
                         key={i.id}
                         item={i}
+                        isSelected = {selected.includes(i)}
                         onSelect={() => {
-                            const newArr = [...selected, i];
-                            setSelected(newArr);
-                            onToppingSelect(newArr);
+                            let localArr = multiSelect ? [...selected, i] : [i];
+                            setSelected(localArr);
+                            onToppingSelect(localArr, ingredientType);
                         }}
                         onUnselect={() => {
-                            const newArr = selected.filter(
+                            const localArr = selected.filter(
                                 (item) => item.id !== i.id,
                             );
-                            setSelected(newArr);
-                            onToppingSelect(newArr);
+                            setSelected(localArr);
+                            onToppingSelect(localArr, ingredientType);
                         }}
                     />
                 ))}
@@ -535,13 +619,29 @@ const iceToPercentage = (servings: number): string => {
 };
 
 function MenuItemCard({ item, onConfirm, addToOrderLabel, speak }: MenuItemCardProps) {
+    const { isHighContrast, textMultipler } = useAccessibility();
+    
     const [open, setOpen] = useState(false);
+    
     const [ice, setIce] = useState(4); // Default to 100% (4 servings)
     const [size, setSize] = useState<DrinkSize>("medium");
-    const [selectedBoba, setSelectedBoba] = useState<InventoryItem[]>([]);
-    const [selectedTea, setSelectedTea] = useState<InventoryItem[]>([]);
-    const [selectedJelly, setSelectedJelly] = useState<InventoryItem[]>([]);
-    const [selectedOther, setSelectedOther] = useState<InventoryItem[]>([]);
+    
+    const [selectedToppings, setSelectedToppings] = useState<Record<number, InventoryItem[]>>(
+        {
+            20: [],
+            30: [],
+            40: [],
+            100: []
+        }
+    );
+    
+    function setToppingsForType(list: InventoryItem[], id: number){
+        setSelectedToppings(prev => ({
+            ...prev,    
+            [id]: list, 
+        }));
+    }
+    
     
 
     // Reset all customization state when dialog opens
@@ -551,17 +651,23 @@ function MenuItemCard({ item, onConfirm, addToOrderLabel, speak }: MenuItemCardP
             // Reset to defaults when opening
             setIce(4); // 100%
             setSize("medium");
-            setSelectedBoba([]);
-            setSelectedTea([]);
-            setSelectedJelly([]);
-            setSelectedOther([]);
+            setSelectedToppings({
+                20: [],
+                30: [],
+                40: [],
+                100: [],
+            });
         }
     };
 
     return (
         <Dialog open={open} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>
-                <div className="relative flex flex-col gap-2 items-center bg-gray-100 p-2 rounded border">
+                <div className={`relative flex flex-col gap-2 items-center 
+                    ${isHighContrast ? "bg-black" : "bg-gray-100"} p-2 rounded border
+                    ${isHighContrast ? "text-white" : "text-black"}
+                `}
+                >
                     <button
                         type="button"
                         onClick={(e) => {
@@ -577,7 +683,7 @@ function MenuItemCard({ item, onConfirm, addToOrderLabel, speak }: MenuItemCardP
                         <img
                             src={item.image_url}
                             alt={"drink image"}
-                            className="w-[120px] h-[120px] object-cover"
+                            className={`w-40 h-40 object-cover`}
                         />
                     ) : (
                         <CupSoda width={120} height={120} />
@@ -590,8 +696,10 @@ function MenuItemCard({ item, onConfirm, addToOrderLabel, speak }: MenuItemCardP
                     </span>
                 </div>
             </DialogTrigger>
-
-            <DialogContent className="max-h-9/10 overflow-y-scroll">
+            <DialogContent className={`max-h-9/10 overflow-y-scroll
+                    ${isHighContrast ? "text-white" : "text-black"}
+                    ${isHighContrast ? "bg-black" : "bg-gray-100"}
+                `}>
                 <DialogHeader>
                     <DialogTitle>Customize {item.name}</DialogTitle>
                 </DialogHeader>
@@ -600,31 +708,37 @@ function MenuItemCard({ item, onConfirm, addToOrderLabel, speak }: MenuItemCardP
                         <p className="text-2xl">Size</p>
                         <div className="flex space-x-4">
                             <div
-                                className={`cursor-pointer duration-300 border rounded-full p-4 text-xl ${
-                                    size === "small"
-                                        ? "bg-black text-white"
-                                        : ""
-                                }`}
+                                className={`cursor-pointer duration-300 border rounded-full p-4 text-xl 
+                                    ${
+                                        isHighContrast ?
+                                            size === "small" ? "bg-black text-blue-500" : ""
+                                        :
+                                            size === "small" ? "bg-black text-white" : ""
+                                    }`
+                                }
                                 onClick={() => setSize("small")}
                             >
                                 S
                             </div>
                             <div
-                                className={`cursor-pointer duration-300 border rounded-full p-4 text-xl ${
-                                    size === "medium"
-                                        ? "bg-black text-white"
-                                        : ""
-                                }`}
+                                className={`cursor-pointer duration-300 border rounded-full p-4 text-xl 
+                                     ${
+                                        isHighContrast ?
+                                            size === "medium" ? "bg-black text-blue-500" : ""
+                                        :
+                                            size === "medium" ? "bg-black text-white" : ""
+                                    }`}
                                 onClick={() => setSize("medium")}
                             >
                                 M
                             </div>
                             <div
-                                className={`cursor-pointer duration-300 border rounded-full p-4 text-xl ${
-                                    size === "large"
-                                        ? "bg-black text-white"
-                                        : ""
-                                }`}
+                                className={`cursor-pointer duration-300 border rounded-full p-4 text-xl  ${
+                                        isHighContrast ?
+                                            size === "large" ? "bg-black text-blue-500" : ""
+                                        :
+                                            size === "large" ? "bg-black text-white" : ""
+                                    }`}
                                 onClick={() => setSize("large")}
                             >
                                 L
@@ -651,29 +765,37 @@ function MenuItemCard({ item, onConfirm, addToOrderLabel, speak }: MenuItemCardP
                         <div>
                             <p className="text-2xl mb-3">Boba</p>
                             <ToppingSelector
-                                onToppingSelect={setSelectedBoba}
+                                globalToppings={selectedToppings}
+                                onToppingSelect={setToppingsForType}
                                 ingredientType={20}
+                                multiSelect={false}
                             />
                         </div>
                         <div>
                             <p className="text-2xl mb-3">Tea</p>
                             <ToppingSelector
-                                onToppingSelect={setSelectedTea}
+                                globalToppings={selectedToppings}
+                                onToppingSelect={setToppingsForType}
                                 ingredientType={30}
+                                multiSelect={false}
                             />
                         </div>
                         <div>
                             <p className="text-2xl mb-3">Jelly</p>
                             <ToppingSelector
-                                onToppingSelect={setSelectedJelly}
+                                globalToppings={selectedToppings}
+                                onToppingSelect={setToppingsForType}
                                 ingredientType={40}
+                                multiSelect={false}
                             />
                         </div>
                         <div>
                             <p className="text-2xl mb-3">Other Toppings</p>
                             <ToppingSelector
-                                onToppingSelect={setSelectedOther}
+                                globalToppings={selectedToppings}
+                                onToppingSelect={setToppingsForType}
                                 ingredientType={100}
+                                multiSelect={true}
                             />
                         </div>
                     </div>
@@ -684,23 +806,21 @@ function MenuItemCard({ item, onConfirm, addToOrderLabel, speak }: MenuItemCardP
                             variant="default"
                             className="w-full"
                             onClick={() => {
-                                const allToppings = [
-                                    ...selectedBoba,
-                                    ...selectedTea,
-                                    ...selectedJelly,
-                                    ...selectedOther,
-                                ];
+                                const allCustomizations = Object.values(selectedToppings).flatMap(topArr =>
+                                    topArr.map(t => ({
+                                        id: t.id,
+                                        name: t.name,
+                                        cost: t.cost,
+                                    }))
+                                );
+
                                 onConfirm({
                                     id: item.id,
                                     size,
                                     ice,
                                     name: item.name,
                                     cost: item.cost,
-                                    customizations: allToppings.map((t) => ({
-                                        id: t.id,
-                                        name: t.name,
-                                        cost: t.cost,
-                                    })),
+                                    customizations: allCustomizations,
                                 });
                             }}
                         >
@@ -753,8 +873,14 @@ function MenuItems({
 }
 
 function CartItemCard({ item }: { item: CartItem }) {
+    const { isHighContrast } = useAccessibility();
+
     return (
-        <div className="border rounded p-4">
+        <div
+            className={`rounded p-4 border ${
+            isHighContrast ? "bg-black text-white border-4  border-blue-500" : "bg-white text-black border"
+            }`}
+        >
             <p className="text-xl font-bold">
                 {item.size.charAt(0).toUpperCase() + item.size.substring(1)}{" "}
                 {item.name}
@@ -778,6 +904,8 @@ function Cart({
     setItems: React.Dispatch<React.SetStateAction<CartItem[]>>;
     labels: Labels;
 }) {
+    const { isHighContrast, textMultipler } = useAccessibility();
+
     const subtotal = calculateSubtotal(items);
     const tax = TAX_RATE * subtotal;
     const total = subtotal + tax;
@@ -798,58 +926,67 @@ function Cart({
     }
 
     return (
-        <div className="flex flex-col h-full gap-3">
-            <p className="text-xl text-center">{labels.cart}</p>
-            <ScrollArea className="flex-1 min-h-0">
-                <div className="space-y-3">
+        <div className={`grid grid-rows-[1fr_8fr_1fr] min-h-0 h-[900] gap-4 ${isHighContrast ? "bg-black text-white border-8 border-yellow-200" : ""}`}>
+            <p className="text-xl mb-4 text-center">{labels.cart}</p>
+            <ScrollArea className="h-150">
+                <div className="space-y-4">
                     {items.map((i, idx) => (
                         <CartItemCard key={idx} item={i} />
                     ))}
                 </div>
             </ScrollArea>
-            <div className="border rounded p-3 space-y-2">
-                <div className="flex justify-between text-sm">
-                    <span>{labels.subtotal}</span>
-                    <span>${subtotal.toFixed(2)}</span>
+            
+            <div className={`grid grid-rows-4 grid-cols-2 p-4 border rounded h-50 ${
+                textMultipler >= 1.75 ? "text-sm" : "text-md"
+            }
+                ${
+                isHighContrast ? "bg-black text-white border-4 border-blue-500" : "bg-white text-black border"
+                }`}>
+                
+                <div className="col-span-2 space-y-2"> 
+                    <div className="flex justify-between text-sm">
+                        <span>{labels.subtotal}</span>
+                        <span>${subtotal.toFixed(2)}</span>
+                    </div>
+
+                    <div className="flex justify-between text-sm">
+                        <span>{labels.tax}</span>
+                        <span>${tax.toFixed(2)}</span>
+                    </div>
+
+                    <div className="flex justify-between font-semibold">
+                        <span>{labels.total}</span>
+                        <span>${total.toFixed(2)}</span>
+                    </div>
+
+                    <Dialog>
+                        <DialogTrigger asChild>
+                            {/* Removed col-span-2 from Button as it should be inside the column structure */}
+                            <Button className={`w-full ${isHighContrast ? "border-4 border-green-400" : ""}`}>{labels.checkout}</Button> 
+                        </DialogTrigger>
+
+                        <DialogContent className={`max-h-[90vh] ${isHighContrast ? "text-white bg-black" : "text-black"}`}>
+                            <DialogHeader>
+                                <DialogTitle className={`text-center text-2xl`}>
+                                    {labels.confirmOrder}
+                                </DialogTitle>
+                            </DialogHeader>
+
+                            <DialogFooter>
+                                <DialogClose asChild>
+                                    <Button
+                                        variant="default"
+                                        className={`w-full  ${isHighContrast ? "border-4 border-green-400" : ""}`}
+                                        onClick={handleCheckout}
+                                    >
+                                        {labels.yesPlaceOrder}
+                                    </Button>
+                                </DialogClose>
+                            </DialogFooter>
+                        </DialogContent>
+                    </Dialog>
                 </div>
-
-                <div className="flex justify-between text-sm">
-                    <span>{labels.tax}</span>
-                    <span>${tax.toFixed(2)}</span>
-                </div>
-
-                <div className="flex justify-between font-semibold">
-                    <span>{labels.total}</span>
-                    <span>${total.toFixed(2)}</span>
-                </div>
-
-                <Dialog>
-                    <DialogTrigger asChild>
-                        <Button className="w-full mt-1">
-                            {labels.checkout}
-                        </Button>
-                    </DialogTrigger>
-
-                    <DialogContent className="max-h-[90vh]">
-                        <DialogHeader>
-                            <DialogTitle className="text-center text-2xl">
-                                {labels.confirmOrder}
-                            </DialogTitle>
-                        </DialogHeader>
-
-                        <DialogFooter>
-                            <DialogClose asChild>
-                                <Button
-                                    variant="default"
-                                    className="w-full"
-                                    onClick={handleCheckout}
-                                >
-                                    {labels.yesPlaceOrder}
-                                </Button>
-                            </DialogClose>
-                        </DialogFooter>
-                    </DialogContent>
-                </Dialog>
+                
             </div>
         </div>
     );
@@ -1055,12 +1192,39 @@ export default function CashierPage() {
 
         translateLabels();
     }, [selectedLanguage, setLang]);
+    const { isHighContrast, textMultipler } = useAccessibility();
+
+    //console.log(cartItems);
+    //Sets default selection for customization options
+    const defaultCustomizations = {
+        Size: "Medium Cups",
+        Ice: "100%",
+        Boba: "None",
+        Jelly: "None",
+        Tea: "Black Tea",
+        Toppings: [],
+    };
+
+    const placeholderItems: CartItem[] = [
+        {
+            id: 1,
+            name: "Mango Green Tea",
+            ice: 3,
+            size: "large",
+            cost: 6.5,
+            customizations: [
+                { id: 9, name: "Red Bean", cost: 0.75 },
+                { id: 12, name: "Pudding", cost: 0.75 },
+                { id: 13, name: "Herb Jelly", cost: 0.75 },
+            ],
+        },
+    ];
 
     return (
-        <div className="min-h-screen bg-[#ffddd233] font-sans dark:bg-black flex flex-col">
+        <div className="min-h-screen bg-[#ffddd233] font-sans dark:bg-black flex flex-col text-white">
             <TopNav subtitle={labels.kioskTitle} />
 
-            <div className="flex justify-end px-8 pt-4 gap-2 items-center">
+            <div className={`flex justify-end px-8 pt-4 gap-2 items-center ${isHighContrast ? "bg-black" : ""}`}>
                 <span className="text-sm font-medium">{labels.language}</span>
                 <select
                     className="border rounded px-2 py-1 text-sm"
@@ -1081,7 +1245,7 @@ export default function CashierPage() {
                 )}
             </div>
 
-            <div className="flex-1 px-6 py-4">
+            <div className={`flex-1 px-6 py-4 ${isHighContrast ? "bg-black" : ""}`}>
                 <div className="mx-auto max-w-6xl grid grid-cols-[1.1fr_2fr_1.2fr] gap-6">
                     <CategorySelector
                         categories={Object.keys(menuData)}

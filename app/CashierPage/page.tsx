@@ -3,6 +3,7 @@
 import { ReactNode, useState, JSX, useMemo, useEffect } from "react";
 import Image from "next/image";
 import IdleLogout from "@/components/idleLogout";
+import TopNav from "@/components/TopNav";
 
 import ItemCard from "../../components/ItemCard";
 import {
@@ -124,7 +125,7 @@ export default function CashierPage() {
             method: "GET",
             headers: { "Content-Type": "application/json" },
         });
-        if(!catRes.ok){
+        if (!catRes.ok) {
             throw new Error(`GET /api/cashier/categories ${catRes.status}`);
         }
         //console.log("hey");
@@ -144,11 +145,11 @@ export default function CashierPage() {
             });
             const items: MenuItem[] = await queryRes.json();
             //console.log(cat.name);
-            menuTempData = {...menuTempData, [cat.name]: items};
+            menuTempData = { ...menuTempData, [cat.name]: items };
         }
         setMenuData(menuTempData);
         console.log("loading ingredients");
-        const ingrRes = await fetch("api/ingredient",{
+        const ingrRes = await fetch("api/ingredient", {
             method: "GET",
             headers: { "Content-Type": "application/json" },
         });
@@ -156,7 +157,7 @@ export default function CashierPage() {
         setInventory(ingr);
         setMenuDataReady(true);
     };
-    
+
     useEffect(() => {
         loadMenuData();
     }, []);
@@ -330,8 +331,7 @@ export default function CashierPage() {
                             drinkOrderId = id;
                         } else {
                             let ingredientAmmount = 0;
-                            let ingredientTemp: Ingredient | any =
-                                inventory[0];
+                            let ingredientTemp: Ingredient | any = inventory[0];
                             if (key === "Ice" || key === "Sugar") {
                                 if (value === "100%") {
                                     ingredientAmmount = 4;
@@ -541,7 +541,11 @@ export default function CashierPage() {
     };
 
     return (
-        <div className="flex min-h-screen bg-[#ffddd233] font-sans dark:bg-black gap-6 justify-between">
+        <div className="min-h-screen bg-[#ffddd233] font-sans dark:bg-black flex flex-col">
+            {/* Top navigation bar */}
+            <TopNav subtitle="Cashier POS" variant="cashier" />
+
+            {/* Customization dialog (overlay) */}
             <AlertDialog
                 open={isCustomizationOpen}
                 onOpenChange={(open) => {
@@ -620,240 +624,258 @@ export default function CashierPage() {
                         >
                             Cancel
                         </AlertDialogCancel>
-                        <AlertDialogAction onClick={() => submitOrder()}>
+                        <AlertDialogAction onClick={submitOrder}>
                             Continue
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
-            <aside className="w-[300px] h-screen bg-gradient-to-b from-[#9d8189] to-[#ffe5d9] flex-col justify-center">
-                <h2 className="font-semibold text-3xl mt-3 mb-10 text-center">
-                    Categories
-                </h2>
-                <div className="flex flex-col items-center w-full gap-10">
-                    {menuDataReady ? (Object.entries(menuData).map(([category]) => (
-                        <Category key={category} name={category} />
-                    ))) : (
-                        <Category name={"loading"}/>
-                    )}
-                </div>
-            </aside>
 
-            <main className="flex-1 flex items-start justify-center mt-10">
-                <div className="flex flex-wrap gap-16 justify-around">
-                    {menuDataReady ? (menuData[selectedCategory].map((itemData,itemDataIndex) => {
-                        return (
-                            <ItemCard
-                                key={itemDataIndex}
-                                itemName={itemData.name}
-                                whenClicked={() => menuItemClicked(itemData)}
-                            />
-                        );
-                    })) : (
-                        <ItemCard
-                            itemName={"loading"}
-                            key={0}
-                            whenClicked={() => {
-                                console.log("don't touch me!");
-                            }}
-                        />
-                    )}
-                </div>
-            </main>
-
-            <aside className="w-[300px] h-screen bg-gradient-to-b from-[#9d8189] to-[#ffe5d9] flex flex-col justify-between p-4">
-                <div>
-                    <h2 className="font-semibold text-3xl text-center mt-3 mb-4">
-                        Checkout
+            {/* Main content row under the top nav */}
+            <div className="flex flex-1 gap-6 justify-between px-6 py-4">
+                {/* Left: Categories */}
+                <aside className="w-[300px] h-full bg-gradient-to-b from-[#9d8189] to-[#ffe5d9] flex flex-col justify-center rounded-xl">
+                    <h2 className="font-semibold text-3xl mt-3 mb-10 text-center">
+                        Categories
                     </h2>
-                    <div className="bg-white/40 rounded-xl p-3 shadow-inner max-h-[60vh] overflow-y-auto">
-                        {curOrders.length === 0 ? (
-                            <div className="flex items-center justify-center h-full min-h-[200px]">
-                                <p className="text-gray-600 font-medium text-lg">
-                                    Cart is empty
-                                </p>
-                            </div>
+                    <div className="flex flex-col items-center w-full gap-10 pb-6">
+                        {menuDataReady ? (
+                            Object.entries(menuData).map(([category]) => (
+                                <Category key={category} name={category} />
+                            ))
                         ) : (
-                            curOrders.map((order, orderIndex) => {
-                                const itemsJSX: JSX.Element[] = [];
+                            <Category name="loading" />
+                        )}
+                    </div>
+                </aside>
 
-                                Object.entries(order).forEach(
-                                    ([key, value]) => {
-                                        if (
-                                            value === "None" ||
-                                            value === null ||
-                                            (Array.isArray(value) &&
-                                                value.length === 0)
-                                        ) {
-                                            return;
+                {/* Middle: Menu items */}
+                <main className="flex-1 flex items-start justify-center mt-6">
+                    <div className="flex flex-wrap gap-16 justify-around">
+                        {menuDataReady && menuData[selectedCategory] ? (
+                            menuData[selectedCategory].map(
+                                (itemData, itemDataIndex) => (
+                                    <ItemCard
+                                        key={itemDataIndex}
+                                        itemName={itemData.name}
+                                        whenClicked={() =>
+                                            menuItemClicked(itemData)
                                         }
+                                    />
+                                ),
+                            )
+                        ) : (
+                            <ItemCard
+                                itemName="loading"
+                                key={0}
+                                whenClicked={() => {
+                                    console.log("don't touch me!");
+                                }}
+                            />
+                        )}
+                    </div>
+                </main>
 
-                                        if (
-                                            key.toLowerCase() === "drink" ||
-                                            key === "quantity"
-                                        ) {
-                                            // we'll show the drink name in the header; price is added in getOrderPrice
-                                            // quantity is shown in the quantity controls, not as a customization item
-                                            return;
-                                        } else if (
-                                            key === "Ice" ||
-                                            key === "Sugar"
-                                        ) {
-                                            itemsJSX.push(
-                                                <div
-                                                    key={`suborder-${key}-${value}-single`}
-                                                    className="bg-[#ffe5ea] px-2 py-1 rounded mb-2"
-                                                >
-                                                    {key}: {value as string}
-                                                </div>,
-                                            );
-                                        } else if (Array.isArray(value)) {
-                                            value.forEach((o: string) => {
-                                                const p = findInventoryCost(o);
+                {/* Right: Checkout */}
+                <aside className="w-[300px] h-full bg-gradient-to-b from-[#9d8189] to-[#ffe5d9] flex flex-col justify-between p-4 rounded-xl">
+                    <div>
+                        <h2 className="font-semibold text-3xl text-center mt-3 mb-4">
+                            Checkout
+                        </h2>
+                        <div className="bg-white/40 rounded-xl p-3 shadow-inner max-h-[60vh] overflow-y-auto">
+                            {curOrders.length === 0 ? (
+                                <div className="flex items-center justify-center h-full min-h-[200px]">
+                                    <p className="text-gray-600 font-medium text-lg">
+                                        Cart is empty
+                                    </p>
+                                </div>
+                            ) : (
+                                curOrders.map((order, orderIndex) => {
+                                    const itemsJSX: JSX.Element[] = [];
+
+                                    Object.entries(order).forEach(
+                                        ([key, value]) => {
+                                            if (
+                                                value === "None" ||
+                                                value === null ||
+                                                (Array.isArray(value) &&
+                                                    value.length === 0)
+                                            ) {
+                                                return;
+                                            }
+
+                                            if (
+                                                key.toLowerCase() === "drink" ||
+                                                key === "quantity"
+                                            ) {
+                                                return;
+                                            } else if (
+                                                key === "Ice" ||
+                                                key === "Sugar"
+                                            ) {
                                                 itemsJSX.push(
                                                     <div
-                                                        key={`suborder-${key}-${o}-single`}
+                                                        key={`suborder-${key}-${value}-single`}
                                                         className="bg-[#ffe5ea] px-2 py-1 rounded mb-2"
                                                     >
-                                                        {o}{" "}
+                                                        {key}: {value as string}
+                                                    </div>,
+                                                );
+                                            } else if (Array.isArray(value)) {
+                                                value.forEach((o: string) => {
+                                                    const p =
+                                                        findInventoryCost(o);
+                                                    itemsJSX.push(
+                                                        <div
+                                                            key={`suborder-${key}-${o}-single`}
+                                                            className="bg-[#ffe5ea] px-2 py-1 rounded mb-2"
+                                                        >
+                                                            {o}{" "}
+                                                            {p !== 0
+                                                                ? `($${p.toFixed(
+                                                                      2,
+                                                                  )})`
+                                                                : ""}
+                                                        </div>,
+                                                    );
+                                                });
+                                            } else {
+                                                const p = findInventoryCost(
+                                                    String(value),
+                                                );
+                                                itemsJSX.push(
+                                                    <div
+                                                        key={`suborder-${key}-${value}-single`}
+                                                        className="bg-[#ffe5ea] px-2 py-1 rounded mb-2"
+                                                    >
+                                                        {String(value)}{" "}
                                                         {p !== 0
                                                             ? `($${p.toFixed(2)})`
                                                             : ""}
                                                     </div>,
                                                 );
-                                            });
-                                        } else {
-                                            const p = findInventoryCost(
-                                                String(value),
-                                            );
-                                            itemsJSX.push(
-                                                <div
-                                                    key={`suborder-${key}-${value}-single`}
-                                                    className="bg-[#ffe5ea] px-2 py-1 rounded mb-2"
-                                                >
-                                                    {String(value)}{" "}
-                                                    {p !== 0
-                                                        ? `($${p.toFixed(2)})`
-                                                        : ""}
-                                                </div>,
-                                            );
-                                        }
-                                    },
-                                );
+                                            }
+                                        },
+                                    );
 
-                                const order_price = getOrderPrice(order);
-                                const quantity =
-                                    (order.quantity as number) || 1;
+                                    const order_price = getOrderPrice(order);
+                                    const quantity =
+                                        (order.quantity as number) || 1;
 
-                                return (
-                                    <div
-                                        key={`order-${orderIndex}`}
-                                        className="bg-[#fffaf8] rounded-xl p-3 mb-4 shadow flex-col"
-                                    >
-                                        <div className="flex justify-between items-start mb-2">
-                                            <h3 className="font-semibold text-lg">
-                                                Order {orderIndex + 1}:{" "}
-                                                {
-                                                    (order.Drink as MenuItem)
-                                                        ?.name
-                                                }
-                                            </h3>
-                                            <div className="flex gap-2">
-                                                <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    onClick={() =>
-                                                        handleEditItem(
-                                                            orderIndex,
-                                                        )
+                                    return (
+                                        <div
+                                            key={`order-${orderIndex}`}
+                                            className="bg-[#fffaf8] rounded-xl p-3 mb-4 shadow flex-col"
+                                        >
+                                            <div className="flex justify-between items-start mb-2">
+                                                <h3 className="font-semibold text-lg">
+                                                    Order {orderIndex + 1}:{" "}
+                                                    {
+                                                        (
+                                                            order.Drink as MenuItem
+                                                        )?.name
                                                     }
-                                                    className="h-7 px-2 text-xs bg-[#ffe5ea] hover:bg-[#ffd6dd] border-[#9d8189] text-[#6d6875]"
-                                                >
-                                                    Edit
-                                                </Button>
-                                                <Button
-                                                    variant="destructive"
-                                                    size="sm"
-                                                    onClick={() =>
-                                                        handleRemoveItem(
-                                                            orderIndex,
-                                                        )
-                                                    }
-                                                    className="h-7 px-2 text-xs"
-                                                >
-                                                    Remove
-                                                </Button>
-                                            </div>
-                                        </div>
-                                        {itemsJSX}
-                                        <div className="mt-3 flex items-center justify-between">
-                                            <div className="flex items-center gap-2">
-                                                <span className="text-sm font-medium">
-                                                    Quantity:
-                                                </span>
-                                                <div className="flex items-center gap-1 border border-[#9d8189] rounded-md">
+                                                </h3>
+                                                <div className="flex gap-2">
                                                     <Button
-                                                        variant="ghost"
-                                                        size="icon-sm"
+                                                        variant="outline"
+                                                        size="sm"
                                                         onClick={() =>
-                                                            handleDecreaseQty(
+                                                            handleEditItem(
                                                                 orderIndex,
                                                             )
                                                         }
-                                                        className="h-6 w-6 p-0 hover:bg-[#ffe5ea] text-[#6d6875]"
-                                                        disabled={quantity <= 1}
+                                                        className="h-7 px-2 text-xs bg-[#ffe5ea] hover:bg-[#ffd6dd] border-[#9d8189] text-[#6d6875]"
                                                     >
-                                                        -
+                                                        Edit
                                                     </Button>
-                                                    <span className="px-2 text-sm font-medium min-w-[2rem] text-center">
-                                                        {quantity}
-                                                    </span>
                                                     <Button
-                                                        variant="ghost"
-                                                        size="icon-sm"
+                                                        variant="destructive"
+                                                        size="sm"
                                                         onClick={() =>
-                                                            handleIncreaseQty(
+                                                            handleRemoveItem(
                                                                 orderIndex,
                                                             )
                                                         }
-                                                        className="h-6 w-6 p-0 hover:bg-[#ffe5ea] text-[#6d6875]"
+                                                        className="h-7 px-2 text-xs"
                                                     >
-                                                        +
+                                                        Remove
                                                     </Button>
                                                 </div>
                                             </div>
-                                            <div className="font-semibold">
-                                                Total: ${order_price.toFixed(2)}
+                                            {itemsJSX}
+                                            <div className="mt-3 flex items-center justify-between">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-sm font-medium">
+                                                        Quantity:
+                                                    </span>
+                                                    <div className="flex items-center gap-1 border border-[#9d8189] rounded-md">
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon-sm"
+                                                            onClick={() =>
+                                                                handleDecreaseQty(
+                                                                    orderIndex,
+                                                                )
+                                                            }
+                                                            className="h-6 w-6 p-0 hover:bg-[#ffe5ea] text-[#6d6875]"
+                                                            disabled={
+                                                                quantity <= 1
+                                                            }
+                                                        >
+                                                            -
+                                                        </Button>
+                                                        <span className="px-2 text-sm font-medium min-w-[2rem] text-center">
+                                                            {quantity}
+                                                        </span>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon-sm"
+                                                            onClick={() =>
+                                                                handleIncreaseQty(
+                                                                    orderIndex,
+                                                                )
+                                                            }
+                                                            className="h-6 w-6 p-0 hover:bg-[#ffe5ea] text-[#6d6875]"
+                                                        >
+                                                            +
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                                <div className="font-semibold">
+                                                    Total: $
+                                                    {order_price.toFixed(2)}
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                );
-                            })
-                        )}
+                                    );
+                                })
+                            )}
+                        </div>
                     </div>
-                </div>
-                <div className="bg-white/60 rounded-xl p-3 mt-4 shadow-md space-y-1">
-                    <div className="flex justify-between">
-                        <span>Subtotal</span>
-                        <span>${subtotal.toFixed(2)}</span>
+                    <div className="bg-white/60 rounded-xl p-3 mt-4 shadow-md space-y-1">
+                        <div className="flex justify-between">
+                            <span>Subtotal</span>
+                            <span>${subtotal.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                            <span>Tax ({(TAX_RATE * 100).toFixed(2)}%)</span>
+                            <span>${tax.toFixed(2)}</span>
+                        </div>
+                        <hr className="my-2" />
+                        <div className="flex justify-between text-xl font-semibold mb-3">
+                            <span>Total</span>
+                            <span>${total.toFixed(2)}</span>
+                        </div>
+                        <button
+                            className="w-full bg-[#6d6875] hover:bg-[#564f5a] text-white font-semibold py-2 rounded-xl transition"
+                            onClick={checkoutOrder}
+                        >
+                            Checkout
+                        </button>
                     </div>
-                    <div className="flex justify-between">
-                        <span>Tax ({(TAX_RATE * 100).toFixed(2)}%)</span>
-                        <span>${tax.toFixed(2)}</span>
-                    </div>
-                    <hr className="my-2" />
-                    <div className="flex justify-between text-xl font-semibold mb-3">
-                        <span>Total</span>
-                        <span>${total.toFixed(2)}</span>
-                    </div>
-                    <button
-                        className="w-full bg-[#6d6875] hover:bg-[#564f5a] text-white font-semibold py-2 rounded-xl transition"
-                        onClick={checkoutOrder}
-                    >
-                        Checkout
-                    </button>
-                </div>
-            </aside>
+                </aside>
+            </div>
         </div>
     );
 }

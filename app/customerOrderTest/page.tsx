@@ -1,9 +1,9 @@
 "use client";
 
-import { ReactNode, useState, JSX, useMemo } from "react";
+import { ReactNode, useState, JSX, useMemo, useEffect } from "react";
 import Image from "next/image";
 import IdleLogout from "@/components/idleLogout";
-
+import TopNav from "@/components/TopNav";
 import ItemCard from "../../components/ItemCard";
 import {
     AlertDialog,
@@ -33,8 +33,7 @@ import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 import { useAccessibility } from "@/contexts/AccessibilityContext";
-
-type DrinkSize = "small" | "medium" | "large";
+import { useTextToSpeech } from "@/hooks/useTextToSpeech";
 
 interface CartItem {
     id: number;
@@ -49,7 +48,47 @@ interface CartItem {
     }[];
 }
 
-//[REMOVE WHEN API IS IMPLEMENTED] Temporary data for now
+type DrinkSize = "small" | "medium" | "large";
+
+const LANGUAGES = [
+    { code: "en", label: "English" },
+    { code: "es", label: "Español" },
+    { code: "ar", label: "العربية" },
+];
+
+const LABEL_KEYS = [
+    "kioskTitle",
+    "categories",
+    "drinks",
+    "cart",
+    "subtotal",
+    "tax",
+    "total",
+    "checkout",
+    "confirmOrder",
+    "yesPlaceOrder",
+    "language",
+    "addToOrder",
+] as const;
+
+type LabelKey = (typeof LABEL_KEYS)[number];
+type Labels = Record<LabelKey, string>;
+
+const EN_LABELS: Labels = {
+    kioskTitle: "Self-Service Kiosk",
+    categories: "Categories",
+    drinks: "Drinks",
+    cart: "Cart",
+    subtotal: "Subtotal",
+    tax: "Tax",
+    total: "Total",
+    checkout: "Checkout",
+    confirmOrder: "Confirm Order?",
+    yesPlaceOrder: "Yes, Place Order",
+    language: "Language:",
+    addToOrder: "Add to Order",
+};
+
 interface MenuItem {
     id: number;
     name: string;
@@ -275,6 +314,7 @@ const menuData: MenuData = {
         { id: 35, name: "New Item", stock: 0, cost: 0, image_url: "" },
     ],
 };
+
 interface InventoryItem {
     id: number;
     name: string;
@@ -291,15 +331,12 @@ const inventory: InventoryItem[] = [
     { id: 25, name: "Straws", stock: 1000, cost: 0, ingredient_type: 0 },
     { id: 26, name: "Seal", stock: 1000, cost: 0, ingredient_type: 0 },
     { id: 27, name: "Bag", stock: 1000, cost: 0, ingredient_type: 0 },
-
     { id: 4, name: "Sugar", stock: 86, cost: 0, ingredient_type: 1 },
-
     { id: 9, name: "Red Bean", stock: 96, cost: 0.75, ingredient_type: 100 },
     { id: 12, name: "Pudding", stock: 92, cost: 0.75, ingredient_type: 100 },
     { id: 8, name: "Mini Pearl", stock: 51, cost: 0.75, ingredient_type: 100 },
     { id: 5, name: "Pearl", stock: 28, cost: 0.75, ingredient_type: 100 },
     { id: 6, name: "Aloe Vera", stock: 89, cost: 0.75, ingredient_type: 100 },
-
     { id: 20, name: "Crystal Boba", stock: 92, cost: 1, ingredient_type: 20 },
     {
         id: 18,
@@ -322,11 +359,9 @@ const inventory: InventoryItem[] = [
         cost: 1,
         ingredient_type: 20,
     },
-
     { id: 3, name: "Oolong Tea", stock: 13, cost: 0, ingredient_type: 30 },
     { id: 2, name: "Green Tea", stock: 0, cost: 0, ingredient_type: 30 },
     { id: 1, name: "Black Tea", stock: 70, cost: 1, ingredient_type: 30 },
-
     { id: 13, name: "Herb Jelly", stock: 100, cost: 0.75, ingredient_type: 40 },
     { id: 7, name: "Lychee Jelly", stock: 37, cost: 0.75, ingredient_type: 40 },
     { id: 14, name: "Alyu Jelly", stock: 96, cost: 0.75, ingredient_type: 40 },
@@ -338,17 +373,13 @@ const inventory: InventoryItem[] = [
         ingredient_type: 40,
     },
     { id: 16, name: "Honey Jelly", stock: 96, cost: 0.75, ingredient_type: 40 },
-
     { id: 28, name: "Ice", stock: 813, cost: 0.0, ingredient_type: 1 },
-
     { id: 10, name: "Creama", stock: 84, cost: 1.25, ingredient_type: 100 },
     { id: 11, name: "Ice Cream", stock: 36, cost: 1.25, ingredient_type: 100 },
 ];
 
-// configurable tax rate for UI display (8.25% default)
 const TAX_RATE = parseFloat(process.env.NEXT_PUBLIC_TAX_RATE ?? "0.0825");
 
-// price helpers
 const findInventoryCost = (name: string) => {
     const item = inventory.find(
         (it) => it.name.trim().toLowerCase() === name.trim().toLowerCase(),
@@ -371,11 +402,17 @@ function calculateSubtotal(cartItems: CartItem[]): number {
 
 interface CategoryCardProps {
     category: string;
+    label: string;
     isSelected: boolean;
     onClick: () => void;
 }
 
-function CategoryCard({ category, isSelected, onClick }: CategoryCardProps) {
+function CategoryCard({
+    category,
+    label,
+    isSelected,
+    onClick,
+}: CategoryCardProps) {
   const { isHighContrast } = useAccessibility();
 
   const base = "border p-4 rounded cursor-pointer";
@@ -388,10 +425,12 @@ function CategoryCard({ category, isSelected, onClick }: CategoryCardProps) {
 
   return (
     <div
-      className={`${base} ${isHighContrast ? highContrast : normal}`}
+      className={`${base} ${
+                isHighContrast ? highContrast : normal
+            }`}
       onClick={onClick}
     >
-      <p>{category}</p>
+      <p>{label}</p>
     </div>
   );
 }
@@ -401,12 +440,16 @@ interface CategorySelectorProps {
     categories: string[];
     selectedCategory: string;
     onSelectedCategoryChange: (category: string) => void;
+    title: string;
+    categoryLabels: Record<string, string>;
 }
 
 function CategorySelector({
     categories,
     selectedCategory,
     onSelectedCategoryChange,
+    title,
+    categoryLabels,
 }: CategorySelectorProps) {
     const { isHighContrast, setIsHighContrast, textMultipler, setTextMultipler } = useAccessibility();
     return (
@@ -457,11 +500,12 @@ function CategorySelector({
                     <Plus color={`${isHighContrast ? "blue" : "black"}`} />
                 </Button>
             </div>
-            <p className={`text-xl ${isHighContrast ? "text-white" : "text-black"}`}>Categories</p>
+            <p className={`text-xl ${isHighContrast ? "text-white" : "text-black"}`}>{title}</p>
             {categories.map((c, i) => (
                 <CategoryCard
                     key={i}
                     category={c}
+                    label={categoryLabels[c] ?? c}
                     isSelected={c === selectedCategory}
                     onClick={() => onSelectedCategoryChange(c)}
                 />
@@ -476,6 +520,7 @@ interface InventoryItemCardProps {
     onSelect: () => void;
     onUnselect: () => void;
 }
+
 function ToppingCard({ item, isSelected, onSelect, onUnselect }: InventoryItemCardProps) {
     const { isHighContrast } = useAccessibility();
     // const [selected, setSelected] = useState(isSelected);
@@ -483,10 +528,12 @@ function ToppingCard({ item, isSelected, onSelect, onUnselect }: InventoryItemCa
     return (
         <div
             className={`flex-col items-center justify-center border rounded p-4 cursor-pointer ${
+                
                 isHighContrast ? 
                     selected ? "text-blue-400" : ""          
                 : 
                     selected ? "bg-black text-white" : ""
+            
             }`}
             onClick={() => {
                 if(selected){
@@ -504,9 +551,7 @@ function ToppingCard({ item, isSelected, onSelect, onUnselect }: InventoryItemCa
             <p className="text-center select-none">{item.name}</p>
             {item.cost > 0 ? (
                 <p className="text-center select-none">(${item.cost})</p>
-            ) : (
-                <></>
-            )}
+            ) : null}
         </div>
     );
 }
@@ -520,6 +565,7 @@ interface ToppingSelectorProps {
     multiSelect: boolean;
     globalToppings: Record<number, InventoryItem[]>
 }
+
 function ToppingSelector({
     onToppingSelect,
     ingredientType,
@@ -530,12 +576,7 @@ function ToppingSelector({
     return (
         <div className={`grid grid-cols-4 gap-2`}>
             {inventory
-                .filter((i) => {
-                    if (i.ingredient_type === ingredientType) {
-                        return true;
-                    }
-                    return false;
-                })
+                .filter((i) => i.ingredient_type === ingredientType)
                 .map((i) => (
                     <ToppingCard
                         key={i.id}
@@ -562,8 +603,16 @@ function ToppingSelector({
 interface MenuItemCardProps {
     item: MenuItem;
     onConfirm: (item: CartItem) => void;
+    addToOrderLabel: string;
+    speak: (text: string) => void;
 }
-function MenuItemCard({ item, onConfirm }: MenuItemCardProps) {
+
+function MenuItemCard({
+    item,
+    onConfirm,
+    addToOrderLabel,
+    speak,
+}: MenuItemCardProps) {
     const { isHighContrast, textMultipler } = useAccessibility();
     const [ice, setIce] = useState(0);
     const [size, setSize] = useState<DrinkSize>("medium");
@@ -586,11 +635,22 @@ function MenuItemCard({ item, onConfirm }: MenuItemCardProps) {
     return (
         <Dialog>
             <DialogTrigger asChild>
-                <div className={`flex flex-col gap-2 items-center 
+                <div className={`relative flex flex-col gap-2 items-center 
                     ${isHighContrast ? "bg-black" : "bg-gray-100"} p-2 rounded border
                     ${isHighContrast ? "text-white" : "text-black"}
                 `}
                 >
+                    <button
+                        type="button"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            speak(`${item.name}. $${item.cost.toFixed(2)}`);
+                        }}
+                        className="absolute top-1 right-1 w-8 h-8 flex items-center justify-center bg-white/90 rounded-full text-sm shadow z-10"
+                    >
+                        🔊
+                    </button>
+
                     {item.image_url !== "" ? (
                         <img
                             src={item.image_url}
@@ -600,7 +660,12 @@ function MenuItemCard({ item, onConfirm }: MenuItemCardProps) {
                     ) : (
                         <CupSoda width={120} height={120} />
                     )}
-                    {item.name}
+                    <span className="font-semibold text-center">
+                        {item.name}
+                    </span>
+                    <span className="text-sm font-medium">
+                        ${item.cost.toFixed(2)}
+                    </span>
                 </div>
             </DialogTrigger>
             <DialogContent className={`max-h-9/10 overflow-y-scroll
@@ -744,7 +809,7 @@ function MenuItemCard({ item, onConfirm }: MenuItemCardProps) {
                                 });
                             }}
                         >
-                            Add to Order
+                            {addToOrderLabel}
                         </Button>
                     </DialogClose>
                 </DialogFooter>
@@ -757,25 +822,33 @@ interface MenuItemsInterface {
     menuData: MenuData;
     selectedCategory: string;
     onItemOrder: (item: CartItem) => void;
+    title: string;
+    addToOrderLabel: string;
+    speak: (text: string) => void;
 }
 
 function MenuItems({
     menuData,
     selectedCategory,
     onItemOrder,
+    title,
+    addToOrderLabel,
+    speak,
 }: MenuItemsInterface) {
     return (
         <div className="space-y-4">
-            <p className="text-xl">Drinks</p>
+            <p className="text-xl">{title}</p>
             <div className="grid grid-rows-3 grid-cols-3 gap-4">
                 {Object.entries(menuData)
-                    .filter(([category, _]) => category === selectedCategory)
+                    .filter(([category]) => category === selectedCategory)
                     .map(([_, items]) =>
                         items.map((item, i) => (
                             <MenuItemCard
                                 key={i}
                                 item={item}
                                 onConfirm={onItemOrder}
+                                addToOrderLabel={addToOrderLabel}
+                                speak={speak}
                             />
                         )),
                     )}
@@ -810,9 +883,11 @@ function CartItemCard({ item }: { item: CartItem }) {
 function Cart({
     items,
     setItems,
+    labels,
 }: {
     items: CartItem[];
     setItems: React.Dispatch<React.SetStateAction<CartItem[]>>;
+    labels: Labels;
 }) {
     const { isHighContrast, textMultipler } = useAccessibility();
 
@@ -837,7 +912,7 @@ function Cart({
 
     return (
         <div className={`grid grid-rows-[1fr_8fr_1fr] min-h-0 max-h-full gap-4 ${isHighContrast ? "bg-black text-white border-8 border-yellow-200" : ""}`}>
-            <p className="text-xl mb-4 text-center">Cart</p>
+            <p className="text-xl mb-4 text-center">{labels.cart}</p>
             <ScrollArea className="h-90">
                 <div className="space-y-4">
                     {items.map((i, idx) => (
@@ -851,24 +926,31 @@ function Cart({
                 ${
                 isHighContrast ? "bg-black text-white border-4  border-blue-500" : "bg-white text-black border"
                 }`}>
-                <p>Subtotal</p>
-                <p className="text-right">${subtotal.toFixed(2)}</p>
+            <div className="border rounded p-3 space-y-2">
+                <div className="flex justify-between text-sm">
+                    <span>{labels.subtotal}</span>
+                    <span>${subtotal.toFixed(2)}</span>
+                </div>
 
-                <p>Tax</p>
-                <p className="text-right">${tax.toFixed(2)}</p>
+                <div className="flex justify-between text-sm">
+                    <span>{labels.tax}</span>
+                    <span>${tax.toFixed(2)}</span>
+                </div>
 
-                <p>Total</p>
-                <p className="text-right">${total.toFixed(2)}</p>
+                <div className="flex justify-between font-semibold">
+                    <span>{labels.total}</span>
+                    <span>${total.toFixed(2)}</span>
+                </div>
+
                 <Dialog>
-                    {/* Button that opens the dialog */}
                     <DialogTrigger asChild>
-                        <Button className={`col-span-2 ${isHighContrast ? "border-4 border-green-400" : ""}`}>Checkout</Button>
+                        <Button className={`col-span-2 ${isHighContrast ? "border-4 border-green-400" : ""}`}>{labels.checkout}</Button>
                     </DialogTrigger>
 
                     <DialogContent className={`max-h-[90vh] ${isHighContrast ? "text-white bg-black" : "text-black"}`}>
                         <DialogHeader>
                             <DialogTitle className={`text-center text-2xl`}>
-                                Confirm Order?
+                                {labels.confirmOrder}
                             </DialogTitle>
                         </DialogHeader>
 
@@ -879,7 +961,7 @@ function Cart({
                                     className={`w-full  ${isHighContrast ? "border-4 border-green-400" : ""}`}
                                     onClick={handleCheckout}
                                 >
-                                    Yes, Place Order
+                                    {labels.yesPlaceOrder}
                                 </Button>
                             </DialogClose>
                         </DialogFooter>
@@ -893,6 +975,203 @@ function Cart({
 export default function CashierPage() {
     const [selectedCategory, setSelectedCategory] = useState("Fruit Tea");
     const [cartItems, setCartItems] = useState<CartItem[]>([]);
+    const [selectedLanguage, setSelectedLanguage] = useState("en");
+    const [labels, setLabels] = useState<Labels>(EN_LABELS);
+    const [isTranslating, setIsTranslating] = useState(false);
+
+    const LANGUAGE_TO_TTS_LANG: Record<string, string> = {
+        en: "en-US",
+        es: "es-ES",
+        ar: "ar-SA",
+    };
+
+    const { speak, setLang } = useTextToSpeech(LANGUAGE_TO_TTS_LANG["en"]);
+
+    const [translatedMenuData, setTranslatedMenuData] =
+        useState<MenuData>(menuData);
+
+    const [categoryLabels, setCategoryLabels] = useState<
+        Record<string, string>
+    >(() => Object.fromEntries(Object.keys(menuData).map((c) => [c, c])));
+
+    useEffect(() => {
+        if (selectedLanguage === "en") {
+            setLabels(EN_LABELS);
+            return;
+        }
+
+        const translateLabels = async () => {
+            setIsTranslating(true);
+            try {
+                const texts = LABEL_KEYS.map((key) => EN_LABELS[key]);
+
+                const res = await fetch("/api/translate", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        texts,
+                        targetLanguage: selectedLanguage,
+                    }),
+                });
+
+                if (!res.ok) {
+                    setLabels(EN_LABELS);
+                    return;
+                }
+
+                const data = await res.json();
+                const translatedTexts: string[] = data.translatedTexts ?? [];
+
+                const updated: Labels = { ...EN_LABELS };
+                LABEL_KEYS.forEach((key, idx) => {
+                    if (translatedTexts[idx]) {
+                        updated[key] = translatedTexts[idx];
+                    }
+                });
+
+                setLabels(updated);
+            } catch (err) {
+                setLabels(EN_LABELS);
+            } finally {
+                setIsTranslating(false);
+            }
+        };
+
+        translateLabels();
+    }, [selectedLanguage]);
+
+    useEffect(() => {
+        if (selectedLanguage === "en") {
+            setTranslatedMenuData(menuData);
+            return;
+        }
+
+        const translateMenuItems = async () => {
+            try {
+                const flatItems: {
+                    category: string;
+                    index: number;
+                    name: string;
+                }[] = [];
+
+                Object.entries(menuData).forEach(([category, items]) => {
+                    items.forEach((item, index) => {
+                        flatItems.push({ category, index, name: item.name });
+                    });
+                });
+
+                const texts = flatItems.map((x) => x.name);
+
+                const res = await fetch("/api/translate", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        texts,
+                        targetLanguage: selectedLanguage,
+                    }),
+                });
+
+                if (!res.ok) {
+                    setTranslatedMenuData(menuData);
+                    return;
+                }
+
+                const data = await res.json();
+                const translatedTexts: string[] = data.translatedTexts ?? [];
+
+                const newMenu: MenuData = {};
+                Object.entries(menuData).forEach(([category, items]) => {
+                    newMenu[category] = items.map((item) => ({ ...item }));
+                });
+
+                translatedTexts.forEach((text, i) => {
+                    const { category, index } = flatItems[i];
+                    if (newMenu[category] && newMenu[category][index]) {
+                        newMenu[category][index].name = text;
+                    }
+                });
+
+                setTranslatedMenuData(newMenu);
+            } catch (err) {
+                setTranslatedMenuData(menuData);
+            }
+        };
+
+        translateMenuItems();
+    }, [selectedLanguage]);
+
+    useEffect(() => {
+        if (selectedLanguage === "en") {
+            setLabels(EN_LABELS);
+            setCategoryLabels(
+                Object.fromEntries(Object.keys(menuData).map((c) => [c, c])),
+            );
+            setLang(LANGUAGE_TO_TTS_LANG["en"]);
+            return;
+        }
+
+        const translateLabels = async () => {
+            setIsTranslating(true);
+            try {
+                const labelTexts = LABEL_KEYS.map((key) => EN_LABELS[key]);
+                const categoryNames = Object.keys(menuData);
+
+                const texts = [...labelTexts, ...categoryNames];
+
+                const res = await fetch("/api/translate", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        texts,
+                        targetLanguage: selectedLanguage,
+                    }),
+                });
+
+                if (!res.ok) {
+                    setLabels(EN_LABELS);
+                    setCategoryLabels(
+                        Object.fromEntries(
+                            Object.keys(menuData).map((c) => [c, c]),
+                        ),
+                    );
+                    setLang(LANGUAGE_TO_TTS_LANG["en"]);
+                    return;
+                }
+
+                const data = await res.json();
+                const translatedTexts: string[] = data.translatedTexts ?? [];
+
+                const updated: Labels = { ...EN_LABELS };
+                LABEL_KEYS.forEach((key, idx) => {
+                    if (translatedTexts[idx]) {
+                        updated[key] = translatedTexts[idx];
+                    }
+                });
+
+                const newCategoryLabels: Record<string, string> = {};
+                categoryNames.forEach((name, idx) => {
+                    const tIdx = LABEL_KEYS.length + idx;
+                    newCategoryLabels[name] = translatedTexts[tIdx] ?? name;
+                });
+
+                setLabels(updated);
+                setCategoryLabels(newCategoryLabels);
+                setLang(LANGUAGE_TO_TTS_LANG[selectedLanguage]);
+            } catch (err) {
+                setLabels(EN_LABELS);
+                setCategoryLabels(
+                    Object.fromEntries(
+                        Object.keys(menuData).map((c) => [c, c]),
+                    ),
+                );
+                setLang(LANGUAGE_TO_TTS_LANG["en"]);
+            } finally {
+                setIsTranslating(false);
+            }
+        };
+
+        translateLabels();
+    }, [selectedLanguage, setLang]);
     const { isHighContrast, textMultipler } = useAccessibility();
 
     //console.log(cartItems);
@@ -921,25 +1200,59 @@ export default function CashierPage() {
         },
     ];
 
-return (
-        <div
-            className={`grid w-full ${textMultipler >= 1.75 ? "grid-cols-[1fr_8fr_4fr]" : "grid-cols-[1fr_7fr_2fr]"} gap-8 p-8 h-dvh overflow-y-auto ${
-                isHighContrast ? "bg-black" : ""
-            }`}
-        >
-            <CategorySelector
-                categories={Object.keys(menuData)}
-                selectedCategory={selectedCategory}
-                onSelectedCategoryChange={setSelectedCategory}
-            />
+    return (
+        <div className="min-h-screen bg-[#ffddd233] font-sans dark:bg-black flex flex-col">
+            <TopNav subtitle={labels.kioskTitle} />
 
-            <MenuItems
-                menuData={menuData}
-                selectedCategory={selectedCategory}
-                onItemOrder={(item) => setCartItems([...cartItems, item])}
-            />
+            <div className="flex justify-end px-8 pt-4 gap-2 items-center">
+                <span className="text-sm font-medium">{labels.language}</span>
+                <select
+                    className="border rounded px-2 py-1 text-sm"
+                    value={selectedLanguage}
+                    onChange={(e) => setSelectedLanguage(e.target.value)}
+                    disabled={isTranslating}
+                >
+                    {LANGUAGES.map((lang) => (
+                        <option key={lang.code} value={lang.code}>
+                            {lang.label}
+                        </option>
+                    ))}
+                </select>
+                {isTranslating && (
+                    <span className="text-xs text-gray-500">
+                        Translating...
+                    </span>
+                )}
+            </div>
 
-            <Cart items={cartItems} setItems={setCartItems} />
+            <div className="flex-1 px-6 py-4">
+                <div className="mx-auto max-w-6xl grid grid-cols-[1.1fr_2fr_1.2fr] gap-6">
+                    <CategorySelector
+                        categories={Object.keys(menuData)}
+                        selectedCategory={selectedCategory}
+                        onSelectedCategoryChange={setSelectedCategory}
+                        title={labels.categories}
+                        categoryLabels={categoryLabels}
+                    />
+
+                    <MenuItems
+                        menuData={translatedMenuData}
+                        selectedCategory={selectedCategory}
+                        onItemOrder={(item) =>
+                            setCartItems([...cartItems, item])
+                        }
+                        title={labels.drinks}
+                        addToOrderLabel={labels.addToOrder}
+                        speak={speak}
+                    />
+
+                    <Cart
+                        items={cartItems}
+                        setItems={setCartItems}
+                        labels={labels}
+                    />
+                </div>
+            </div>
         </div>
     );
 }

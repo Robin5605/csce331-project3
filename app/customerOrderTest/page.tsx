@@ -606,16 +606,26 @@ interface MenuItemCardProps {
     addToOrderLabel: string;
     speak: (text: string) => void;
 }
+// Helper function to convert ice servings (0-4) to percentage label
+const iceToPercentage = (servings: number): string => {
+    const mapping: { [key: number]: string } = {
+        0: "0%",
+        1: "25%",
+        2: "50%",
+        3: "75%",
+        4: "100%",
+    };
+    return mapping[servings] || "0%";
+};
 
-function MenuItemCard({
-    item,
-    onConfirm,
-    addToOrderLabel,
-    speak,
-}: MenuItemCardProps) {
+function MenuItemCard({ item, onConfirm, addToOrderLabel, speak }: MenuItemCardProps) {
     const { isHighContrast, textMultipler } = useAccessibility();
-    const [ice, setIce] = useState(0);
+    
+    const [open, setOpen] = useState(false);
+    
+    const [ice, setIce] = useState(4); // Default to 100% (4 servings)
     const [size, setSize] = useState<DrinkSize>("medium");
+    
     const [selectedToppings, setSelectedToppings] = useState<Record<number, InventoryItem[]>>(
         {
             20: [],
@@ -624,16 +634,34 @@ function MenuItemCard({
             100: []
         }
     );
-
+    
     function setToppingsForType(list: InventoryItem[], id: number){
         setSelectedToppings(prev => ({
             ...prev,    
             [id]: list, 
         }));
     }
+    
+    
+
+    // Reset all customization state when dialog opens
+    const handleOpenChange = (isOpen: boolean) => {
+        setOpen(isOpen);
+        if (isOpen) {
+            // Reset to defaults when opening
+            setIce(4); // 100%
+            setSize("medium");
+            setSelectedToppings({
+                20: [],
+                30: [],
+                40: [],
+                100: [],
+            });
+        }
+    };
 
     return (
-        <Dialog>
+        <Dialog open={open} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>
                 <div className={`relative flex flex-col gap-2 items-center 
                     ${isHighContrast ? "bg-black" : "bg-gray-100"} p-2 rounded border
@@ -721,28 +749,15 @@ function MenuItemCard({
                     <div>
                         <p className="text-2xl">Ice</p>
                         <div className="flex space-x-4">
-                            <Button
-                                variant="outline"
-                                size="icon"
-                                className="rounded-full"
-                                onClick={() => setIce(ice > 0 ? ice - 1 : 0)}
-                            >
-                                <Minus color={`${isHighContrast ? "blue" : "black"}`}/>
-                            </Button>
-                            <Input
-                                type="number"
-                                className="rounded-full w-fit"
-                                value={ice}
-                                readOnly
-                            />
-                            <Button
-                                variant="outline"
-                                size="icon"
-                                className="rounded-full"
-                                onClick={() => setIce(ice < 5 ? ice + 1 : 5)}
-                            >
-                                <Plus color={`${isHighContrast ? "blue" : "black"}`} />
-                            </Button>
+                            {[0, 1, 2, 3, 4].map((servings) => (
+                                <div
+                                    key={servings}
+                                    className={`cursor-pointer duration-300 border rounded-full p-4 text-xl ${ice === servings ? "bg-black text-white" : ""}`}
+                                    onClick={() => setIce(servings)}
+                                >
+                                    {iceToPercentage(servings)}
+                                </div>
+                            ))}
                         </div>
                     </div>
 
@@ -870,7 +885,7 @@ function CartItemCard({ item }: { item: CartItem }) {
                 {item.size.charAt(0).toUpperCase() + item.size.substring(1)}{" "}
                 {item.name}
             </p>
-            <p>Ice: {item.ice}</p>
+            <p>Ice: {iceToPercentage(item.ice)}</p>
             {item.customizations.map((c) => (
                 <p key={c.id}>{c.name}</p>
             ))}
@@ -902,6 +917,7 @@ function Cart({
                 drinks: items.map((i) => ({
                     id: i.id,
                     customizations: i.customizations.map((i) => i.id),
+                    ice: i.ice, // Send ice servings (0-4)
                 })),
                 employeeId: 1,
                 paymentMethod: "CARD",

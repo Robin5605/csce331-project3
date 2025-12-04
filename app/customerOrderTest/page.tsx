@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode, useState, JSX, useMemo, useEffect } from "react";
+import { ReactNode, useState, JSX, useMemo, useEffect, useCallback } from "react";
 import Image from "next/image";
 import IdleLogout from "@/components/idleLogout";
 import TopNav from "@/components/TopNav";
@@ -17,7 +17,7 @@ import {
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import CustomizationCard from "@/components/CustomizationCard";
-import { CupSoda, Minus, Plus } from "lucide-react";
+import { CupSoda, Minus, Plus, ReceiptTurkishLiraIcon } from "lucide-react";
 import {
     Dialog,
     DialogClose,
@@ -56,6 +56,18 @@ const LANGUAGES = [
     { code: "es", label: "Español" },
     { code: "ar", label: "العربية" },
 ];
+
+type CurrencyCode = "USD" | "EUR";
+
+const CURRENCIES = [
+    { code: "USD", label: "USD - $", symbol: "$"},
+    { code: "EUR", label: "EUR - €", symbol: "€"}
+]
+
+const CURRENCY_SYMBOLS: Record<CurrencyCode, string> = {
+    USD: "$",
+    EUR: "€",
+}
 
 const LABEL_KEYS = [
     "kioskTitle",
@@ -101,6 +113,8 @@ interface MenuItem {
 interface MenuData {
     [categoryName: string]: MenuItem[];
 }
+
+
 
 const menuData: MenuData = {
     "Fruit Tea": [
@@ -926,10 +940,16 @@ function Cart({
     items,
     setItems,
     labels,
+    currency,
+    setCurrency,
+    formatPrice,
 }: {
     items: CartItem[];
     setItems: React.Dispatch<React.SetStateAction<CartItem[]>>;
     labels: Labels;
+    currency: CurrencyCode,
+    setCurrency: React.Dispatch<React.SetStateAction<CurrencyCode>>;
+    formatPrice: (amount: number) => string;
 }) {
     const { isHighContrast, textMultipler } = useAccessibility();
 
@@ -979,17 +999,17 @@ function Cart({
                 <div className="col-span-2 space-y-2">
                     <div className="flex justify-between text-sm">
                         <span>{labels.subtotal}</span>
-                        <span>${subtotal.toFixed(2)}</span>
+                        <span>{formatPrice(subtotal)}</span>
                     </div>
 
                     <div className="flex justify-between text-sm">
                         <span>{labels.tax}</span>
-                        <span>${tax.toFixed(2)}</span>
+                        <span>{formatPrice(tax)}</span>
                     </div>
 
                     <div className="flex justify-between font-semibold">
                         <span>{labels.total}</span>
-                        <span>${total.toFixed(2)}</span>
+                        <span>{formatPrice(total)}</span>
                     </div>
 
                     <Dialog>
@@ -1024,6 +1044,18 @@ function Cart({
                             </DialogFooter>
                         </DialogContent>
                     </Dialog>
+                    <select className={`rounded border px-2 py-1 text-sm w-full ${
+                        isHighContrast
+                            ? "bg-black text-white border-white"
+                            : "bg-white text-black border-gray-300"
+                    }`} value={currency}
+                        onChange={(e) => setCurrency(e.target.value as CurrencyCode)}>
+                        {CURRENCIES.map((c) => (
+                            <option key={c.code} value={c.code}>
+                                {c.label}
+                            </option>
+                        ))}
+                    </select>
                 </div>
             </div>
         </div>
@@ -1044,6 +1076,29 @@ export default function CashierPage() {
 
     const { speak } = useTextToSpeech("en-US");
     const { isHighContrast, textMultipler } = useAccessibility();
+
+    const [currency, setCurrency] = useState<CurrencyCode>("USD");
+    const [rates, setRates] = useState<Partial<Record<CurrencyCode, number>>>({
+        USD: 1, 
+    });
+
+    useEffect(() => {
+        if(currency === "USD") return; // If just USD no need to convert any conversions. 1 is okay.
+
+        async function fetchRate(){ 
+            const res = await fetch(`/api/currency?currency=${currency}`);
+            const data = await res.json();
+
+            setRates(prev => ({
+                ...prev,
+                [currency]: data.data[currency],
+            }));
+        }
+
+        fetchRate();
+
+    }, [currency]);
+
 
     //console.log(cartItems);
     //Sets default selection for customization options
@@ -1071,7 +1126,15 @@ export default function CashierPage() {
         },
     ];
 
+    const formatPrice = useCallback((amount: number) => {
+        const rate = rates[currency] ?? 1;
+        const converted = amount * rate;
+        return `${CURRENCY_SYMBOLS[currency]}${converted.toFixed(2)}`;
+    }, [currency, rates]);
+
+
     return (
+        
         <div className="min-h-screen bg-[#ffddd233] font-sans dark:bg-black flex flex-col text-white">
             <TopNav subtitle={labels.kioskTitle} variant="kiosk" />
 
@@ -1084,7 +1147,7 @@ export default function CashierPage() {
                     <GoogleTranslate />
                 </div>
             </div>
-
+            
             <div
                 className={`flex-1 px-6 py-4 ${isHighContrast ? "bg-black" : ""}`}
             >
@@ -1112,6 +1175,9 @@ export default function CashierPage() {
                         items={cartItems}
                         setItems={setCartItems}
                         labels={labels}
+                        currency={currency}
+                        setCurrency={setCurrency}
+                        formatPrice={formatPrice}
                     />
                 </div>
             </div>

@@ -582,6 +582,13 @@ function ToppingSelector({
     globalToppings,
 }: ToppingSelectorProps) {
     const [selected, setSelected] = useState<InventoryItem[]>([]); //This is for local selections
+    
+    // Sync local state with globalToppings when it changes
+    useEffect(() => {
+        const globalSelection = globalToppings[ingredientType] || [];
+        setSelected(globalSelection);
+    }, [globalToppings, ingredientType]);
+    
     return (
         <div className={`grid grid-cols-4 gap-2`}>
             {inventory
@@ -663,9 +670,16 @@ function MenuItemCard({
             // Reset to defaults when opening
             setIce(4); // 100%
             setSize("medium");
+            
+            // Find Black Tea from inventory
+            const blackTea = inventory.find(
+                (item) => item.ingredient_type === 30 && item.name === "Black Tea"
+            );
+            
+            // Set Black Tea as default for new drinks
             setSelectedToppings({
                 20: [],
-                30: [],
+                30: blackTea ? [blackTea] : [],
                 40: [],
                 100: [],
             });

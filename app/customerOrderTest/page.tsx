@@ -875,9 +875,10 @@ function MenuItems({
     addToOrderLabel,
     speak,
 }: MenuItemsInterface) {
+    const { isHighContrast } = useAccessibility();
     return (
         <div className="space-y-4">
-            <p className="text-xl">{title}</p>
+            <p className={`text-xl ${isHighContrast ? "text-white" : "text-black"}`}>{title}</p>
             <div className="grid grid-rows-3 grid-cols-3 gap-4">
                 {Object.entries(menuData)
                     .filter(([category]) => category === selectedCategory)
@@ -957,7 +958,7 @@ function Cart({
         <div
             className={`grid grid-rows-[1fr_8fr_1fr] min-h-0 h-[900] gap-4 ${isHighContrast ? "bg-black text-white border-8 border-yellow-200" : ""}`}
         >
-            <p className="text-xl mb-4 text-center">{labels.cart}</p>
+            <p className={`text-xl mb-4 text-center ${isHighContrast ? "text-white" : "text-black"}`}>{labels.cart}</p>
             <ScrollArea className="h-150">
                 <div className="space-y-4">
                     {items.map((i, idx) => (

@@ -34,6 +34,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 
 import { useAccessibility } from "@/contexts/AccessibilityContext";
 import { useTextToSpeech } from "@/hooks/useTextToSpeech";
+import GoogleTranslate from "@/components/GoogleTranslate";
 
 interface CartItem {
     id: number;
@@ -996,203 +997,16 @@ function Cart({
 export default function CashierPage() {
     const [selectedCategory, setSelectedCategory] = useState("Fruit Tea");
     const [cartItems, setCartItems] = useState<CartItem[]>([]);
-    const [selectedLanguage, setSelectedLanguage] = useState("en");
-    const [labels, setLabels] = useState<Labels>(EN_LABELS);
-    const [isTranslating, setIsTranslating] = useState(false);
 
-    const LANGUAGE_TO_TTS_LANG: Record<string, string> = {
-        en: "en-US",
-        es: "es-ES",
-        ar: "ar-SA",
-    };
+    const labels = EN_LABELS;
 
-    const { speak, setLang } = useTextToSpeech(LANGUAGE_TO_TTS_LANG["en"]);
+    const translatedMenuData = menuData;
 
-    const [translatedMenuData, setTranslatedMenuData] =
-        useState<MenuData>(menuData);
+    const categoryLabels = Object.fromEntries(
+        Object.keys(menuData).map((c) => [c, c])
+    );
 
-    const [categoryLabels, setCategoryLabels] = useState<
-        Record<string, string>
-    >(() => Object.fromEntries(Object.keys(menuData).map((c) => [c, c])));
-
-    useEffect(() => {
-        if (selectedLanguage === "en") {
-            setLabels(EN_LABELS);
-            return;
-        }
-
-        const translateLabels = async () => {
-            setIsTranslating(true);
-            try {
-                const texts = LABEL_KEYS.map((key) => EN_LABELS[key]);
-
-                const res = await fetch("/api/translate", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        texts,
-                        targetLanguage: selectedLanguage,
-                    }),
-                });
-
-                if (!res.ok) {
-                    setLabels(EN_LABELS);
-                    return;
-                }
-
-                const data = await res.json();
-                const translatedTexts: string[] = data.translatedTexts ?? [];
-
-                const updated: Labels = { ...EN_LABELS };
-                LABEL_KEYS.forEach((key, idx) => {
-                    if (translatedTexts[idx]) {
-                        updated[key] = translatedTexts[idx];
-                    }
-                });
-
-                setLabels(updated);
-            } catch (err) {
-                setLabels(EN_LABELS);
-            } finally {
-                setIsTranslating(false);
-            }
-        };
-
-        translateLabels();
-    }, [selectedLanguage]);
-
-    useEffect(() => {
-        if (selectedLanguage === "en") {
-            setTranslatedMenuData(menuData);
-            return;
-        }
-
-        const translateMenuItems = async () => {
-            try {
-                const flatItems: {
-                    category: string;
-                    index: number;
-                    name: string;
-                }[] = [];
-
-                Object.entries(menuData).forEach(([category, items]) => {
-                    items.forEach((item, index) => {
-                        flatItems.push({ category, index, name: item.name });
-                    });
-                });
-
-                const texts = flatItems.map((x) => x.name);
-
-                const res = await fetch("/api/translate", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        texts,
-                        targetLanguage: selectedLanguage,
-                    }),
-                });
-
-                if (!res.ok) {
-                    setTranslatedMenuData(menuData);
-                    return;
-                }
-
-                const data = await res.json();
-                const translatedTexts: string[] = data.translatedTexts ?? [];
-
-                const newMenu: MenuData = {};
-                Object.entries(menuData).forEach(([category, items]) => {
-                    newMenu[category] = items.map((item) => ({ ...item }));
-                });
-
-                translatedTexts.forEach((text, i) => {
-                    const { category, index } = flatItems[i];
-                    if (newMenu[category] && newMenu[category][index]) {
-                        newMenu[category][index].name = text;
-                    }
-                });
-
-                setTranslatedMenuData(newMenu);
-            } catch (err) {
-                setTranslatedMenuData(menuData);
-            }
-        };
-
-        translateMenuItems();
-    }, [selectedLanguage]);
-
-    useEffect(() => {
-        if (selectedLanguage === "en") {
-            setLabels(EN_LABELS);
-            setCategoryLabels(
-                Object.fromEntries(Object.keys(menuData).map((c) => [c, c])),
-            );
-            setLang(LANGUAGE_TO_TTS_LANG["en"]);
-            return;
-        }
-
-        const translateLabels = async () => {
-            setIsTranslating(true);
-            try {
-                const labelTexts = LABEL_KEYS.map((key) => EN_LABELS[key]);
-                const categoryNames = Object.keys(menuData);
-
-                const texts = [...labelTexts, ...categoryNames];
-
-                const res = await fetch("/api/translate", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        texts,
-                        targetLanguage: selectedLanguage,
-                    }),
-                });
-
-                if (!res.ok) {
-                    setLabels(EN_LABELS);
-                    setCategoryLabels(
-                        Object.fromEntries(
-                            Object.keys(menuData).map((c) => [c, c]),
-                        ),
-                    );
-                    setLang(LANGUAGE_TO_TTS_LANG["en"]);
-                    return;
-                }
-
-                const data = await res.json();
-                const translatedTexts: string[] = data.translatedTexts ?? [];
-
-                const updated: Labels = { ...EN_LABELS };
-                LABEL_KEYS.forEach((key, idx) => {
-                    if (translatedTexts[idx]) {
-                        updated[key] = translatedTexts[idx];
-                    }
-                });
-
-                const newCategoryLabels: Record<string, string> = {};
-                categoryNames.forEach((name, idx) => {
-                    const tIdx = LABEL_KEYS.length + idx;
-                    newCategoryLabels[name] = translatedTexts[tIdx] ?? name;
-                });
-
-                setLabels(updated);
-                setCategoryLabels(newCategoryLabels);
-                setLang(LANGUAGE_TO_TTS_LANG[selectedLanguage]);
-            } catch (err) {
-                setLabels(EN_LABELS);
-                setCategoryLabels(
-                    Object.fromEntries(
-                        Object.keys(menuData).map((c) => [c, c]),
-                    ),
-                );
-                setLang(LANGUAGE_TO_TTS_LANG["en"]);
-            } finally {
-                setIsTranslating(false);
-            }
-        };
-
-        translateLabels();
-    }, [selectedLanguage, setLang]);
+    const { speak } = useTextToSpeech("en-US");
     const { isHighContrast, textMultipler } = useAccessibility();
 
     //console.log(cartItems);
@@ -1225,26 +1039,16 @@ export default function CashierPage() {
         <div className="min-h-screen bg-[#ffddd233] font-sans dark:bg-black flex flex-col text-white">
             <TopNav subtitle={labels.kioskTitle} />
 
-            <div className={`flex justify-end px-8 pt-4 gap-2 items-center ${isHighContrast ? "bg-black" : ""}`}>
-                <span className="text-sm font-medium">{labels.language}</span>
-                <select
-                    className="border rounded px-2 py-1 text-sm"
-                    value={selectedLanguage}
-                    onChange={(e) => setSelectedLanguage(e.target.value)}
-                    disabled={isTranslating}
+            <div
+                className={`flex justify-end px-8 pt-4 gap-2 items-center ${
+                    isHighContrast ? "bg-black" : ""
+                }`}
                 >
-                    {LANGUAGES.map((lang) => (
-                        <option key={lang.code} value={lang.code}>
-                            {lang.label}
-                        </option>
-                    ))}
-                </select>
-                {isTranslating && (
-                    <span className="text-xs text-gray-500">
-                        Translating...
-                    </span>
-                )}
+                <div className="inline-block">
+                    <GoogleTranslate />
+                </div>
             </div>
+
 
             <div className={`flex-1 px-6 py-4 ${isHighContrast ? "bg-black" : ""}`}>
                 <div className="mx-auto max-w-6xl grid grid-cols-[1.1fr_2fr_1.2fr] gap-6">

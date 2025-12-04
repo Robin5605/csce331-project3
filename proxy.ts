@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 
 export default withAuth(
     function middleware(req) {
+        console.log("MIDDLEWARE RUNNING", req.nextUrl.pathname);
         const role = req.nextauth.token?.role;
 
         const { pathname } = req.nextUrl;
@@ -50,8 +51,11 @@ export default withAuth(
 
 export const config = {
     matcher: [
-        "/api/auth/:path*",
-        "/managerPage",
+        "/managerPage/:path*",
+        "/employees/:path*",
+        "/ingredientManagementPage/:path*",
+        "/menuManagementPage/:path*",
+        "/x_and_z_reports/:path*",
         "/CashierPage/:path*",
     ],
 };

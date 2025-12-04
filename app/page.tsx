@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import Image from "next/image";
 
+import GoogleTranslate from "@/components/GoogleTranslate";
+
 export default function Home() {
     const router = useRouter();
 
@@ -21,6 +23,11 @@ export default function Home() {
                     />
                 </div>
             </nav>
+
+            <div className="flex justify-end m-4">
+                <GoogleTranslate />
+            </div>
+           
 
             {/* PAGE CONTENT */}
             <main className="mx-auto flex w-full max-w-6xl flex-col gap-10 px-4 py-10 md:flex-row md:items-center md:justify-between">

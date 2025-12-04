@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { AccessibilityProvider } from "@/contexts/AccessibilityContext";
+import "./globals.css";
 
 const geistSans = Geist({
     variable: "--font-geist-sans",
@@ -25,9 +27,11 @@ export default function RootLayout({
     return (
         <html lang="en">
             <body
-                className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+                className={`${geistSans.variable} ${geistMono.variable} antialiased m-0 min-h-dvh w-full`}
             >
-                {children}
+                <AccessibilityProvider>
+                    <div className="min-h-dvh w-full">{children}</div>
+                </AccessibilityProvider>
             </body>
         </html>
     );

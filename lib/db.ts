@@ -698,11 +698,13 @@ export async function createOrder({
     ensureConnected();
     try {
         await client.query("BEGIN");
-        
+
         // Look up Ice ingredient ID once per order (cache it)
         const iceIngredientId = await getIngredientByName(ICE_INGREDIENT_NAME);
         if (!iceIngredientId) {
-            throw new Error(`Ingredient "${ICE_INGREDIENT_NAME}" not found in database`);
+            throw new Error(
+                `Ingredient "${ICE_INGREDIENT_NAME}" not found in database`,
+            );
         }
 
         let total = 0;
@@ -710,11 +712,10 @@ export async function createOrder({
         for (const drink of drinks) {
             const drinkCost = Number(
                 (
-                    await client.query(
-                        `SELECT cost FROM menu WHERE id = $1`,
-                        [drink.id],
-                    )
-                ).rows[0].cost
+                    await client.query(`SELECT cost FROM menu WHERE id = $1`, [
+                        drink.id,
+                    ])
+                ).rows[0].cost,
             );
 
             const customizationsCost = await client

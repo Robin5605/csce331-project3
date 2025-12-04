@@ -30,9 +30,7 @@ export default function RootLayout({
                 className={`${geistSans.variable} ${geistMono.variable} antialiased m-0 min-h-dvh w-full`}
             >
                 <AccessibilityProvider>
-                    <div className="min-h-dvh w-full">
-                        {children}
-                    </div>
+                    <div className="min-h-dvh w-full">{children}</div>
                 </AccessibilityProvider>
             </body>
         </html>

@@ -414,28 +414,23 @@ function CategoryCard({
     isSelected,
     onClick,
 }: CategoryCardProps) {
-  const { isHighContrast } = useAccessibility();
+    const { isHighContrast } = useAccessibility();
 
-  const base = "border p-4 rounded cursor-pointer";
+    const base = "border p-4 rounded cursor-pointer";
 
-  const normal =
-    `hover:border-black transition duration-300 ${isSelected ? "bg-black text-white" : ""}`;
+    const normal = `hover:border-black transition duration-300 ${isSelected ? "bg-black text-white" : ""}`;
 
-  const highContrast =
-    `bg-black ${isSelected ? "text-blue-400" : "text-white"} border-2 border-white`;
+    const highContrast = `bg-black ${isSelected ? "text-blue-400" : "text-white"} border-2 border-white`;
 
-  return (
-    <div
-      className={`${base} ${
-                isHighContrast ? highContrast : normal
-            }`}
-      onClick={onClick}
-    >
-      <p>{label}</p>
-    </div>
-  );
+    return (
+        <div
+            className={`${base} ${isHighContrast ? highContrast : normal}`}
+            onClick={onClick}
+        >
+            <p>{label}</p>
+        </div>
+    );
 }
-
 
 interface CategorySelectorProps {
     categories: string[];
@@ -452,17 +447,23 @@ function CategorySelector({
     title,
     categoryLabels,
 }: CategorySelectorProps) {
-    const { isHighContrast, setIsHighContrast, textMultipler, setTextMultipler } = useAccessibility();
+    const {
+        isHighContrast,
+        setIsHighContrast,
+        textMultipler,
+        setTextMultipler,
+    } = useAccessibility();
     return (
-        <div className={`w-fit space-y-4 flex-col items-center ${isHighContrast ? "text-white" : "text-black"} ${textMultipler >= 1.75 ? "max-w-50" : ""}`}>
+        <div
+            className={`w-fit space-y-4 flex-col items-center ${isHighContrast ? "text-white" : "text-black"} ${textMultipler >= 1.75 ? "max-w-50" : ""}`}
+        >
             <Button
                 variant="default"
                 className="w-full"
                 onClick={() => {
-                        let t = isHighContrast
-                        setIsHighContrast(!t)
-                    }
-                }
+                    let t = isHighContrast;
+                    setIsHighContrast(!t);
+                }}
             >
                 Toggle High Contrast
             </Button>
@@ -473,13 +474,13 @@ function CategorySelector({
                     size="icon"
                     className="rounded-full"
                     onClick={() => {
-                        if(textMultipler <= 1) return;
-                        let z = textMultipler - .25
+                        if (textMultipler <= 1) return;
+                        let z = textMultipler - 0.25;
                         document.documentElement.style.fontSize = `${16 * z}px`; //This changes the magnification of the page
                         setTextMultipler(z);
                     }}
                 >
-                    <Minus color={`${isHighContrast ? "blue" : "black"}`}/>
+                    <Minus color={`${isHighContrast ? "blue" : "black"}`} />
                 </Button>
                 <Input
                     type="number"
@@ -492,8 +493,8 @@ function CategorySelector({
                     size="icon"
                     className="rounded-full"
                     onClick={() => {
-                        if(textMultipler >= 2) return;
-                        let z = textMultipler + .25
+                        if (textMultipler >= 2) return;
+                        let z = textMultipler + 0.25;
                         document.documentElement.style.fontSize = `${16 * z}px`; //This changes the magnification of the page
                         setTextMultipler(z);
                     }}
@@ -501,7 +502,11 @@ function CategorySelector({
                     <Plus color={`${isHighContrast ? "blue" : "black"}`} />
                 </Button>
             </div>
-            <p className={`text-xl ${isHighContrast ? "text-white" : "text-black"}`}>{title}</p>
+            <p
+                className={`text-xl ${isHighContrast ? "text-white" : "text-black"}`}
+            >
+                {title}
+            </p>
             {categories.map((c, i) => (
                 <CategoryCard
                     key={i}
@@ -522,27 +527,33 @@ interface InventoryItemCardProps {
     onUnselect: () => void;
 }
 
-function ToppingCard({ item, isSelected, onSelect, onUnselect }: InventoryItemCardProps) {
+function ToppingCard({
+    item,
+    isSelected,
+    onSelect,
+    onUnselect,
+}: InventoryItemCardProps) {
     const { isHighContrast } = useAccessibility();
     // const [selected, setSelected] = useState(isSelected);
-    let selected = isSelected
+    let selected = isSelected;
     return (
         <div
             className={`flex-col items-center justify-center border rounded p-4 cursor-pointer ${
-                
-                isHighContrast ? 
-                    selected ? "text-blue-400" : ""          
-                : 
-                    selected ? "bg-black text-white" : ""
-            
+                isHighContrast
+                    ? selected
+                        ? "text-blue-400"
+                        : ""
+                    : selected
+                      ? "bg-black text-white"
+                      : ""
             }`}
             onClick={() => {
-                if(selected){
+                if (selected) {
                     // setSelected(false)
-                    onUnselect()
+                    onUnselect();
                 } else {
                     // setSelected(true)
-                    onSelect()
+                    onSelect();
                 }
                 // setSelected(!selected);
                 // if (!selected) onSelect();
@@ -558,20 +569,17 @@ function ToppingCard({ item, isSelected, onSelect, onUnselect }: InventoryItemCa
 }
 
 interface ToppingSelectorProps {
-    onToppingSelect: (        
-        list: InventoryItem[],
-        id: number
-    ) => void;
+    onToppingSelect: (list: InventoryItem[], id: number) => void;
     ingredientType: number;
     multiSelect: boolean;
-    globalToppings: Record<number, InventoryItem[]>
+    globalToppings: Record<number, InventoryItem[]>;
 }
 
 function ToppingSelector({
     onToppingSelect,
     ingredientType,
     multiSelect,
-    globalToppings
+    globalToppings,
 }: ToppingSelectorProps) {
     const [selected, setSelected] = useState<InventoryItem[]>([]); //This is for local selections
     return (
@@ -582,7 +590,7 @@ function ToppingSelector({
                     <ToppingCard
                         key={i.id}
                         item={i}
-                        isSelected = {selected.includes(i)}
+                        isSelected={selected.includes(i)}
                         onSelect={() => {
                             let localArr = multiSelect ? [...selected, i] : [i];
                             setSelected(localArr);
@@ -619,31 +627,34 @@ const iceToPercentage = (servings: number): string => {
     return mapping[servings] || "0%";
 };
 
-function MenuItemCard({ item, onConfirm, addToOrderLabel, speak }: MenuItemCardProps) {
+function MenuItemCard({
+    item,
+    onConfirm,
+    addToOrderLabel,
+    speak,
+}: MenuItemCardProps) {
     const { isHighContrast, textMultipler } = useAccessibility();
-    
+
     const [open, setOpen] = useState(false);
-    
+
     const [ice, setIce] = useState(4); // Default to 100% (4 servings)
     const [size, setSize] = useState<DrinkSize>("medium");
-    
-    const [selectedToppings, setSelectedToppings] = useState<Record<number, InventoryItem[]>>(
-        {
-            20: [],
-            30: [],
-            40: [],
-            100: []
-        }
-    );
-    
-    function setToppingsForType(list: InventoryItem[], id: number){
-        setSelectedToppings(prev => ({
-            ...prev,    
-            [id]: list, 
+
+    const [selectedToppings, setSelectedToppings] = useState<
+        Record<number, InventoryItem[]>
+    >({
+        20: [],
+        30: [],
+        40: [],
+        100: [],
+    });
+
+    function setToppingsForType(list: InventoryItem[], id: number) {
+        setSelectedToppings((prev) => ({
+            ...prev,
+            [id]: list,
         }));
     }
-    
-    
 
     // Reset all customization state when dialog opens
     const handleOpenChange = (isOpen: boolean) => {
@@ -664,7 +675,8 @@ function MenuItemCard({ item, onConfirm, addToOrderLabel, speak }: MenuItemCardP
     return (
         <Dialog open={open} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>
-                <div className={`relative flex flex-col gap-2 items-center 
+                <div
+                    className={`relative flex flex-col gap-2 items-center 
                     ${isHighContrast ? "bg-black" : "bg-gray-100"} p-2 rounded border
                     ${isHighContrast ? "text-white" : "text-black"}
                 `}
@@ -697,10 +709,12 @@ function MenuItemCard({ item, onConfirm, addToOrderLabel, speak }: MenuItemCardP
                     </span>
                 </div>
             </DialogTrigger>
-            <DialogContent className={`max-h-9/10 overflow-y-scroll
+            <DialogContent
+                className={`max-h-9/10 overflow-y-scroll
                     ${isHighContrast ? "text-white" : "text-black"}
                     ${isHighContrast ? "bg-black" : "bg-gray-100"}
-                `}>
+                `}
+            >
                 <DialogHeader>
                     <DialogTitle>Customize {item.name}</DialogTitle>
                 </DialogHeader>
@@ -711,12 +725,14 @@ function MenuItemCard({ item, onConfirm, addToOrderLabel, speak }: MenuItemCardP
                             <div
                                 className={`cursor-pointer duration-300 border rounded-full p-4 text-xl 
                                     ${
-                                        isHighContrast ?
-                                            size === "small" ? "bg-black text-blue-500" : ""
-                                        :
-                                            size === "small" ? "bg-black text-white" : ""
-                                    }`
-                                }
+                                        isHighContrast
+                                            ? size === "small"
+                                                ? "bg-black text-blue-500"
+                                                : ""
+                                            : size === "small"
+                                              ? "bg-black text-white"
+                                              : ""
+                                    }`}
                                 onClick={() => setSize("small")}
                             >
                                 S
@@ -724,22 +740,28 @@ function MenuItemCard({ item, onConfirm, addToOrderLabel, speak }: MenuItemCardP
                             <div
                                 className={`cursor-pointer duration-300 border rounded-full p-4 text-xl 
                                      ${
-                                        isHighContrast ?
-                                            size === "medium" ? "bg-black text-blue-500" : ""
-                                        :
-                                            size === "medium" ? "bg-black text-white" : ""
-                                    }`}
+                                         isHighContrast
+                                             ? size === "medium"
+                                                 ? "bg-black text-blue-500"
+                                                 : ""
+                                             : size === "medium"
+                                               ? "bg-black text-white"
+                                               : ""
+                                     }`}
                                 onClick={() => setSize("medium")}
                             >
                                 M
                             </div>
                             <div
                                 className={`cursor-pointer duration-300 border rounded-full p-4 text-xl  ${
-                                        isHighContrast ?
-                                            size === "large" ? "bg-black text-blue-500" : ""
-                                        :
-                                            size === "large" ? "bg-black text-white" : ""
-                                    }`}
+                                    isHighContrast
+                                        ? size === "large"
+                                            ? "bg-black text-blue-500"
+                                            : ""
+                                        : size === "large"
+                                          ? "bg-black text-white"
+                                          : ""
+                                }`}
                                 onClick={() => setSize("large")}
                             >
                                 L
@@ -807,12 +829,14 @@ function MenuItemCard({ item, onConfirm, addToOrderLabel, speak }: MenuItemCardP
                             variant="default"
                             className="w-full"
                             onClick={() => {
-                                const allCustomizations = Object.values(selectedToppings).flatMap(topArr =>
-                                    topArr.map(t => ({
+                                const allCustomizations = Object.values(
+                                    selectedToppings,
+                                ).flatMap((topArr) =>
+                                    topArr.map((t) => ({
                                         id: t.id,
                                         name: t.name,
                                         cost: t.cost,
-                                    }))
+                                    })),
                                 );
 
                                 onConfirm({
@@ -879,7 +903,9 @@ function CartItemCard({ item }: { item: CartItem }) {
     return (
         <div
             className={`rounded p-4 border ${
-            isHighContrast ? "bg-black text-white border-4  border-blue-500" : "bg-white text-black border"
+                isHighContrast
+                    ? "bg-black text-white border-4  border-blue-500"
+                    : "bg-white text-black border"
             }`}
         >
             <p className="text-xl font-bold">
@@ -928,7 +954,9 @@ function Cart({
     }
 
     return (
-        <div className={`grid grid-rows-[1fr_8fr_1fr] min-h-0 h-[900] gap-4 ${isHighContrast ? "bg-black text-white border-8 border-yellow-200" : ""}`}>
+        <div
+            className={`grid grid-rows-[1fr_8fr_1fr] min-h-0 h-[900] gap-4 ${isHighContrast ? "bg-black text-white border-8 border-yellow-200" : ""}`}
+        >
             <p className="text-xl mb-4 text-center">{labels.cart}</p>
             <ScrollArea className="h-150">
                 <div className="space-y-4">
@@ -937,15 +965,18 @@ function Cart({
                     ))}
                 </div>
             </ScrollArea>
-            
-            <div className={`grid grid-rows-4 grid-cols-2 p-4 border rounded h-50 ${
-                textMultipler >= 1.75 ? "text-sm" : "text-md"
-            }
+
+            <div
+                className={`grid grid-rows-4 grid-cols-2 p-4 border rounded h-50 ${
+                    textMultipler >= 1.75 ? "text-sm" : "text-md"
+                }
                 ${
-                isHighContrast ? "bg-black text-white border-4 border-blue-500" : "bg-white text-black border"
-                }`}>
-                
-                <div className="col-span-2 space-y-2"> 
+                    isHighContrast
+                        ? "bg-black text-white border-4 border-blue-500"
+                        : "bg-white text-black border"
+                }`}
+            >
+                <div className="col-span-2 space-y-2">
                     <div className="flex justify-between text-sm">
                         <span>{labels.subtotal}</span>
                         <span>${subtotal.toFixed(2)}</span>
@@ -964,10 +995,16 @@ function Cart({
                     <Dialog>
                         <DialogTrigger asChild>
                             {/* Removed col-span-2 from Button as it should be inside the column structure */}
-                            <Button className={`w-full ${isHighContrast ? "border-4 border-green-400" : ""}`}>{labels.checkout}</Button> 
+                            <Button
+                                className={`w-full ${isHighContrast ? "border-4 border-green-400" : ""}`}
+                            >
+                                {labels.checkout}
+                            </Button>
                         </DialogTrigger>
 
-                        <DialogContent className={`max-h-[90vh] ${isHighContrast ? "text-white bg-black" : "text-black"}`}>
+                        <DialogContent
+                            className={`max-h-[90vh] ${isHighContrast ? "text-white bg-black" : "text-black"}`}
+                        >
                             <DialogHeader>
                                 <DialogTitle className={`text-center text-2xl`}>
                                     {labels.confirmOrder}
@@ -988,7 +1025,6 @@ function Cart({
                         </DialogContent>
                     </Dialog>
                 </div>
-                
             </div>
         </div>
     );
@@ -1003,7 +1039,7 @@ export default function CashierPage() {
     const translatedMenuData = menuData;
 
     const categoryLabels = Object.fromEntries(
-        Object.keys(menuData).map((c) => [c, c])
+        Object.keys(menuData).map((c) => [c, c]),
     );
 
     const { speak } = useTextToSpeech("en-US");
@@ -1043,14 +1079,15 @@ export default function CashierPage() {
                 className={`flex justify-end px-8 pt-4 gap-2 items-center ${
                     isHighContrast ? "bg-black" : ""
                 }`}
-                >
+            >
                 <div className="inline-block">
                     <GoogleTranslate />
                 </div>
             </div>
 
-
-            <div className={`flex-1 px-6 py-4 ${isHighContrast ? "bg-black" : ""}`}>
+            <div
+                className={`flex-1 px-6 py-4 ${isHighContrast ? "bg-black" : ""}`}
+            >
                 <div className="mx-auto max-w-6xl grid grid-cols-[1.1fr_2fr_1.2fr] gap-6">
                     <CategorySelector
                         categories={Object.keys(menuData)}

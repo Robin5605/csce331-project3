@@ -728,6 +728,9 @@ function MenuItemCard({
                     ${isHighContrast ? "text-white" : "text-black"}
                     ${isHighContrast ? "bg-black" : "bg-gray-100"}
                 `}
+                onInteractOutside={(e) => {
+                    e.preventDefault();
+                }}
             >
                 <DialogHeader>
                     <DialogTitle>Customize {item.name}</DialogTitle>

@@ -3,6 +3,7 @@ import { Client } from "pg";
 import {
     MenuItem,
     Ingredient,
+    Category,
     Employee,
     SalesDatum,
     InventoryUsageDatum,
@@ -154,7 +155,7 @@ export async function populate_ingredient_management_table(): Promise<
     await ensureConnected();
     const { rows } = await client.query<Ingredient>(
         `
-    SELECT id, name, stock, cost::float8 AS cost
+    SELECT id, name, stock, cost::float8 AS cost, ingredient_type
     FROM ingredients
     ORDER BY id
     `,
@@ -384,6 +385,22 @@ export async function updateEmployee(
     return rows.length === 0 ? null : rows[0];
 }
 
+export async function fetch_categories(): Promise<Category[]> {
+    const { rows } = await client.query<Category>(
+        `SELECT id, name, stock FROM categories ORDER BY id`,
+    );
+    return rows;
+}
+
+export async function fetch_menu_by_category(
+    categoryId: number,
+): Promise<MenuItem[]> {
+    const { rows } = await client.query<MenuItem>(
+        `SELECT id, name, category_id, stock, cost::float8 AS cost FROM menu WHERE category_id = $1 ORDER BY id`,
+        [categoryId],
+    );
+    return rows;
+}
 //  X REPORTS AND Z REPORTS
 
 /**
@@ -601,7 +618,7 @@ export async function fetch_kitchen_orders_by_status(
                                     )
                                     FROM drinks_ingredients di
                                     JOIN ingredients i ON i.id = di.ingredient_id
-                                    WHERE di.drink_id = m.id
+                                    WHERE di.drink_id = dord.id
                                 ),
                                 '[]'
                             )
@@ -652,12 +669,27 @@ export interface CreateOrder {
     drinks: {
         id: number;
         customizations: number[];
+        ice?: number; // Ice servings (0-4), optional for backward compatibility
     }[];
     employeeId: number;
     paymentMethod: string;
 }
 
 const TAX_RATE = parseFloat(process.env.NEXT_PUBLIC_TAX_RATE ?? "0.0825");
+const ICE_INGREDIENT_NAME = "Ice";
+
+/**
+ * Look up an ingredient by name. Returns null if not found.
+ */
+async function getIngredientByName(name: string): Promise<number | null> {
+    await ensureConnected();
+    const result = await client.query<{ id: number }>(
+        `SELECT id FROM ingredients WHERE name = $1`,
+        [name],
+    );
+    return result.rows.length > 0 ? result.rows[0].id : null;
+}
+
 export async function createOrder({
     drinks,
     employeeId,
@@ -665,25 +697,37 @@ export async function createOrder({
 }: CreateOrder) {
     ensureConnected();
     try {
-        let total = 0;
-        for (const drink of drinks) {
-            const res = await client.query(
-                `SELECT SUM(cost) FROM ingredients WHERE id = ANY($1)`,
-                [drink.customizations],
-            );
+        await client.query("BEGIN");
 
-            const customizationsCost = Number(res.rows[0].sum);
-            total += customizationsCost;
+        // Look up Ice ingredient ID once per order (cache it)
+        const iceIngredientId = await getIngredientByName(ICE_INGREDIENT_NAME);
+        if (!iceIngredientId) {
+            throw new Error(
+                `Ingredient "${ICE_INGREDIENT_NAME}" not found in database`,
+            );
         }
 
-        const menuIDs = drinks.map((drink) => drink.id); // Menu IDs of all the ordered drins
-        const res = await client.query(
-            `SELECT SUM(cost) FROM menu WHERE id = ANY($1)`,
-            [menuIDs],
-        );
+        let total = 0;
+        console.log(drinks);
+        for (const drink of drinks) {
+            const drinkCost = Number(
+                (
+                    await client.query(`SELECT cost FROM menu WHERE id = $1`, [
+                        drink.id,
+                    ])
+                ).rows[0].cost,
+            );
 
-        const baseDrinksCost = Number(res.rows[0].sum);
-        total += baseDrinksCost;
+            const customizationsCost = await client
+                .query(`SELECT SUM(cost) FROM ingredients WHERE id = ANY($1)`, [
+                    drink.customizations,
+                ])
+                .then((res) => res.rows[0].sum)
+                .then(Number);
+
+            total += drinkCost + customizationsCost;
+        }
+
         total += total * TAX_RATE;
 
         const orderId = (
@@ -701,10 +745,23 @@ export async function createOrder({
                 )
             ).rows[0].id as number;
 
-            await client.query(
-                `INSERT INTO drinks_ingredients (drink_id, ingredient_id, servings) SELECT $1, unnest($2::int[]), 1`,
-                [drinksOrdersID, drink.customizations],
-            );
+            // Insert customizations (toppings, etc.)
+            if (drink.customizations && drink.customizations.length > 0) {
+                await client.query(
+                    `INSERT INTO drinks_ingredients (drink_id, ingredient_id, servings) SELECT $1, unnest($2::int[]), 1`,
+                    [drinksOrdersID, drink.customizations],
+                );
+            }
+
+            // Insert ice servings if provided and > 0
+            const iceServings = drink.ice ?? 0;
+            if (iceServings > 0) {
+                await insert_into_drinks_ingredients_table(
+                    drinksOrdersID,
+                    iceIngredientId,
+                    iceServings,
+                );
+            }
         }
 
         await client.query("COMMIT");

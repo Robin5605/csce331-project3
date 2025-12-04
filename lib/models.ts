@@ -39,6 +39,7 @@ interface Ingredient {
     name: string;
     stock: number;
     cost: number;
+    ingredient_type: number;
 }
 
 interface DrinkIngredient {

@@ -6,12 +6,15 @@ import MenuManagementPage from "@/app/menuManagementPage/page";
 import ReportsPage from "@/app/ReportsPage/page";
 import XZReports from "@/app/x_and_z_reports/page";
 import KitchenPage from "@/app//KitchenPage/page";
+import TopNav from "@/components/TopNav";
 
 export default function ManagerPage() {
     return (
         <div className="p-6">
-            <h1 className="text-3xl font-bold mb-6">Manager Dashboard</h1>
+            <TopNav subtitle="Manager Dashboard" />
 
+            <h1 className="text-3xl font-bold mb-6">Manager Dashboard</h1>
+            
             <Tabs defaultValue="cashier" className="w-full">
                 {/* ───── TAB HEADERS ───── */}
                 <TabsList className="grid grid-cols-6 w-full">

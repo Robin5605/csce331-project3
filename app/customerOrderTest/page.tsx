@@ -1,6 +1,13 @@
 "use client";
 
-import { ReactNode, useState, JSX, useMemo, useEffect } from "react";
+import {
+    ReactNode,
+    useState,
+    JSX,
+    useMemo,
+    useEffect,
+    useCallback,
+} from "react";
 import Image from "next/image";
 import IdleLogout from "@/components/idleLogout";
 import TopNav from "@/components/TopNav";
@@ -17,7 +24,7 @@ import {
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import CustomizationCard from "@/components/CustomizationCard";
-import { CupSoda, Minus, Plus } from "lucide-react";
+import { CupSoda, Minus, Plus, ReceiptTurkishLiraIcon } from "lucide-react";
 import {
     Dialog,
     DialogClose,
@@ -31,7 +38,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
+
+import { useAccessibility } from "@/contexts/AccessibilityContext";
 import { useTextToSpeech } from "@/hooks/useTextToSpeech";
+import GoogleTranslate from "@/components/GoogleTranslate";
 
 interface CartItem {
     id: number;
@@ -53,6 +63,18 @@ const LANGUAGES = [
     { code: "es", label: "Español" },
     { code: "ar", label: "العربية" },
 ];
+
+type CurrencyCode = "USD" | "EUR";
+
+const CURRENCIES = [
+    { code: "USD", label: "USD - $", symbol: "$" },
+    { code: "EUR", label: "EUR - €", symbol: "€" },
+];
+
+const CURRENCY_SYMBOLS: Record<CurrencyCode, string> = {
+    USD: "$",
+    EUR: "€",
+};
 
 const LABEL_KEYS = [
     "kioskTitle",
@@ -386,6 +408,7 @@ const findInventoryCost = (name: string) => {
 };
 
 function calculateSubtotal(cartItems: CartItem[]): number {
+    //console.log(JSON.stringify(cartItems));
     let total = 0;
 
     for (const item of cartItems) {
@@ -410,11 +433,17 @@ function CategoryCard({
     isSelected,
     onClick,
 }: CategoryCardProps) {
+    const { isHighContrast } = useAccessibility();
+
+    const base = "border p-4 rounded cursor-pointer";
+
+    const normal = `hover:border-black transition duration-300 ${isSelected ? "bg-black text-white" : ""}`;
+
+    const highContrast = `bg-black ${isSelected ? "text-blue-400" : "text-white"} border-2 border-white`;
+
     return (
         <div
-            className={`border p-4 rounded hover:border-black cursor-pointer transition duration-300 ${
-                isSelected ? "bg-black text-white" : ""
-            }`}
+            className={`${base} ${isHighContrast ? highContrast : normal}`}
             onClick={onClick}
         >
             <p>{label}</p>
@@ -437,9 +466,66 @@ function CategorySelector({
     title,
     categoryLabels,
 }: CategorySelectorProps) {
+    const {
+        isHighContrast,
+        setIsHighContrast,
+        textMultipler,
+        setTextMultipler,
+    } = useAccessibility();
     return (
-        <div className="w-fit space-y-4">
-            <p className="text-xl">{title}</p>
+        <div
+            className={`w-fit space-y-4 flex-col items-center ${isHighContrast ? "text-white" : "text-black"} ${textMultipler >= 1.75 ? "max-w-50" : ""}`}
+        >
+            <Button
+                variant="default"
+                className="w-full"
+                onClick={() => {
+                    let t = isHighContrast;
+                    setIsHighContrast(!t);
+                }}
+            >
+                Toggle High Contrast
+            </Button>
+            <p className="text-center">Zoom</p>
+            <div className="flex space-x-4">
+                <Button
+                    variant="outline"
+                    size="icon"
+                    className="rounded-full"
+                    onClick={() => {
+                        if (textMultipler <= 1) return;
+                        let z = textMultipler - 0.25;
+                        document.documentElement.style.fontSize = `${16 * z}px`; //This changes the magnification of the page
+                        setTextMultipler(z);
+                    }}
+                >
+                    <Minus color={`${isHighContrast ? "blue" : "black"}`} />
+                </Button>
+                <Input
+                    type="number"
+                    className="rounded-full w-fit"
+                    value={textMultipler}
+                    readOnly
+                />
+                <Button
+                    variant="outline"
+                    size="icon"
+                    className="rounded-full"
+                    onClick={() => {
+                        if (textMultipler >= 2) return;
+                        let z = textMultipler + 0.25;
+                        document.documentElement.style.fontSize = `${16 * z}px`; //This changes the magnification of the page
+                        setTextMultipler(z);
+                    }}
+                >
+                    <Plus color={`${isHighContrast ? "blue" : "black"}`} />
+                </Button>
+            </div>
+            <p
+                className={`text-xl ${isHighContrast ? "text-white" : "text-black"}`}
+            >
+                {title}
+            </p>
             {categories.map((c, i) => (
                 <CategoryCard
                     key={i}
@@ -455,21 +541,42 @@ function CategorySelector({
 
 interface InventoryItemCardProps {
     item: InventoryItem;
+    isSelected: boolean;
     onSelect: () => void;
     onUnselect: () => void;
 }
 
-function ToppingCard({ item, onSelect, onUnselect }: InventoryItemCardProps) {
-    const [selected, setSelected] = useState(false);
+function ToppingCard({
+    item,
+    isSelected,
+    onSelect,
+    onUnselect,
+}: InventoryItemCardProps) {
+    const { isHighContrast } = useAccessibility();
+    // const [selected, setSelected] = useState(isSelected);
+    let selected = isSelected;
     return (
         <div
             className={`flex-col items-center justify-center border rounded p-4 cursor-pointer ${
-                selected ? "bg-black text-white" : ""
+                isHighContrast
+                    ? selected
+                        ? "text-blue-400"
+                        : ""
+                    : selected
+                      ? "bg-black text-white"
+                      : ""
             }`}
             onClick={() => {
-                setSelected(!selected);
-                if (!selected) onSelect();
-                else onUnselect();
+                if (selected) {
+                    // setSelected(false)
+                    onUnselect();
+                } else {
+                    // setSelected(true)
+                    onSelect();
+                }
+                // setSelected(!selected);
+                // if (!selected) onSelect();
+                // else onUnselect();
             }}
         >
             <p className="text-center select-none">{item.name}</p>
@@ -481,34 +588,46 @@ function ToppingCard({ item, onSelect, onUnselect }: InventoryItemCardProps) {
 }
 
 interface ToppingSelectorProps {
-    onToppingSelect: (toppings: InventoryItem[]) => void;
+    onToppingSelect: (list: InventoryItem[], id: number) => void;
     ingredientType: number;
+    multiSelect: boolean;
+    globalToppings: Record<number, InventoryItem[]>;
 }
 
 function ToppingSelector({
     onToppingSelect,
     ingredientType,
+    multiSelect,
+    globalToppings,
 }: ToppingSelectorProps) {
-    const [selected, setSelected] = useState<InventoryItem[]>([]);
+    const [selected, setSelected] = useState<InventoryItem[]>([]); //This is for local selections
+
+    // Sync local state with globalToppings when it changes
+    useEffect(() => {
+        const globalSelection = globalToppings[ingredientType] || [];
+        setSelected(globalSelection);
+    }, [globalToppings, ingredientType]);
+
     return (
-        <div className="grid grid-cols-4 gap-2">
+        <div className={`grid grid-cols-4 gap-2`}>
             {inventory
                 .filter((i) => i.ingredient_type === ingredientType)
                 .map((i) => (
                     <ToppingCard
                         key={i.id}
                         item={i}
+                        isSelected={selected.includes(i)}
                         onSelect={() => {
-                            const newArr = [...selected, i];
-                            setSelected(newArr);
-                            onToppingSelect(newArr);
+                            let localArr = multiSelect ? [...selected, i] : [i];
+                            setSelected(localArr);
+                            onToppingSelect(localArr, ingredientType);
                         }}
                         onUnselect={() => {
-                            const newArr = selected.filter(
+                            const localArr = selected.filter(
                                 (item) => item.id !== i.id,
                             );
-                            setSelected(newArr);
-                            onToppingSelect(newArr);
+                            setSelected(localArr);
+                            onToppingSelect(localArr, ingredientType);
                         }}
                     />
                 ))}
@@ -522,6 +641,17 @@ interface MenuItemCardProps {
     addToOrderLabel: string;
     speak: (text: string) => void;
 }
+// Helper function to convert ice servings (0-4) to percentage label
+const iceToPercentage = (servings: number): string => {
+    const mapping: { [key: number]: string } = {
+        0: "0%",
+        1: "25%",
+        2: "50%",
+        3: "75%",
+        4: "100%",
+    };
+    return mapping[servings] || "0%";
+};
 
 function MenuItemCard({
     item,
@@ -529,18 +659,62 @@ function MenuItemCard({
     addToOrderLabel,
     speak,
 }: MenuItemCardProps) {
-    const [ice, setIce] = useState(0);
+    const { isHighContrast, textMultipler } = useAccessibility();
+
+    const [open, setOpen] = useState(false);
+
+    const [ice, setIce] = useState(4); // Default to 100% (4 servings)
     const [size, setSize] = useState<DrinkSize>("medium");
 
-    const [selectedBoba, setSelectedBoba] = useState<InventoryItem[]>([]);
-    const [selectedTea, setSelectedTea] = useState<InventoryItem[]>([]);
-    const [selectedJelly, setSelectedJelly] = useState<InventoryItem[]>([]);
-    const [selectedOther, setSelectedOther] = useState<InventoryItem[]>([]);
+    const [selectedToppings, setSelectedToppings] = useState<
+        Record<number, InventoryItem[]>
+    >({
+        20: [],
+        30: [],
+        40: [],
+        100: [],
+    });
+
+    function setToppingsForType(list: InventoryItem[], id: number) {
+        setSelectedToppings((prev) => ({
+            ...prev,
+            [id]: list,
+        }));
+    }
+
+    // Reset all customization state when dialog opens
+    const handleOpenChange = (isOpen: boolean) => {
+        setOpen(isOpen);
+        if (isOpen) {
+            // Reset to defaults when opening
+            setIce(4); // 100%
+            setSize("medium");
+
+            // Find Black Tea from inventory
+            const blackTea = inventory.find(
+                (item) =>
+                    item.ingredient_type === 30 && item.name === "Black Tea",
+            );
+
+            // Set Black Tea as default for new drinks
+            setSelectedToppings({
+                20: [],
+                30: blackTea ? [blackTea] : [],
+                40: [],
+                100: [],
+            });
+        }
+    };
 
     return (
-        <Dialog>
+        <Dialog open={open} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>
-                <div className="relative flex flex-col gap-2 items-center bg-gray-100 p-2 rounded border">
+                <div
+                    className={`relative flex flex-col gap-2 items-center 
+                    ${isHighContrast ? "bg-black" : "bg-gray-100"} p-2 rounded border
+                    ${isHighContrast ? "text-white" : "text-black"}
+                `}
+                >
                     <button
                         type="button"
                         onClick={(e) => {
@@ -556,7 +730,7 @@ function MenuItemCard({
                         <img
                             src={item.image_url}
                             alt={"drink image"}
-                            className="w-[120px] h-[120px] object-cover"
+                            className={`w-40 h-40 object-cover`}
                         />
                     ) : (
                         <CupSoda width={120} height={120} />
@@ -569,8 +743,15 @@ function MenuItemCard({
                     </span>
                 </div>
             </DialogTrigger>
-
-            <DialogContent className="max-h-9/10 overflow-y-scroll">
+            <DialogContent
+                className={`max-h-9/10 overflow-y-scroll
+                    ${isHighContrast ? "text-white" : "text-black"}
+                    ${isHighContrast ? "bg-black" : "bg-gray-100"}
+                `}
+                onInteractOutside={(e) => {
+                    e.preventDefault();
+                }}
+            >
                 <DialogHeader>
                     <DialogTitle>Customize {item.name}</DialogTitle>
                 </DialogHeader>
@@ -579,30 +760,44 @@ function MenuItemCard({
                         <p className="text-2xl">Size</p>
                         <div className="flex space-x-4">
                             <div
-                                className={`cursor-pointer duration-300 border rounded-full p-4 text-xl ${
-                                    size === "small"
-                                        ? "bg-black text-white"
-                                        : ""
-                                }`}
+                                className={`cursor-pointer duration-300 border rounded-full p-4 text-xl 
+                                    ${
+                                        isHighContrast
+                                            ? size === "small"
+                                                ? "bg-black text-blue-500"
+                                                : ""
+                                            : size === "small"
+                                              ? "bg-black text-white"
+                                              : ""
+                                    }`}
                                 onClick={() => setSize("small")}
                             >
                                 S
                             </div>
                             <div
-                                className={`cursor-pointer duration-300 border rounded-full p-4 text-xl ${
-                                    size === "medium"
-                                        ? "bg-black text-white"
-                                        : ""
-                                }`}
+                                className={`cursor-pointer duration-300 border rounded-full p-4 text-xl 
+                                     ${
+                                         isHighContrast
+                                             ? size === "medium"
+                                                 ? "bg-black text-blue-500"
+                                                 : ""
+                                             : size === "medium"
+                                               ? "bg-black text-white"
+                                               : ""
+                                     }`}
                                 onClick={() => setSize("medium")}
                             >
                                 M
                             </div>
                             <div
-                                className={`cursor-pointer duration-300 border rounded-full p-4 text-xl ${
-                                    size === "large"
-                                        ? "bg-black text-white"
-                                        : ""
+                                className={`cursor-pointer duration-300 border rounded-full p-4 text-xl  ${
+                                    isHighContrast
+                                        ? size === "large"
+                                            ? "bg-black text-blue-500"
+                                            : ""
+                                        : size === "large"
+                                          ? "bg-black text-white"
+                                          : ""
                                 }`}
                                 onClick={() => setSize("large")}
                             >
@@ -614,28 +809,15 @@ function MenuItemCard({
                     <div>
                         <p className="text-2xl">Ice</p>
                         <div className="flex space-x-4">
-                            <Button
-                                variant="outline"
-                                size="icon"
-                                className="rounded-full"
-                                onClick={() => setIce(ice > 0 ? ice - 1 : 0)}
-                            >
-                                <Minus />
-                            </Button>
-                            <Input
-                                type="number"
-                                className="rounded-full w-fit"
-                                value={ice}
-                                readOnly
-                            />
-                            <Button
-                                variant="outline"
-                                size="icon"
-                                className="rounded-full"
-                                onClick={() => setIce(ice < 5 ? ice + 1 : 5)}
-                            >
-                                <Plus />
-                            </Button>
+                            {[0, 1, 2, 3, 4].map((servings) => (
+                                <div
+                                    key={servings}
+                                    className={`cursor-pointer duration-300 border rounded-full p-4 text-xl ${ice === servings ? "bg-black text-white" : ""}`}
+                                    onClick={() => setIce(servings)}
+                                >
+                                    {iceToPercentage(servings)}
+                                </div>
+                            ))}
                         </div>
                     </div>
 
@@ -643,29 +825,37 @@ function MenuItemCard({
                         <div>
                             <p className="text-2xl mb-3">Boba</p>
                             <ToppingSelector
-                                onToppingSelect={setSelectedBoba}
+                                globalToppings={selectedToppings}
+                                onToppingSelect={setToppingsForType}
                                 ingredientType={20}
+                                multiSelect={false}
                             />
                         </div>
                         <div>
                             <p className="text-2xl mb-3">Tea</p>
                             <ToppingSelector
-                                onToppingSelect={setSelectedTea}
+                                globalToppings={selectedToppings}
+                                onToppingSelect={setToppingsForType}
                                 ingredientType={30}
+                                multiSelect={false}
                             />
                         </div>
                         <div>
                             <p className="text-2xl mb-3">Jelly</p>
                             <ToppingSelector
-                                onToppingSelect={setSelectedJelly}
+                                globalToppings={selectedToppings}
+                                onToppingSelect={setToppingsForType}
                                 ingredientType={40}
+                                multiSelect={false}
                             />
                         </div>
                         <div>
                             <p className="text-2xl mb-3">Other Toppings</p>
                             <ToppingSelector
-                                onToppingSelect={setSelectedOther}
+                                globalToppings={selectedToppings}
+                                onToppingSelect={setToppingsForType}
                                 ingredientType={100}
+                                multiSelect={true}
                             />
                         </div>
                     </div>
@@ -676,23 +866,23 @@ function MenuItemCard({
                             variant="default"
                             className="w-full"
                             onClick={() => {
-                                const allToppings = [
-                                    ...selectedBoba,
-                                    ...selectedTea,
-                                    ...selectedJelly,
-                                    ...selectedOther,
-                                ];
+                                const allCustomizations = Object.values(
+                                    selectedToppings,
+                                ).flatMap((topArr) =>
+                                    topArr.map((t) => ({
+                                        id: t.id,
+                                        name: t.name,
+                                        cost: t.cost,
+                                    })),
+                                );
+
                                 onConfirm({
                                     id: item.id,
                                     size,
                                     ice,
                                     name: item.name,
                                     cost: item.cost,
-                                    customizations: allToppings.map((t) => ({
-                                        id: t.id,
-                                        name: t.name,
-                                        cost: t.cost,
-                                    })),
+                                    customizations: allCustomizations,
                                 });
                             }}
                         >
@@ -722,9 +912,14 @@ function MenuItems({
     addToOrderLabel,
     speak,
 }: MenuItemsInterface) {
+    const { isHighContrast } = useAccessibility();
     return (
         <div className="space-y-4">
-            <p className="text-xl">{title}</p>
+            <p
+                className={`text-xl ${isHighContrast ? "text-white" : "text-black"}`}
+            >
+                {title}
+            </p>
             <div className="grid grid-rows-3 grid-cols-3 gap-4">
                 {Object.entries(menuData)
                     .filter(([category]) => category === selectedCategory)
@@ -745,13 +940,21 @@ function MenuItems({
 }
 
 function CartItemCard({ item }: { item: CartItem }) {
+    const { isHighContrast } = useAccessibility();
+
     return (
-        <div className="border rounded p-4">
+        <div
+            className={`rounded p-4 border ${
+                isHighContrast
+                    ? "bg-black text-white border-4  border-blue-500"
+                    : "bg-white text-black border"
+            }`}
+        >
             <p className="text-xl font-bold">
                 {item.size.charAt(0).toUpperCase() + item.size.substring(1)}{" "}
                 {item.name}
             </p>
-            <p>Ice: {item.ice}</p>
+            <p>Ice: {iceToPercentage(item.ice)}</p>
             {item.customizations.map((c) => (
                 <p key={c.id}>{c.name}</p>
             ))}
@@ -765,11 +968,19 @@ function Cart({
     items,
     setItems,
     labels,
+    currency,
+    setCurrency,
+    formatPrice,
 }: {
     items: CartItem[];
     setItems: React.Dispatch<React.SetStateAction<CartItem[]>>;
     labels: Labels;
+    currency: CurrencyCode;
+    setCurrency: React.Dispatch<React.SetStateAction<CurrencyCode>>;
+    formatPrice: (amount: number) => string;
 }) {
+    const { isHighContrast, textMultipler } = useAccessibility();
+
     const subtotal = calculateSubtotal(items);
     const tax = TAX_RATE * subtotal;
     const total = subtotal + tax;
@@ -781,6 +992,7 @@ function Cart({
                 drinks: items.map((i) => ({
                     id: i.id,
                     customizations: i.customizations.map((i) => i.id),
+                    ice: i.ice, // Send ice servings (0-4)
                 })),
                 employeeId: 1,
                 paymentMethod: "CARD",
@@ -790,58 +1002,98 @@ function Cart({
     }
 
     return (
-        <div className="flex flex-col h-full gap-3">
-            <p className="text-xl text-center">{labels.cart}</p>
-            <ScrollArea className="flex-1 min-h-0">
-                <div className="space-y-3">
+        <div
+            className={`grid grid-rows-[1fr_8fr_1fr] min-h-0 h-[900] gap-4 ${isHighContrast ? "bg-black text-white border-8 border-yellow-200" : ""}`}
+        >
+            <p
+                className={`text-xl mb-4 text-center ${isHighContrast ? "text-white" : "text-black"}`}
+            >
+                {labels.cart}
+            </p>
+            <ScrollArea className="h-150">
+                <div className="space-y-4">
                     {items.map((i, idx) => (
                         <CartItemCard key={idx} item={i} />
                     ))}
                 </div>
             </ScrollArea>
-            <div className="border rounded p-3 space-y-2">
-                <div className="flex justify-between text-sm">
-                    <span>{labels.subtotal}</span>
-                    <span>${subtotal.toFixed(2)}</span>
+
+            <div
+                className={`grid grid-rows-4 grid-cols-2 p-4 border rounded h-50 ${
+                    textMultipler >= 1.75 ? "text-sm" : "text-md"
+                }
+                ${
+                    isHighContrast
+                        ? "bg-black text-white border-4 border-blue-500"
+                        : "bg-white text-black border"
+                }`}
+            >
+                <div className="col-span-2 space-y-2">
+                    <div className="flex justify-between text-sm">
+                        <span>{labels.subtotal}</span>
+                        <span>{formatPrice(subtotal)}</span>
+                    </div>
+
+                    <div className="flex justify-between text-sm">
+                        <span>{labels.tax}</span>
+                        <span>{formatPrice(tax)}</span>
+                    </div>
+
+                    <div className="flex justify-between font-semibold">
+                        <span>{labels.total}</span>
+                        <span>{formatPrice(total)}</span>
+                    </div>
+
+                    <Dialog>
+                        <DialogTrigger asChild>
+                            {/* Removed col-span-2 from Button as it should be inside the column structure */}
+                            <Button
+                                className={`w-full ${isHighContrast ? "border-4 border-green-400" : ""}`}
+                            >
+                                {labels.checkout}
+                            </Button>
+                        </DialogTrigger>
+
+                        <DialogContent
+                            className={`max-h-[90vh] ${isHighContrast ? "text-white bg-black" : "text-black"}`}
+                        >
+                            <DialogHeader>
+                                <DialogTitle className={`text-center text-2xl`}>
+                                    {labels.confirmOrder}
+                                </DialogTitle>
+                            </DialogHeader>
+
+                            <DialogFooter>
+                                <DialogClose asChild>
+                                    <Button
+                                        variant="default"
+                                        className={`w-full  ${isHighContrast ? "border-4 border-green-400" : ""}`}
+                                        onClick={handleCheckout}
+                                    >
+                                        {labels.yesPlaceOrder}
+                                    </Button>
+                                </DialogClose>
+                            </DialogFooter>
+                        </DialogContent>
+                    </Dialog>
+                    <select
+                        className={`rounded border px-2 py-1 text-sm w-full ${
+                            isHighContrast
+                                ? "bg-black text-white border-white"
+                                : "bg-white text-black border-gray-300"
+                        }`}
+                        value={currency}
+                        onChange={(e) =>
+                            setCurrency(e.target.value as CurrencyCode)
+                        }
+                    >
+                        {CURRENCIES.map((c) => (
+                            <option key={c.code} value={c.code}>
+                                {c.label}
+                            </option>
+                        ))}
+                    </select>
                 </div>
-
-                <div className="flex justify-between text-sm">
-                    <span>{labels.tax}</span>
-                    <span>${tax.toFixed(2)}</span>
-                </div>
-
-                <div className="flex justify-between font-semibold">
-                    <span>{labels.total}</span>
-                    <span>${total.toFixed(2)}</span>
-                </div>
-
-                <Dialog>
-                    <DialogTrigger asChild>
-                        <Button className="w-full mt-1">
-                            {labels.checkout}
-                        </Button>
-                    </DialogTrigger>
-
-                    <DialogContent className="max-h-[90vh]">
-                        <DialogHeader>
-                            <DialogTitle className="text-center text-2xl">
-                                {labels.confirmOrder}
-                            </DialogTitle>
-                        </DialogHeader>
-
-                        <DialogFooter>
-                            <DialogClose asChild>
-                                <Button
-                                    variant="default"
-                                    className="w-full"
-                                    onClick={handleCheckout}
-                                >
-                                    {labels.yesPlaceOrder}
-                                </Button>
-                            </DialogClose>
-                        </DialogFooter>
-                    </DialogContent>
-                </Dialog>
             </div>
         </div>
     );
@@ -850,230 +1102,91 @@ function Cart({
 export default function CashierPage() {
     const [selectedCategory, setSelectedCategory] = useState("Fruit Tea");
     const [cartItems, setCartItems] = useState<CartItem[]>([]);
-    const [selectedLanguage, setSelectedLanguage] = useState("en");
-    const [labels, setLabels] = useState<Labels>(EN_LABELS);
-    const [isTranslating, setIsTranslating] = useState(false);
 
-    const LANGUAGE_TO_TTS_LANG: Record<string, string> = {
-        en: "en-US",
-        es: "es-ES",
-        ar: "ar-SA",
+    const labels = EN_LABELS;
+
+    const translatedMenuData = menuData;
+
+    const categoryLabels = Object.fromEntries(
+        Object.keys(menuData).map((c) => [c, c]),
+    );
+
+    const { speak } = useTextToSpeech("en-US");
+    const { isHighContrast, textMultipler } = useAccessibility();
+
+    const [currency, setCurrency] = useState<CurrencyCode>("USD");
+    const [rates, setRates] = useState<Partial<Record<CurrencyCode, number>>>({
+        USD: 1,
+    });
+
+    useEffect(() => {
+        if (currency === "USD") return; // If just USD no need to convert any conversions. 1 is okay.
+
+        async function fetchRate() {
+            const res = await fetch(`/api/currency?currency=${currency}`);
+            const data = await res.json();
+
+            setRates((prev) => ({
+                ...prev,
+                [currency]: data.data[currency],
+            }));
+        }
+
+        fetchRate();
+    }, [currency]);
+
+    //console.log(cartItems);
+    //Sets default selection for customization options
+    const defaultCustomizations = {
+        Size: "Medium Cups",
+        Ice: "100%",
+        Boba: "None",
+        Jelly: "None",
+        Tea: "Black Tea",
+        Toppings: [],
     };
 
-    const { speak, setLang } = useTextToSpeech(LANGUAGE_TO_TTS_LANG["en"]);
+    const placeholderItems: CartItem[] = [
+        {
+            id: 1,
+            name: "Mango Green Tea",
+            ice: 3,
+            size: "large",
+            cost: 6.5,
+            customizations: [
+                { id: 9, name: "Red Bean", cost: 0.75 },
+                { id: 12, name: "Pudding", cost: 0.75 },
+                { id: 13, name: "Herb Jelly", cost: 0.75 },
+            ],
+        },
+    ];
 
-    const [translatedMenuData, setTranslatedMenuData] =
-        useState<MenuData>(menuData);
-
-    const [categoryLabels, setCategoryLabels] = useState<
-        Record<string, string>
-    >(() => Object.fromEntries(Object.keys(menuData).map((c) => [c, c])));
-
-    useEffect(() => {
-        if (selectedLanguage === "en") {
-            setLabels(EN_LABELS);
-            return;
-        }
-
-        const translateLabels = async () => {
-            setIsTranslating(true);
-            try {
-                const texts = LABEL_KEYS.map((key) => EN_LABELS[key]);
-
-                const res = await fetch("/api/translate", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        texts,
-                        targetLanguage: selectedLanguage,
-                    }),
-                });
-
-                if (!res.ok) {
-                    setLabels(EN_LABELS);
-                    return;
-                }
-
-                const data = await res.json();
-                const translatedTexts: string[] = data.translatedTexts ?? [];
-
-                const updated: Labels = { ...EN_LABELS };
-                LABEL_KEYS.forEach((key, idx) => {
-                    if (translatedTexts[idx]) {
-                        updated[key] = translatedTexts[idx];
-                    }
-                });
-
-                setLabels(updated);
-            } catch (err) {
-                setLabels(EN_LABELS);
-            } finally {
-                setIsTranslating(false);
-            }
-        };
-
-        translateLabels();
-    }, [selectedLanguage]);
-
-    useEffect(() => {
-        if (selectedLanguage === "en") {
-            setTranslatedMenuData(menuData);
-            return;
-        }
-
-        const translateMenuItems = async () => {
-            try {
-                const flatItems: {
-                    category: string;
-                    index: number;
-                    name: string;
-                }[] = [];
-
-                Object.entries(menuData).forEach(([category, items]) => {
-                    items.forEach((item, index) => {
-                        flatItems.push({ category, index, name: item.name });
-                    });
-                });
-
-                const texts = flatItems.map((x) => x.name);
-
-                const res = await fetch("/api/translate", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        texts,
-                        targetLanguage: selectedLanguage,
-                    }),
-                });
-
-                if (!res.ok) {
-                    setTranslatedMenuData(menuData);
-                    return;
-                }
-
-                const data = await res.json();
-                const translatedTexts: string[] = data.translatedTexts ?? [];
-
-                const newMenu: MenuData = {};
-                Object.entries(menuData).forEach(([category, items]) => {
-                    newMenu[category] = items.map((item) => ({ ...item }));
-                });
-
-                translatedTexts.forEach((text, i) => {
-                    const { category, index } = flatItems[i];
-                    if (newMenu[category] && newMenu[category][index]) {
-                        newMenu[category][index].name = text;
-                    }
-                });
-
-                setTranslatedMenuData(newMenu);
-            } catch (err) {
-                setTranslatedMenuData(menuData);
-            }
-        };
-
-        translateMenuItems();
-    }, [selectedLanguage]);
-
-    useEffect(() => {
-        if (selectedLanguage === "en") {
-            setLabels(EN_LABELS);
-            setCategoryLabels(
-                Object.fromEntries(Object.keys(menuData).map((c) => [c, c])),
-            );
-            setLang(LANGUAGE_TO_TTS_LANG["en"]);
-            return;
-        }
-
-        const translateLabels = async () => {
-            setIsTranslating(true);
-            try {
-                const labelTexts = LABEL_KEYS.map((key) => EN_LABELS[key]);
-                const categoryNames = Object.keys(menuData);
-
-                const texts = [...labelTexts, ...categoryNames];
-
-                const res = await fetch("/api/translate", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        texts,
-                        targetLanguage: selectedLanguage,
-                    }),
-                });
-
-                if (!res.ok) {
-                    setLabels(EN_LABELS);
-                    setCategoryLabels(
-                        Object.fromEntries(
-                            Object.keys(menuData).map((c) => [c, c]),
-                        ),
-                    );
-                    setLang(LANGUAGE_TO_TTS_LANG["en"]);
-                    return;
-                }
-
-                const data = await res.json();
-                const translatedTexts: string[] = data.translatedTexts ?? [];
-
-                const updated: Labels = { ...EN_LABELS };
-                LABEL_KEYS.forEach((key, idx) => {
-                    if (translatedTexts[idx]) {
-                        updated[key] = translatedTexts[idx];
-                    }
-                });
-
-                const newCategoryLabels: Record<string, string> = {};
-                categoryNames.forEach((name, idx) => {
-                    const tIdx = LABEL_KEYS.length + idx;
-                    newCategoryLabels[name] = translatedTexts[tIdx] ?? name;
-                });
-
-                setLabels(updated);
-                setCategoryLabels(newCategoryLabels);
-                setLang(LANGUAGE_TO_TTS_LANG[selectedLanguage]);
-            } catch (err) {
-                setLabels(EN_LABELS);
-                setCategoryLabels(
-                    Object.fromEntries(
-                        Object.keys(menuData).map((c) => [c, c]),
-                    ),
-                );
-                setLang(LANGUAGE_TO_TTS_LANG["en"]);
-            } finally {
-                setIsTranslating(false);
-            }
-        };
-
-        translateLabels();
-    }, [selectedLanguage, setLang]);
+    const formatPrice = useCallback(
+        (amount: number) => {
+            const rate = rates[currency] ?? 1;
+            const converted = amount * rate;
+            return `${CURRENCY_SYMBOLS[currency]}${converted.toFixed(2)}`;
+        },
+        [currency, rates],
+    );
 
     return (
-        <div className="min-h-screen bg-[#ffddd233] font-sans dark:bg-black flex flex-col">
-            <TopNav subtitle={labels.kioskTitle} />
+        <div className="min-h-screen bg-[#ffddd233] font-sans dark:bg-black flex flex-col text-white">
+            <TopNav subtitle={labels.kioskTitle} variant="kiosk" />
 
-            <div className="flex justify-end px-8 pt-4 gap-2 items-center">
-                <span className="text-sm font-medium">{labels.language}</span>
-                <select
-                    className="border rounded px-2 py-1 text-sm"
-                    value={selectedLanguage}
-                    onChange={(e) => setSelectedLanguage(e.target.value)}
-                    disabled={isTranslating}
-                >
-                    {LANGUAGES.map((lang) => (
-                        <option key={lang.code} value={lang.code}>
-                            {lang.label}
-                        </option>
-                    ))}
-                </select>
-                {isTranslating && (
-                    <span className="text-xs text-gray-500">
-                        Translating...
-                    </span>
-                )}
+            <div
+                className={`flex justify-end px-8 pt-4 gap-2 items-center ${
+                    isHighContrast ? "bg-black" : ""
+                }`}
+            >
+                <div className="inline-block">
+                    <GoogleTranslate />
+                </div>
             </div>
 
-            <div className="flex-1 px-6 py-4">
+            <div
+                className={`flex-1 px-6 py-4 ${isHighContrast ? "bg-black" : ""}`}
+            >
                 <div className="mx-auto max-w-6xl grid grid-cols-[1.1fr_2fr_1.2fr] gap-6">
                     <CategorySelector
                         categories={Object.keys(menuData)}
@@ -1098,6 +1211,9 @@ export default function CashierPage() {
                         items={cartItems}
                         setItems={setCartItems}
                         labels={labels}
+                        currency={currency}
+                        setCurrency={setCurrency}
+                        formatPrice={formatPrice}
                     />
                 </div>
             </div>

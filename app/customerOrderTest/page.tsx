@@ -1073,7 +1073,7 @@ export default function CashierPage() {
 
     return (
         <div className="min-h-screen bg-[#ffddd233] font-sans dark:bg-black flex flex-col text-white">
-            <TopNav subtitle={labels.kioskTitle} />
+            <TopNav subtitle={labels.kioskTitle} variant="kiosk" />
 
             <div
                 className={`flex justify-end px-8 pt-4 gap-2 items-center ${

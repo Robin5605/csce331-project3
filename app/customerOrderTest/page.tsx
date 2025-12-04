@@ -1,6 +1,13 @@
 "use client";
 
-import { ReactNode, useState, JSX, useMemo, useEffect, useCallback } from "react";
+import {
+    ReactNode,
+    useState,
+    JSX,
+    useMemo,
+    useEffect,
+    useCallback,
+} from "react";
 import Image from "next/image";
 import IdleLogout from "@/components/idleLogout";
 import TopNav from "@/components/TopNav";
@@ -35,6 +42,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useAccessibility } from "@/contexts/AccessibilityContext";
 import { useTextToSpeech } from "@/hooks/useTextToSpeech";
 import GoogleTranslate from "@/components/GoogleTranslate";
+import { useSession } from "next-auth/react";
 
 interface CartItem {
     id: number;
@@ -60,14 +68,14 @@ const LANGUAGES = [
 type CurrencyCode = "USD" | "EUR";
 
 const CURRENCIES = [
-    { code: "USD", label: "USD - $", symbol: "$"},
-    { code: "EUR", label: "EUR - €", symbol: "€"}
-]
+    { code: "USD", label: "USD - $", symbol: "$" },
+    { code: "EUR", label: "EUR - €", symbol: "€" },
+];
 
 const CURRENCY_SYMBOLS: Record<CurrencyCode, string> = {
     USD: "$",
     EUR: "€",
-}
+};
 
 const LABEL_KEYS = [
     "kioskTitle",
@@ -113,8 +121,6 @@ interface MenuItem {
 interface MenuData {
     [categoryName: string]: MenuItem[];
 }
-
-
 
 const menuData: MenuData = {
     "Fruit Tea": [
@@ -596,13 +602,13 @@ function ToppingSelector({
     globalToppings,
 }: ToppingSelectorProps) {
     const [selected, setSelected] = useState<InventoryItem[]>([]); //This is for local selections
-    
+
     // Sync local state with globalToppings when it changes
     useEffect(() => {
         const globalSelection = globalToppings[ingredientType] || [];
         setSelected(globalSelection);
     }, [globalToppings, ingredientType]);
-    
+
     return (
         <div className={`grid grid-cols-4 gap-2`}>
             {inventory
@@ -684,12 +690,13 @@ function MenuItemCard({
             // Reset to defaults when opening
             setIce(4); // 100%
             setSize("medium");
-            
+
             // Find Black Tea from inventory
             const blackTea = inventory.find(
-                (item) => item.ingredient_type === 30 && item.name === "Black Tea"
+                (item) =>
+                    item.ingredient_type === 30 && item.name === "Black Tea",
             );
-            
+
             // Set Black Tea as default for new drinks
             setSelectedToppings({
                 20: [],
@@ -909,7 +916,11 @@ function MenuItems({
     const { isHighContrast } = useAccessibility();
     return (
         <div className="space-y-4">
-            <p className={`text-xl ${isHighContrast ? "text-white" : "text-black"}`}>{title}</p>
+            <p
+                className={`text-xl ${isHighContrast ? "text-white" : "text-black"}`}
+            >
+                {title}
+            </p>
             <div className="grid grid-rows-3 grid-cols-3 gap-4">
                 {Object.entries(menuData)
                     .filter(([category]) => category === selectedCategory)
@@ -965,7 +976,7 @@ function Cart({
     items: CartItem[];
     setItems: React.Dispatch<React.SetStateAction<CartItem[]>>;
     labels: Labels;
-    currency: CurrencyCode,
+    currency: CurrencyCode;
     setCurrency: React.Dispatch<React.SetStateAction<CurrencyCode>>;
     formatPrice: (amount: number) => string;
 }) {
@@ -995,7 +1006,11 @@ function Cart({
         <div
             className={`grid grid-rows-[1fr_8fr_1fr] min-h-0 h-[900] gap-4 ${isHighContrast ? "bg-black text-white border-8 border-yellow-200" : ""}`}
         >
-            <p className={`text-xl mb-4 text-center ${isHighContrast ? "text-white" : "text-black"}`}>{labels.cart}</p>
+            <p
+                className={`text-xl mb-4 text-center ${isHighContrast ? "text-white" : "text-black"}`}
+            >
+                {labels.cart}
+            </p>
             <ScrollArea className="h-150">
                 <div className="space-y-4">
                     {items.map((i, idx) => (
@@ -1062,12 +1077,17 @@ function Cart({
                             </DialogFooter>
                         </DialogContent>
                     </Dialog>
-                    <select className={`rounded border px-2 py-1 text-sm w-full ${
-                        isHighContrast
-                            ? "bg-black text-white border-white"
-                            : "bg-white text-black border-gray-300"
-                    }`} value={currency}
-                        onChange={(e) => setCurrency(e.target.value as CurrencyCode)}>
+                    <select
+                        className={`rounded border px-2 py-1 text-sm w-full ${
+                            isHighContrast
+                                ? "bg-black text-white border-white"
+                                : "bg-white text-black border-gray-300"
+                        }`}
+                        value={currency}
+                        onChange={(e) =>
+                            setCurrency(e.target.value as CurrencyCode)
+                        }
+                    >
                         {CURRENCIES.map((c) => (
                             <option key={c.code} value={c.code}>
                                 {c.label}
@@ -1083,7 +1103,7 @@ function Cart({
 export default function CashierPage() {
     const [selectedCategory, setSelectedCategory] = useState("Fruit Tea");
     const [cartItems, setCartItems] = useState<CartItem[]>([]);
-
+    const { data: session } = useSession();
     const labels = EN_LABELS;
 
     const translatedMenuData = menuData;
@@ -1097,26 +1117,24 @@ export default function CashierPage() {
 
     const [currency, setCurrency] = useState<CurrencyCode>("USD");
     const [rates, setRates] = useState<Partial<Record<CurrencyCode, number>>>({
-        USD: 1, 
+        USD: 1,
     });
 
     useEffect(() => {
-        if(currency === "USD") return; // If just USD no need to convert any conversions. 1 is okay.
+        if (currency === "USD") return; // If just USD no need to convert any conversions. 1 is okay.
 
-        async function fetchRate(){ 
+        async function fetchRate() {
             const res = await fetch(`/api/currency?currency=${currency}`);
             const data = await res.json();
 
-            setRates(prev => ({
+            setRates((prev) => ({
                 ...prev,
                 [currency]: data.data[currency],
             }));
         }
 
         fetchRate();
-
     }, [currency]);
-
 
     //console.log(cartItems);
     //Sets default selection for customization options
@@ -1144,15 +1162,16 @@ export default function CashierPage() {
         },
     ];
 
-    const formatPrice = useCallback((amount: number) => {
-        const rate = rates[currency] ?? 1;
-        const converted = amount * rate;
-        return `${CURRENCY_SYMBOLS[currency]}${converted.toFixed(2)}`;
-    }, [currency, rates]);
-
+    const formatPrice = useCallback(
+        (amount: number) => {
+            const rate = rates[currency] ?? 1;
+            const converted = amount * rate;
+            return `${CURRENCY_SYMBOLS[currency]}${converted.toFixed(2)}`;
+        },
+        [currency, rates],
+    );
 
     return (
-        
         <div className="min-h-screen bg-[#ffddd233] font-sans dark:bg-black flex flex-col text-white">
             <TopNav subtitle={labels.kioskTitle} variant="kiosk" />
 
@@ -1165,7 +1184,7 @@ export default function CashierPage() {
                     <GoogleTranslate />
                 </div>
             </div>
-            
+
             <div
                 className={`flex-1 px-6 py-4 ${isHighContrast ? "bg-black" : ""}`}
             >

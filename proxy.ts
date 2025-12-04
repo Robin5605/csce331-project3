@@ -11,7 +11,7 @@ export default withAuth(
         // Allow NextAuth API routes (login, callback, session)
         if (pathname.startsWith("/api/auth")) {
             return NextResponse.next();
-}
+        }
 
         // If no session, redirect to login
         if (!req.nextauth.token) {

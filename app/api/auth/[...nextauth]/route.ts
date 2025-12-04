@@ -2,8 +2,6 @@ import NextAuth from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
 
-console.log(process.env.NEXTAUTH_SECRET); 
-
 const handler = NextAuth({
     providers: [
         GoogleProvider({
@@ -47,12 +45,19 @@ const handler = NextAuth({
 
     callbacks: {
         async jwt({ token, user, account }) {
-
             if (user) {
                 token.id = user.id as string;
-                token.role = user.role || (account?.provider === "google" ? "customer" : "customer");
+
+                if (account?.provider === "credentials") {
+                    token.role = user.role;
+                    token.email = null;
+                    token.name = null;
+                } else if (account?.provider === "google") {
+                    token.role = "customer";
+                    token.email = user.email || null;
+                    token.name = user.name || null;
+                }
             }
-            console.log("JWT TOKEN:", token); 
             return token;
         },
 

@@ -27,7 +27,6 @@ export default function Home() {
             <div className="flex justify-end m-4">
                 <GoogleTranslate />
             </div>
-           
 
             {/* PAGE CONTENT */}
             <main className="mx-auto flex w-full max-w-6xl flex-col gap-10 px-4 py-10 md:flex-row md:items-center md:justify-between">

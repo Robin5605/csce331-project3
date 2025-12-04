@@ -15,7 +15,7 @@ export default function ManagerPage() {
             <TopNav subtitle="Manager Dashboard" />
 
             <h1 className="text-3xl font-bold mb-6">Manager Dashboard</h1>
-            
+
             <Tabs defaultValue="cashier" className="w-full">
                 {/* ───── TAB HEADERS ───── */}
                 <TabsList className="grid grid-cols-6 w-full">

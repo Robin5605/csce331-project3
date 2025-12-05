@@ -772,3 +772,22 @@ export async function createOrder({
         throw e;
     }
 }
+
+export async function getMenuItemById(drinkId: number): Promise<MenuItem> {
+    const res = await client.query(`SELECT * FROM menu WHERE id = $1`, [
+        drinkId,
+    ]);
+    if (res.rows.length > 0) {
+        const row = res.rows[0];
+        return {
+            id: Number(row.id),
+            name: row.name,
+            category_id: row.category_id ? Number(row.category_id) : null,
+            stock: Number(row.stock),
+            cost: Number(row.cost),
+            image_url: row.image_url,
+        };
+    } else {
+        throw `Unknown drink with ID ${drinkId}`;
+    }
+}

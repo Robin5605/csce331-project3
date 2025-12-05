@@ -155,7 +155,7 @@ export async function populate_ingredient_management_table(): Promise<
     await ensureConnected();
     const { rows } = await client.query<Ingredient>(
         `
-    SELECT id, name, stock, cost::float8 AS cost, ingredient_type
+    SELECT id, name, stock, cost::float8 AS cost, ingredient_type, ingredient_group
     FROM ingredients
     ORDER BY id
     `,

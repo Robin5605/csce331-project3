@@ -111,7 +111,8 @@ interface MenuData {
 const emptyMenuData: MenuData = {};
 const emptyInventory: Ingredient[] = [];
 
-const inventory: Ingredient[] = [];
+let inventory: Ingredient[] = [];
+//const inventory: Ingredient[] = [];
 
 const TAX_RATE = parseFloat(process.env.NEXT_PUBLIC_TAX_RATE ?? "0.0825");
 
@@ -801,7 +802,7 @@ export default function CashierPage() {
 
     const [menuData, setMenuData] = useState<MenuData>(emptyMenuData);
     const [menuDataReady, setMenuDataReady] = useState<boolean>(false);
-    const [inventory, setInventory] = useState<Ingredient[]>(emptyInventory);
+    //const [inventory, setInventory] = useState<Ingredient[]>(emptyInventory);
 
     const translatedMenuData = menuData;
 
@@ -835,6 +836,8 @@ export default function CashierPage() {
         fetchRate();
 
     }, [currency]);
+
+    const [test, setTest] = useState<Ingredient[]>(emptyInventory);
 
     const loadMenuData = async () => {
         setMenuDataReady(false);
@@ -873,15 +876,22 @@ export default function CashierPage() {
             method: "GET",
             headers: { "Content-Type": "application/json" },
         });
-        const ingr: Ingredient[] = await ingrRes.json();
-        setInventory(ingr);
-        console.log(`ingr size ${inventory.length}`);
+        //const ingr: Ingredient[] = await ingrRes.json();
+        inventory = await ingrRes.json();
+        //setInventory(ingr);
+        //setTest(ingr);
+        for(const item of inventory){
+            console.log(`id: ${item.id}, name: ${item.name}, stock: ${item.stock}, cost: ${item.cost}, type: ${item.ingredient_type}, group: ${item.ingredient_group}`)
+        }
         setMenuDataReady(true);
+        //console.log(`ingr size ${inventory.length}`);
+        //console.log(`test size ${test.length}`);
     };
 
     useEffect(() => {
         loadMenuData();
     }, []);
+
 
     //console.log(cartItems);
     //Sets default selection for customization options
@@ -954,7 +964,6 @@ export default function CashierPage() {
                             title={labels.drinks}
                             addToOrderLabel={labels.addToOrder}
                             speak={speak}
-                            inventory={inventory}
                         />
 
                         <Cart

@@ -75,7 +75,7 @@ export async function populate_menu_management_table(): Promise<MenuItem[]> {
     await ensureConnected();
     const { rows } = await client.query<MenuItem>(
         `
-    SELECT id, name, category_id, stock, cost::float8 AS cost
+    SELECT id, name, category_id, stock, cost::float8, ingredient_type, ingredient_group AS cost
     FROM menu
     ORDER BY id
     `,

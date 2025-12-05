@@ -35,6 +35,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useAccessibility } from "@/contexts/AccessibilityContext";
 import { useTextToSpeech } from "@/hooks/useTextToSpeech";
 import GoogleTranslate from "@/components/GoogleTranslate";
+import { MenuItem, Category, Ingredient } from "@/lib/models";
 
 interface CartItem {
     id: number;
@@ -102,296 +103,15 @@ const EN_LABELS: Labels = {
     addToOrder: "Add to Order",
 };
 
-interface MenuItem {
-    id: number;
-    name: string;
-    stock: number;
-    cost: number;
-    image_url: string;
-}
 
 interface MenuData {
     [categoryName: string]: MenuItem[];
 }
 
+const emptyMenuData: MenuData = {};
+const emptyInventory: Ingredient[] = [];
 
-
-const menuData: MenuData = {
-    "Fruit Tea": [
-        {
-            id: 1,
-            name: "Mango Green Tea",
-            stock: 80,
-            cost: 6.5,
-            image_url: "/drinks/mango_green_tea.png",
-        },
-        {
-            id: 2,
-            name: "Peach Tea With Honey Jelly",
-            stock: 75,
-            cost: 6.25,
-            image_url: "/drinks/peach_tea_with_honey_jelly.png",
-        },
-        {
-            id: 3,
-            name: "Passion Chess",
-            stock: 75,
-            cost: 6.25,
-            image_url: "/drinks/passion_chess.png",
-        },
-        {
-            id: 5,
-            name: "Mango & Passion Fruit",
-            stock: 75,
-            cost: 6.25,
-            image_url: "/drinks/mango_passion_fruit.png",
-        },
-        {
-            id: 6,
-            name: "Honey Lemonade",
-            stock: 75,
-            cost: 5.2,
-            image_url: "/drinks/honey_lemonade.png",
-        },
-        {
-            id: 4,
-            name: "Berry Lychee Burst",
-            stock: 74,
-            cost: 6.25,
-            image_url: "/drinks/berry_lychee_burst.png",
-        },
-    ],
-
-    "Ice Blended": [
-        {
-            id: 7,
-            name: "Oreo w/ Pearl",
-            stock: 75,
-            cost: 6.75,
-            image_url: "/drinks/oreo_w_pearl.png",
-        },
-        {
-            id: 8,
-            name: "Taro w/ Pudding",
-            stock: 75,
-            cost: 6.95,
-            image_url: "/drinks/taro_w_pudding.png",
-        },
-        {
-            id: 9,
-            name: "Thai Tea w/ Pearl",
-            stock: 75,
-            cost: 6.95,
-            image_url: "/drinks/thai_tea_w_pearl.png",
-        },
-        {
-            id: 10,
-            name: "Coffee w/ Ice Cream",
-            stock: 75,
-            cost: 6.95,
-            image_url: "/drinks/coffee_w_ice_cream.png",
-        },
-        {
-            id: 11,
-            name: "Mango w/ Ice Cream",
-            stock: 75,
-            cost: 6.95,
-            image_url: "/drinks/mango_w_ice_cream.png",
-        },
-        {
-            id: 12,
-            name: "Strawberry w/ Ice Cream",
-            stock: 75,
-            cost: 6.95,
-            image_url: "/drinks/strawberry_w_ice_cream.png",
-        },
-    ],
-
-    Milky: [
-        {
-            id: 13,
-            name: "Clasic Pearl Milk Tea",
-            stock: 75,
-            cost: 5.8,
-            image_url: "/drinks/classic_pearl_milk_tea.png",
-        },
-        {
-            id: 14,
-            name: "Honey Pearl Milk Tea",
-            stock: 75,
-            cost: 6.0,
-            image_url: "/drinks/honey_pearl_milk_tea.png",
-        },
-        {
-            id: 15,
-            name: "Coffe Creama",
-            stock: 75,
-            cost: 6.5,
-            image_url: "/drinks/coffe_creama.png",
-        },
-        {
-            id: 16,
-            name: "Hokaido Pearl Milk Tea",
-            stock: 75,
-            cost: 6.25,
-            image_url: "/drinks/hokaido_pearl_milk_tea.png",
-        },
-        {
-            id: 17,
-            name: "Mango Green Milk Tea",
-            stock: 75,
-            cost: 6.5,
-            image_url: "/drinks/mango_green_milk_tea.png",
-        },
-        {
-            id: 18,
-            name: "Golden Retriever",
-            stock: 75,
-            cost: 6.75,
-            image_url: "/drinks/golden_retriever.png",
-        },
-    ],
-
-    "Non Caffenated": [
-        {
-            id: 19,
-            name: "Tiger Boba",
-            stock: 75,
-            cost: 6.5,
-            image_url: "/drinks/tiger_boba.png",
-        },
-        {
-            id: 20,
-            name: "Strawberry Coconut",
-            stock: 75,
-            cost: 6.5,
-            image_url: "/drinks/strawberry_coconut.png",
-        },
-        {
-            id: 21,
-            name: "Strawberry Coconut Ice Blended",
-            stock: 75,
-            cost: 6.5,
-            image_url: "/drinks/strawberry_coconut_ice_blended.png",
-        },
-        {
-            id: 22,
-            name: "Halo Halo",
-            stock: 75,
-            cost: 6.95,
-            image_url: "/drinks/halo_halo.png",
-        },
-        {
-            id: 23,
-            name: "Wintermellon Lemonade",
-            stock: 75,
-            cost: 5.8,
-            image_url: "/drinks/wintermellon_lemonade.png",
-        },
-        {
-            id: 24,
-            name: "Wintermellon w/ Fresh Milk",
-            stock: 75,
-            cost: 5.2,
-            image_url: "/drinks/wintermellon_w_fresh_milk.png",
-        },
-    ],
-
-    "Fall Seasonals": [
-        {
-            id: 25,
-            name: "Red Bean Matcha",
-            stock: 75,
-            cost: 6.95,
-            image_url: "/drinks/red_bean_matcha.png",
-        },
-        {
-            id: 26,
-            name: "Pumpkin Chai",
-            stock: 75,
-            cost: 6.95,
-            image_url: "/drinks/pumpkin_chai.png",
-        },
-        {
-            id: 27,
-            name: "Honey and Cinnamon Milk Tea",
-            stock: 75,
-            cost: 6.95,
-            image_url: "/drinks/honey_and_cinnamon_milk_tea.png",
-        },
-        { id: 31, name: "temp", stock: 99, cost: 5.0, image_url: "" },
-        { id: 32, name: "temp2", stock: 99, cost: 1.0, image_url: "" },
-    ],
-
-    Uncategorized: [
-        { id: 33, name: "New Item", stock: 0, cost: 0, image_url: "" },
-        { id: 34, name: "New Item", stock: 0, cost: 0, image_url: "" },
-        { id: 35, name: "New Item", stock: 0, cost: 0, image_url: "" },
-    ],
-};
-
-interface InventoryItem {
-    id: number;
-    name: string;
-    stock: number;
-    cost: number;
-    ingredient_type: number;
-}
-
-const inventory: InventoryItem[] = [
-    { id: 21, name: "Napkins", stock: 2000, cost: 0, ingredient_type: 0 },
-    { id: 22, name: "Large Cups", stock: 1000, cost: 0, ingredient_type: 0 },
-    { id: 23, name: "Small Cups", stock: 1000, cost: 0, ingredient_type: 0 },
-    { id: 24, name: "Medium Cups", stock: 1000, cost: 0, ingredient_type: 0 },
-    { id: 25, name: "Straws", stock: 1000, cost: 0, ingredient_type: 0 },
-    { id: 26, name: "Seal", stock: 1000, cost: 0, ingredient_type: 0 },
-    { id: 27, name: "Bag", stock: 1000, cost: 0, ingredient_type: 0 },
-    { id: 4, name: "Sugar", stock: 86, cost: 0, ingredient_type: 1 },
-    { id: 9, name: "Red Bean", stock: 96, cost: 0.75, ingredient_type: 100 },
-    { id: 12, name: "Pudding", stock: 92, cost: 0.75, ingredient_type: 100 },
-    { id: 8, name: "Mini Pearl", stock: 51, cost: 0.75, ingredient_type: 100 },
-    { id: 5, name: "Pearl", stock: 28, cost: 0.75, ingredient_type: 100 },
-    { id: 6, name: "Aloe Vera", stock: 89, cost: 0.75, ingredient_type: 100 },
-    { id: 20, name: "Crystal Boba", stock: 92, cost: 1, ingredient_type: 20 },
-    {
-        id: 18,
-        name: "Strawberry Popping Boba",
-        stock: 98,
-        cost: 1,
-        ingredient_type: 20,
-    },
-    {
-        id: 17,
-        name: "Mango Popping Boba",
-        stock: 89,
-        cost: 1,
-        ingredient_type: 20,
-    },
-    {
-        id: 19,
-        name: "Peach Popping Boba",
-        stock: 96,
-        cost: 1,
-        ingredient_type: 20,
-    },
-    { id: 3, name: "Oolong Tea", stock: 13, cost: 0, ingredient_type: 30 },
-    { id: 2, name: "Green Tea", stock: 0, cost: 0, ingredient_type: 30 },
-    { id: 1, name: "Black Tea", stock: 70, cost: 1, ingredient_type: 30 },
-    { id: 13, name: "Herb Jelly", stock: 100, cost: 0.75, ingredient_type: 40 },
-    { id: 7, name: "Lychee Jelly", stock: 37, cost: 0.75, ingredient_type: 40 },
-    { id: 14, name: "Alyu Jelly", stock: 96, cost: 0.75, ingredient_type: 40 },
-    {
-        id: 15,
-        name: "Coffee Jelly",
-        stock: 93,
-        cost: 0.75,
-        ingredient_type: 40,
-    },
-    { id: 16, name: "Honey Jelly", stock: 96, cost: 0.75, ingredient_type: 40 },
-    { id: 28, name: "Ice", stock: 813, cost: 0.0, ingredient_type: 1 },
-    { id: 10, name: "Creama", stock: 84, cost: 1.25, ingredient_type: 100 },
-    { id: 11, name: "Ice Cream", stock: 36, cost: 1.25, ingredient_type: 100 },
-];
+const inventory: Ingredient[] = [];
 
 const TAX_RATE = parseFloat(process.env.NEXT_PUBLIC_TAX_RATE ?? "0.0825");
 
@@ -535,7 +255,7 @@ function CategorySelector({
 }
 
 interface InventoryItemCardProps {
-    item: InventoryItem;
+    item: Ingredient;
     isSelected: boolean;
     onSelect: () => void;
     onUnselect: () => void;
@@ -583,10 +303,10 @@ function ToppingCard({
 }
 
 interface ToppingSelectorProps {
-    onToppingSelect: (list: InventoryItem[], id: number) => void;
-    ingredientType: number;
+    onToppingSelect: (list: Ingredient[], id: string) => void;
+    ingredientType: string;
     multiSelect: boolean;
-    globalToppings: Record<number, InventoryItem[]>;
+    globalToppings: Record<string, Ingredient[]>;
 }
 
 function ToppingSelector({
@@ -595,7 +315,7 @@ function ToppingSelector({
     multiSelect,
     globalToppings,
 }: ToppingSelectorProps) {
-    const [selected, setSelected] = useState<InventoryItem[]>([]); //This is for local selections
+    const [selected, setSelected] = useState<Ingredient[]>([]); //This is for local selections
     
     // Sync local state with globalToppings when it changes
     useEffect(() => {
@@ -606,7 +326,7 @@ function ToppingSelector({
     return (
         <div className={`grid grid-cols-4 gap-2`}>
             {inventory
-                .filter((i) => i.ingredient_type === ingredientType)
+                .filter((i) => i.ingredient_group === ingredientType)
                 .map((i) => (
                     <ToppingCard
                         key={i.id}
@@ -648,6 +368,27 @@ const iceToPercentage = (servings: number): string => {
     return mapping[servings] || "0%";
 };
 
+function GenerateToppingsGroups() {
+    let groups: string[] = [];
+    for(let i: number = 0; i < inventory.length; ++i){
+        if(groups.includes(inventory[i].ingredient_group)){
+            continue;
+        }
+        if(inventory[i].ingredient_group == "Scale" || inventory[i].ingredient_group == "Default"){
+            continue;
+        }
+        groups.push(inventory[i].ingredient_group);
+    }
+    let rec: Record<string, Ingredient[]> = {};
+    for(const group of groups){
+        rec = {
+            ...rec,
+            group: [],
+        };
+    }
+    return rec;
+}
+
 function MenuItemCard({
     item,
     onConfirm,
@@ -662,21 +403,17 @@ function MenuItemCard({
     const [size, setSize] = useState<DrinkSize>("medium");
 
     const [selectedToppings, setSelectedToppings] = useState<
-        Record<number, InventoryItem[]>
-    >({
-        20: [],
-        30: [],
-        40: [],
-        100: [],
-    });
+        Record<string, Ingredient[]>
+    >(GenerateToppingsGroups());
 
-    function setToppingsForType(list: InventoryItem[], id: number) {
+    function setToppingsForType(list: Ingredient[], id: string) {
         setSelectedToppings((prev) => ({
             ...prev,
             [id]: list,
         }));
     }
 
+    console.log(`inv size ${inventory.length}`);
     // Reset all customization state when dialog opens
     const handleOpenChange = (isOpen: boolean) => {
         setOpen(isOpen);
@@ -687,15 +424,13 @@ function MenuItemCard({
             
             // Find Black Tea from inventory
             const blackTea = inventory.find(
-                (item) => item.ingredient_type === 30 && item.name === "Black Tea"
+                (item) => item.ingredient_group === "Tea"  && item.name === "Black Tea"
             );
             
             // Set Black Tea as default for new drinks
             setSelectedToppings({
-                20: [],
-                30: blackTea ? [blackTea] : [],
-                40: [],
-                100: [],
+                ...selectedToppings,
+                "Tea": blackTea ? [blackTea] : [],
             });
         }
     };
@@ -816,42 +551,20 @@ function MenuItemCard({
                     </div>
 
                     <div className="flex flex-col space-y-4">
-                        <div>
-                            <p className="text-2xl mb-3">Boba</p>
-                            <ToppingSelector
-                                globalToppings={selectedToppings}
-                                onToppingSelect={setToppingsForType}
-                                ingredientType={20}
-                                multiSelect={false}
-                            />
-                        </div>
-                        <div>
-                            <p className="text-2xl mb-3">Tea</p>
-                            <ToppingSelector
-                                globalToppings={selectedToppings}
-                                onToppingSelect={setToppingsForType}
-                                ingredientType={30}
-                                multiSelect={false}
-                            />
-                        </div>
-                        <div>
-                            <p className="text-2xl mb-3">Jelly</p>
-                            <ToppingSelector
-                                globalToppings={selectedToppings}
-                                onToppingSelect={setToppingsForType}
-                                ingredientType={40}
-                                multiSelect={false}
-                            />
-                        </div>
-                        <div>
-                            <p className="text-2xl mb-3">Other Toppings</p>
-                            <ToppingSelector
-                                globalToppings={selectedToppings}
-                                onToppingSelect={setToppingsForType}
-                                ingredientType={100}
-                                multiSelect={true}
-                            />
-                        </div>
+                        {Object.keys(selectedToppings).map( (key) => {
+                            console.log(key);
+                            return (
+                                <div key={key}>
+                                    <p className="text-2xl mb-3">{key}</p>
+                                    <ToppingSelector
+                                        globalToppings={selectedToppings}
+                                        onToppingSelect={setToppingsForType}
+                                        ingredientType={key}
+                                        multiSelect={false}
+                                    />
+                                </div>
+                            );})
+                        }
                     </div>
                 </div>
                 <DialogFooter>
@@ -1086,6 +799,10 @@ export default function CashierPage() {
 
     const labels = EN_LABELS;
 
+    const [menuData, setMenuData] = useState<MenuData>(emptyMenuData);
+    const [menuDataReady, setMenuDataReady] = useState<boolean>(false);
+    const [inventory, setInventory] = useState<Ingredient[]>(emptyInventory);
+
     const translatedMenuData = menuData;
 
     const categoryLabels = Object.fromEntries(
@@ -1099,6 +816,8 @@ export default function CashierPage() {
     const [rates, setRates] = useState<Partial<Record<CurrencyCode, number>>>({
         USD: 1, 
     });
+
+    
 
     useEffect(() => {
         if(currency === "USD") return; // If just USD no need to convert any conversions. 1 is okay.
@@ -1117,6 +836,52 @@ export default function CashierPage() {
 
     }, [currency]);
 
+    const loadMenuData = async () => {
+        setMenuDataReady(false);
+        setMenuData({});
+        let menuTempData: MenuData = {};
+        console.log("loading menu");
+        const catRes = await fetch("api/cashier/categories", {
+            method: "GET",
+            headers: { "Content-Type": "application/json" },
+        });
+        if (!catRes.ok) {
+            throw new Error(`GET /api/cashier/categories ${catRes.status}`);
+        }
+        //console.log("hey");
+        const cats: Category[] = await catRes.json();
+        //console.log(`cats length: ${cats.length}`);
+        for (let cat_idx = 0; cat_idx < cats.length; cat_idx++) {
+            //console.log(`c idx:${cat_idx}`);
+            const cat = cats[cat_idx];
+            //console.log(cat);
+            const queryBody = {
+                id: cat.id,
+            };
+            const queryRes = await fetch("/api/cashier/menu_by_category", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(queryBody),
+            });
+            const items: MenuItem[] = await queryRes.json();
+            //console.log(cat.name);
+            menuTempData = { ...menuTempData, [cat.name]: items };
+        }
+        setMenuData(menuTempData);
+        console.log("loading ingredients");
+        const ingrRes = await fetch("api/ingredient", {
+            method: "GET",
+            headers: { "Content-Type": "application/json" },
+        });
+        const ingr: Ingredient[] = await ingrRes.json();
+        setInventory(ingr);
+        console.log(`ingr size ${inventory.length}`);
+        setMenuDataReady(true);
+    };
+
+    useEffect(() => {
+        loadMenuData();
+    }, []);
 
     //console.log(cartItems);
     //Sets default selection for customization options
@@ -1169,35 +934,63 @@ export default function CashierPage() {
             <div
                 className={`flex-1 px-6 py-4 ${isHighContrast ? "bg-black" : ""}`}
             >
-                <div className="mx-auto max-w-6xl grid grid-cols-[1.1fr_2fr_1.2fr] gap-6">
-                    <CategorySelector
-                        categories={Object.keys(menuData)}
-                        selectedCategory={selectedCategory}
-                        onSelectedCategoryChange={setSelectedCategory}
-                        title={labels.categories}
-                        categoryLabels={categoryLabels}
-                    />
+                {menuDataReady ? (
+                    <div className="mx-auto max-w-6xl grid grid-cols-[1.1fr_2fr_1.2fr] gap-6">
+                        
+                        <CategorySelector
+                            categories={Object.keys(menuData)}
+                            selectedCategory={selectedCategory}
+                            onSelectedCategoryChange={setSelectedCategory}
+                            title={labels.categories}
+                            categoryLabels={categoryLabels}
+                        />
 
-                    <MenuItems
-                        menuData={translatedMenuData}
-                        selectedCategory={selectedCategory}
-                        onItemOrder={(item) =>
-                            setCartItems([...cartItems, item])
-                        }
-                        title={labels.drinks}
-                        addToOrderLabel={labels.addToOrder}
-                        speak={speak}
-                    />
+                        <MenuItems
+                            menuData={translatedMenuData}
+                            selectedCategory={selectedCategory}
+                            onItemOrder={(item) =>
+                                setCartItems([...cartItems, item])
+                            }
+                            title={labels.drinks}
+                            addToOrderLabel={labels.addToOrder}
+                            speak={speak}
+                            inventory={inventory}
+                        />
 
-                    <Cart
-                        items={cartItems}
-                        setItems={setCartItems}
-                        labels={labels}
-                        currency={currency}
-                        setCurrency={setCurrency}
-                        formatPrice={formatPrice}
-                    />
-                </div>
+                        <Cart
+                            items={cartItems}
+                            setItems={setCartItems}
+                            labels={labels}
+                            currency={currency}
+                            setCurrency={setCurrency}
+                            formatPrice={formatPrice}
+                        />
+                    </div>
+                ) : (
+                    <div className="mx-auto max-w-6xl grid grid-cols-[1.1fr_2fr_1.2fr] gap-6">
+                        
+                        <CategorySelector
+                            categories={["loading"]}
+                            selectedCategory={selectedCategory}
+                            onSelectedCategoryChange={ () => {console.log("bad touch")}}
+                            title={labels.categories}
+                            categoryLabels={categoryLabels}
+                        />
+                        
+                        <div>
+                        </div>
+
+                        <Cart
+                            items={cartItems}
+                            setItems={setCartItems}
+                            labels={labels}
+                            currency={currency}
+                            setCurrency={setCurrency}
+                            formatPrice={formatPrice}
+                        />
+                    </div>
+                )}
+                
             </div>
         </div>
     );

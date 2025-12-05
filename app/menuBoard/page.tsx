@@ -1,234 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import TopNav from "@/components/TopNav";
 import { CupSoda } from "lucide-react";
+import { MenuItem, Category } from "@/lib/models";
 
-interface MenuItem {
-    id: number;
-    name: string;
-    stock: number;
-    cost: number;
-    image_url: string;
-}
+
 
 interface MenuData {
     [categoryName: string]: MenuItem[];
 }
 
-const menuData: MenuData = {
-    "Fruit Tea": [
-        {
-            id: 1,
-            name: "Mango Green Tea",
-            stock: 80,
-            cost: 6.5,
-            image_url: "/drinks/mango_green_tea.png",
-        },
-        {
-            id: 2,
-            name: "Peach Tea With Honey Jelly",
-            stock: 75,
-            cost: 6.25,
-            image_url: "/drinks/peach_tea_with_honey_jelly.png",
-        },
-        {
-            id: 3,
-            name: "Passion Chess",
-            stock: 75,
-            cost: 6.25,
-            image_url: "/drinks/passion_chess.png",
-        },
-        {
-            id: 5,
-            name: "Mango & Passion Fruit",
-            stock: 75,
-            cost: 6.25,
-            image_url: "/drinks/mango_passion_fruit.png",
-        },
-        {
-            id: 6,
-            name: "Honey Lemonade",
-            stock: 75,
-            cost: 5.2,
-            image_url: "/drinks/honey_lemonade.png",
-        },
-        {
-            id: 4,
-            name: "Berry Lychee Burst",
-            stock: 74,
-            cost: 6.25,
-            image_url: "/drinks/berry_lychee_burst.png",
-        },
-    ],
-
-    "Ice Blended": [
-        {
-            id: 7,
-            name: "Oreo w/ Pearl",
-            stock: 75,
-            cost: 6.75,
-            image_url: "/drinks/oreo_w_pearl.png",
-        },
-        {
-            id: 8,
-            name: "Taro w/ Pudding",
-            stock: 75,
-            cost: 6.95,
-            image_url: "/drinks/taro_w_pudding.png",
-        },
-        {
-            id: 9,
-            name: "Thai Tea w/ Pearl",
-            stock: 75,
-            cost: 6.95,
-            image_url: "/drinks/thai_tea_w_pearl.png",
-        },
-        {
-            id: 10,
-            name: "Coffee w/ Ice Cream",
-            stock: 75,
-            cost: 6.95,
-            image_url: "/drinks/coffee_w_ice_cream.png",
-        },
-        {
-            id: 11,
-            name: "Mango w/ Ice Cream",
-            stock: 75,
-            cost: 6.95,
-            image_url: "/drinks/mango_w_ice_cream.png",
-        },
-        {
-            id: 12,
-            name: "Strawberry w/ Ice Cream",
-            stock: 75,
-            cost: 6.95,
-            image_url: "/drinks/strawberry_w_ice_cream.png",
-        },
-    ],
-
-    Milky: [
-        {
-            id: 13,
-            name: "Clasic Pearl Milk Tea",
-            stock: 75,
-            cost: 5.8,
-            image_url: "/drinks/classic_pearl_milk_tea.png",
-        },
-        {
-            id: 14,
-            name: "Honey Pearl Milk Tea",
-            stock: 75,
-            cost: 6.0,
-            image_url: "/drinks/honey_pearl_milk_tea.png",
-        },
-        {
-            id: 15,
-            name: "Coffe Creama",
-            stock: 75,
-            cost: 6.5,
-            image_url: "/drinks/coffe_creama.png",
-        },
-        {
-            id: 16,
-            name: "Hokaido Pearl Milk Tea",
-            stock: 75,
-            cost: 6.25,
-            image_url: "/drinks/hokaido_pearl_milk_tea.png",
-        },
-        {
-            id: 17,
-            name: "Mango Green Milk Tea",
-            stock: 75,
-            cost: 6.5,
-            image_url: "/drinks/mango_green_milk_tea.png",
-        },
-        {
-            id: 18,
-            name: "Golden Retriever",
-            stock: 75,
-            cost: 6.75,
-            image_url: "/drinks/golden_retriever.png",
-        },
-    ],
-
-    "Non Caffenated": [
-        {
-            id: 19,
-            name: "Tiger Boba",
-            stock: 75,
-            cost: 6.5,
-            image_url: "/drinks/tiger_boba.png",
-        },
-        {
-            id: 20,
-            name: "Strawberry Coconut",
-            stock: 75,
-            cost: 6.5,
-            image_url: "/drinks/strawberry_coconut.png",
-        },
-        {
-            id: 21,
-            name: "Strawberry Coconut Ice Blended",
-            stock: 75,
-            cost: 6.5,
-            image_url: "/drinks/strawberry_coconut_ice_blended.png",
-        },
-        {
-            id: 22,
-            name: "Halo Halo",
-            stock: 75,
-            cost: 6.95,
-            image_url: "/drinks/halo_halo.png",
-        },
-        {
-            id: 23,
-            name: "Wintermellon Lemonade",
-            stock: 75,
-            cost: 5.8,
-            image_url: "/drinks/wintermellon_lemonade.png",
-        },
-        {
-            id: 24,
-            name: "Wintermellon w/ Fresh Milk",
-            stock: 75,
-            cost: 5.2,
-            image_url: "/drinks/wintermellon_w_fresh_milk.png",
-        },
-    ],
-
-    "Fall Seasonals": [
-        {
-            id: 25,
-            name: "Red Bean Matcha",
-            stock: 75,
-            cost: 6.95,
-            image_url: "/drinks/red_bean_matcha.png",
-        },
-        {
-            id: 26,
-            name: "Pumpkin Chai",
-            stock: 75,
-            cost: 6.95,
-            image_url: "/drinks/pumpkin_chai.png",
-        },
-        {
-            id: 27,
-            name: "Honey and Cinnamon Milk Tea",
-            stock: 75,
-            cost: 6.95,
-            image_url: "/drinks/honey_and_cinnamon_milk_tea.png",
-        },
-        { id: 31, name: "temp", stock: 99, cost: 5.0, image_url: "" },
-        { id: 32, name: "temp2", stock: 99, cost: 1.0, image_url: "" },
-    ],
-
-    Uncategorized: [
-        { id: 33, name: "New Item", stock: 0, cost: 0, image_url: "" },
-        { id: 34, name: "New Item", stock: 0, cost: 0, image_url: "" },
-        { id: 35, name: "New Item", stock: 0, cost: 0, image_url: "" },
-    ],
-};
+const emptyMenuData: MenuData = {};
 
 const CATEGORY_ORDER = [
     "Fruit Tea",
@@ -275,7 +58,7 @@ function DrinkCard({ item }: { item: MenuItem }) {
     return (
         <div className="group rounded-2xl bg-white/80 shadow-md hover:shadow-xl transition transform hover:-translate-y-1 flex flex-col overflow-hidden border border-[#f1c4d8]">
             <div className="relative w-full aspect-[4/3] bg-[#ffe5f1] flex items-center justify-center">
-                {hasImage ? (
+                {hasImage && item.image_url ?(
                     <img
                         src={item.image_url}
                         alt={item.name}
@@ -303,9 +86,59 @@ export default function MenuBoardPage() {
         CATEGORY_ORDER[0],
     );
 
-    const categories = CATEGORY_ORDER.filter((c) => menuData[c]);
+    const [menuData, setMenuData] = useState<MenuData>(emptyMenuData);
+    const [menuDataReady, setMenuDataReady] = useState<boolean>(false);
+
+    const loadMenuData = async () => {
+        try {
+            setMenuDataReady(false);
+            setMenuData({});
+            let menuTempData: MenuData = {};
+            console.log("loading menu");
+            const catRes = await fetch("/api/cashier/categories", {
+            method: "GET",
+            headers: { "Content-Type": "application/json" },
+            });
+            if (!catRes.ok) {
+                throw new Error(`GET /api/cashier/categories ${catRes.status}`);
+            }
+            const cats: Category[] = await catRes.json();
+
+            const entries = await Promise.all(
+                cats.map(async (cat) => {
+                    const queryRes = await fetch("/api/cashier/menu_by_category", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ id: cat.id }),
+                    });
+
+                    if (!queryRes.ok) {
+                        throw new Error(
+                            `POST /api/cashier/menu_by_category ${queryRes.status}`,
+                        );
+                    }
+
+                    const items: MenuItem[] = await queryRes.json();
+                    return [cat.name, items] as const;
+                }),
+            );
+            setMenuData(Object.fromEntries(entries));
+            
+        }   catch (err) {
+            console.error("Failed to load menu data:", err);
+        } finally {
+            setMenuDataReady(true);
+        }
+    
+        console.log("done");
+    };
+
+    useEffect(() => {
+        loadMenuData();
+    }, []);
 
     const drinksToShow = menuData[selectedCategory] ?? [];
+    const categories = CATEGORY_ORDER.filter((c) => menuData[c]);
 
     return (
         <div className="min-h-screen bg-[#ffddd233] dark:bg-black font-sans flex flex-col">
@@ -327,13 +160,24 @@ export default function MenuBoardPage() {
                     </div>
 
                     {/* Category pills */}
-                    <div className="mt-2">
-                        <CategoryPills
-                            categories={categories}
-                            selected={selectedCategory}
-                            onSelect={setSelectedCategory}
-                        />
-                    </div>
+                    {menuDataReady ? (
+                        <div className="mt-2">
+                            <CategoryPills
+                                categories={categories}
+                                selected={selectedCategory}
+                                onSelect={setSelectedCategory}
+                            />
+                        </div>
+                    ):(
+                        <div className="mt-2">
+                            <CategoryPills
+                                categories={["loading"]}
+                                selected={"string"}
+                                onSelect={() => {}}
+                            />
+                        </div>
+                    )}
+                    
 
                     {/* Category label */}
                     <div className="flex items-center justify-between mt-4">

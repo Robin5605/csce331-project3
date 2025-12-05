@@ -791,3 +791,20 @@ export async function getMenuItemById(drinkId: number): Promise<MenuItem> {
         throw `Unknown drink with ID ${drinkId}`;
     }
 }
+
+export async function getManyIngredientsByIds(
+    ids: number[],
+): Promise<Ingredient[]> {
+    const res = await client.query(
+        `SELECT * FROM ingredients WHERE id = ANY($1)`,
+        [ids],
+    );
+
+    return res.rows.map((row) => ({
+        id: Number(row.id),
+        name: row.name,
+        stock: Number(row.stock),
+        cost: Number(row.cost),
+        ingredient_type: Number(row.ingredient_type),
+    }));
+}

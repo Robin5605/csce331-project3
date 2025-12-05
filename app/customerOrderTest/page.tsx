@@ -42,6 +42,17 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useAccessibility } from "@/contexts/AccessibilityContext";
 import { useTextToSpeech } from "@/hooks/useTextToSpeech";
 import GoogleTranslate from "@/components/GoogleTranslate";
+import {
+    Field,
+    FieldContent,
+    FieldDescription,
+    FieldGroup,
+    FieldLabel,
+    FieldSet,
+    FieldTitle,
+} from "@/components/ui/field";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { cn } from "@/lib/utils";
 
 interface CartItem {
     id: number;
@@ -964,6 +975,180 @@ function CartItemCard({ item }: { item: CartItem }) {
     );
 }
 
+interface NoReceipt {
+    kind: "none";
+}
+interface EmailReceipt {
+    kind: "email";
+    email: string;
+}
+
+interface TextReceipt {
+    kind: "text";
+    phoneNumber: string;
+}
+
+type ReceiptType = NoReceipt | EmailReceipt | TextReceipt;
+
+interface ReceiptSelectorProps {
+    onSubmit: (receiptType: ReceiptType) => void;
+}
+function ReceiptSelector({ onSubmit }: ReceiptSelectorProps) {
+    const [selected, setSelected] = useState<string>("none");
+    const [email, setEmail] = useState<string>("");
+    const [phoneNumber, setPhoneNumber] = useState<string>("");
+    const { isHighContrast, textMultipler } = useAccessibility();
+
+    return (
+        <Dialog>
+            <DialogTrigger asChild>
+                {/* Removed col-span-2 from Button as it should be inside the column structure */}
+                <Button
+                    className={`w-full ${isHighContrast ? "border-4 border-green-400" : ""}`}
+                >
+                    {EN_LABELS.checkout}
+                </Button>
+            </DialogTrigger>
+
+            <DialogContent
+                className={`max-h-[90vh] ${isHighContrast ? "text-white bg-black" : "text-black"}`}
+            >
+                <DialogHeader>
+                    <DialogTitle className={`text-center text-2xl`}>
+                        {EN_LABELS.confirmOrder}
+                    </DialogTitle>
+                </DialogHeader>
+
+                <div>
+                    <FieldGroup>
+                        <FieldSet>
+                            <FieldLabel>Receipt</FieldLabel>
+                            <FieldDescription>
+                                Choose how you'd like your receipt
+                            </FieldDescription>
+                            <RadioGroup
+                                value={selected}
+                                onValueChange={setSelected}
+                            >
+                                <FieldLabel
+                                    htmlFor="no-receipt-selector"
+                                    className={`border ${isHighContrast ? "border-primary" : "border-secondary"} ${isHighContrast ? "has-data-[state=checked]:border-secondary" : "has-data-[state=checked]:border-primary"}`}
+                                >
+                                    <Field orientation="horizontal">
+                                        <RadioGroupItem
+                                            value="none"
+                                            id="no-receipt-selector"
+                                            className={
+                                                isHighContrast
+                                                    ? "data-[state=checked]:bg-white"
+                                                    : ""
+                                            }
+                                        />
+                                        <FieldTitle>No receipt</FieldTitle>
+                                    </Field>
+                                </FieldLabel>
+
+                                <FieldLabel
+                                    htmlFor="email-receipt-selector"
+                                    className={`border ${isHighContrast ? "border-primary" : "border-secondary"} ${isHighContrast ? "has-data-[state=checked]:border-secondary" : "has-data-[state=checked]:border-primary"}`}
+                                >
+                                    <Field orientation="horizontal">
+                                        <RadioGroupItem
+                                            value="email"
+                                            id="email-receipt-selector"
+                                            className={
+                                                isHighContrast
+                                                    ? "data-[state=checked]:bg-white"
+                                                    : ""
+                                            }
+                                        />
+                                        <FieldContent>
+                                            <FieldTitle>Email</FieldTitle>
+                                            <FieldDescription>
+                                                <Input
+                                                    type="email"
+                                                    onFocus={() =>
+                                                        setSelected("email")
+                                                    }
+                                                    value={email}
+                                                    onChange={(e) =>
+                                                        setEmail(e.target.value)
+                                                    }
+                                                />
+                                            </FieldDescription>
+                                        </FieldContent>
+                                    </Field>
+                                </FieldLabel>
+
+                                <FieldLabel
+                                    htmlFor="txtmsg-receipt-selector"
+                                    className={`border ${isHighContrast ? "border-primary" : "border-secondary"} ${isHighContrast ? "has-data-[state=checked]:border-secondary" : "has-data-[state=checked]:border-primary"}`}
+                                >
+                                    <Field orientation="horizontal">
+                                        <RadioGroupItem
+                                            value="text"
+                                            id="txtmsg-receipt-selector"
+                                            className={
+                                                isHighContrast
+                                                    ? "data-[state=checked]:bg-white"
+                                                    : ""
+                                            }
+                                        />
+                                        <FieldContent>
+                                            <FieldTitle>
+                                                Text Message
+                                            </FieldTitle>
+                                            <FieldDescription>
+                                                <Input
+                                                    type="tel"
+                                                    onFocus={() =>
+                                                        setSelected("text")
+                                                    }
+                                                    value={phoneNumber}
+                                                    onChange={(e) =>
+                                                        setPhoneNumber(
+                                                            e.target.value,
+                                                        )
+                                                    }
+                                                />
+                                            </FieldDescription>
+                                        </FieldContent>
+                                    </Field>
+                                </FieldLabel>
+                            </RadioGroup>
+                        </FieldSet>
+                    </FieldGroup>
+                </div>
+
+                <DialogFooter>
+                    <DialogClose asChild>
+                        <Button
+                            variant="default"
+                            className={`w-full  ${isHighContrast ? "border-4 border-green-400" : ""}`}
+                            onClick={() => {
+                                switch (selected) {
+                                    case "none":
+                                        onSubmit({ kind: "none" });
+                                        return;
+                                    case "email":
+                                        onSubmit({ kind: "email", email });
+                                        return;
+
+                                    case "text":
+                                        onSubmit({ kind: "text", phoneNumber });
+                                        return;
+                                }
+                            }}
+                        >
+                            {EN_LABELS.yesPlaceOrder}
+                        </Button>
+                    </DialogClose>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
 function Cart({
     items,
     setItems,
@@ -985,7 +1170,7 @@ function Cart({
     const tax = TAX_RATE * subtotal;
     const total = subtotal + tax;
 
-    function handleCheckout() {
+    function handleCheckout(receiptType: ReceiptType) {
         fetch("/api/customer/order", {
             method: "POST",
             body: JSON.stringify({
@@ -996,6 +1181,7 @@ function Cart({
                 })),
                 employeeId: 1,
                 paymentMethod: "CARD",
+                receiptType,
             }),
         });
         setItems([]);
@@ -1044,38 +1230,8 @@ function Cart({
                         <span>{formatPrice(total)}</span>
                     </div>
 
-                    <Dialog>
-                        <DialogTrigger asChild>
-                            {/* Removed col-span-2 from Button as it should be inside the column structure */}
-                            <Button
-                                className={`w-full ${isHighContrast ? "border-4 border-green-400" : ""}`}
-                            >
-                                {labels.checkout}
-                            </Button>
-                        </DialogTrigger>
+                    <ReceiptSelector onSubmit={handleCheckout} />
 
-                        <DialogContent
-                            className={`max-h-[90vh] ${isHighContrast ? "text-white bg-black" : "text-black"}`}
-                        >
-                            <DialogHeader>
-                                <DialogTitle className={`text-center text-2xl`}>
-                                    {labels.confirmOrder}
-                                </DialogTitle>
-                            </DialogHeader>
-
-                            <DialogFooter>
-                                <DialogClose asChild>
-                                    <Button
-                                        variant="default"
-                                        className={`w-full  ${isHighContrast ? "border-4 border-green-400" : ""}`}
-                                        onClick={handleCheckout}
-                                    >
-                                        {labels.yesPlaceOrder}
-                                    </Button>
-                                </DialogClose>
-                            </DialogFooter>
-                        </DialogContent>
-                    </Dialog>
                     <select
                         className={`rounded border px-2 py-1 text-sm w-full ${
                             isHighContrast

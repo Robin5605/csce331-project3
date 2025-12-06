@@ -45,14 +45,14 @@ export async function POST(req: NextRequest) {
         //     temperature: 0,
         // });
 
-        const content = completion.choices[0]?.message?.content ?? "[]";
+        // const content = completion.choices[0]?.message?.content ?? "[]";
 
         // content should be a JSON array like ["Texto 1", "Texto 2", ...]
         let translatedTexts: string[] = [];
         try {
-            translatedTexts = JSON.parse(content);
+            // translatedTexts = JSON.parse(content);
         } catch (e) {
-            console.error("Failed to parse translation JSON:", content);
+            // console.error("Failed to parse translation JSON:", content);
             return NextResponse.json(
                 { error: "Failed to parse translation response" },
                 { status: 500 },

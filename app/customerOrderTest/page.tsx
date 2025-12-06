@@ -1185,12 +1185,17 @@ export default function CashierPage() {
         <div className="min-h-screen bg-[#ffddd233] font-sans dark:bg-black flex flex-col text-white">
             <TopNav subtitle={labels.kioskTitle} variant="kiosk" />
 
-            <div
+            {/* <div
                 className={`flex justify-end px-8 pt-4 gap-2 items-center ${
                     isHighContrast ? "bg-black" : ""
                 }`}
             >
                 <div className="inline-block">
+                    <GoogleTranslate />
+                </div>
+            </div> */}
+            <div className="relative">
+                <div className="absolute top-4 right-8 z-50">
                     <GoogleTranslate />
                 </div>
             </div>

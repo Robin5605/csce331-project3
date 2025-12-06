@@ -1003,7 +1003,7 @@ function Cart({
 
     return (
         <div
-            className={`grid grid-rows-[1fr_8fr_1fr] min-h-0 h-[900] gap-4 ${isHighContrast ? "bg-black text-white border-8 border-yellow-200" : ""}`}
+            className={`grid grid-rows-[1fr_8fr_1fr] min-h-0 h-[850] gap-4 ${isHighContrast ? "bg-black text-white border-8 border-yellow-200" : ""}`}
         >
             <p
                 className={`text-xl mb-4 text-center ${isHighContrast ? "text-white" : "text-black"}`}

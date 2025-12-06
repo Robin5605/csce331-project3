@@ -1010,7 +1010,18 @@ function Cart({
             >
                 {labels.cart}
             </p>
-            <ScrollArea className="h-150">
+            <ScrollArea
+                className="
+                    h-150
+                    bg-white/70
+                    border
+                    border-gray-300
+                    rounded-md
+                    p-3
+                    shadow-sm
+                    dark:bg-black/40
+                "
+            >
                 <div className="space-y-4">
                     {items.length === 0 ? (
                         // empty state

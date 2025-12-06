@@ -112,6 +112,7 @@ const emptyMenuData: MenuData = {};
 const emptyInventory: Ingredient[] = [];
 
 let inventory: Ingredient[] = [];
+let globalToppingsGroups: Map<string,Ingredient[]> = new Map<string,Ingredient[]>();
 //const inventory: Ingredient[] = [];
 
 const TAX_RATE = parseFloat(process.env.NEXT_PUBLIC_TAX_RATE ?? "0.0825");
@@ -307,7 +308,7 @@ interface ToppingSelectorProps {
     onToppingSelect: (list: Ingredient[], id: string) => void;
     ingredientType: string;
     multiSelect: boolean;
-    globalToppings: Record<string, Ingredient[]>;
+    globalToppings: Map<string, Ingredient[]>;
 }
 
 function ToppingSelector({
@@ -320,7 +321,7 @@ function ToppingSelector({
     
     // Sync local state with globalToppings when it changes
     useEffect(() => {
-        const globalSelection = globalToppings[ingredientType] || [];
+        const globalSelection = globalToppings.get(ingredientType) || [];
         setSelected(globalSelection);
     }, [globalToppings, ingredientType]);
     
@@ -369,27 +370,6 @@ const iceToPercentage = (servings: number): string => {
     return mapping[servings] || "0%";
 };
 
-function GenerateToppingsGroups() {
-    let groups: string[] = [];
-    for(let i: number = 0; i < inventory.length; ++i){
-        if(groups.includes(inventory[i].ingredient_group)){
-            continue;
-        }
-        if(inventory[i].ingredient_group == "Scale" || inventory[i].ingredient_group == "Default"){
-            continue;
-        }
-        groups.push(inventory[i].ingredient_group);
-    }
-    let rec: Record<string, Ingredient[]> = {};
-    for(const group of groups){
-        rec = {
-            ...rec,
-            group: [],
-        };
-    }
-    return rec;
-}
-
 function MenuItemCard({
     item,
     onConfirm,
@@ -403,18 +383,21 @@ function MenuItemCard({
     const [ice, setIce] = useState(4); // Default to 100% (4 servings)
     const [size, setSize] = useState<DrinkSize>("medium");
 
-    const [selectedToppings, setSelectedToppings] = useState<
-        Record<string, Ingredient[]>
-    >(GenerateToppingsGroups());
+    //const [selectedToppings, setSelectedToppings] = useState<
+    //    Map<string, Ingredient[]>
+    //>(globalToppingsGroups);
+    let selectedToppings = globalToppingsGroups;
+    const [test,setTest] = useState<Map<string,Ingredient[]>>();
 
     function setToppingsForType(list: Ingredient[], id: string) {
-        setSelectedToppings((prev) => ({
-            ...prev,
-            [id]: list,
-        }));
+        selectedToppings.set(id,list);
+        //setSelectedToppings((prev) => ({
+        //    ...prev,
+        //    [id]: list,
+        //}));
     }
 
-    console.log(`inv size ${inventory.length}`);
+    //console.log(`inv size ${inventory.length}`);
     // Reset all customization state when dialog opens
     const handleOpenChange = (isOpen: boolean) => {
         setOpen(isOpen);
@@ -429,13 +412,15 @@ function MenuItemCard({
             );
             
             // Set Black Tea as default for new drinks
-            setSelectedToppings({
-                ...selectedToppings,
-                "Tea": blackTea ? [blackTea] : [],
-            });
+            setToppingsForType(blackTea ? [blackTea] : [],"Tea");
+            //setSelectedToppings({
+            //    ...selectedToppings,
+            //    "Tea": blackTea ? [blackTea] : [],
+            //});
         }
     };
-
+    console.log(`keys in global ${globalToppingsGroups.keys.length}`)
+    console.log(`keys of ingredients ${selectedToppings.keys.length}`);
     return (
         <Dialog open={open} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>
@@ -552,8 +537,8 @@ function MenuItemCard({
                     </div>
 
                     <div className="flex flex-col space-y-4">
-                        {Object.keys(selectedToppings).map( (key) => {
-                            console.log(key);
+                        {Array.from(globalToppingsGroups.keys()).map( (key) => {
+                            console.log(`key: ${key}`);
                             return (
                                 <div key={key}>
                                     <p className="text-2xl mb-3">{key}</p>
@@ -574,9 +559,8 @@ function MenuItemCard({
                             variant="default"
                             className="w-full"
                             onClick={() => {
-                                const allCustomizations = Object.values(
-                                    selectedToppings,
-                                ).flatMap((topArr) =>
+                                const allCustomizations = Array.from(selectedToppings.values())
+                                .flatMap((topArr) =>
                                     topArr.map((t) => ({
                                         id: t.id,
                                         name: t.name,
@@ -837,7 +821,6 @@ export default function CashierPage() {
 
     }, [currency]);
 
-    const [test, setTest] = useState<Ingredient[]>(emptyInventory);
 
     const loadMenuData = async () => {
         setMenuDataReady(false);
@@ -886,8 +869,30 @@ export default function CashierPage() {
         setMenuDataReady(true);
         //console.log(`ingr size ${inventory.length}`);
         //console.log(`test size ${test.length}`);
+        //globalToppingsGroups = GenerateToppingsGroups();
+        //GenerateToppingsGroups();
+        let groups: string[] = [];
+        const emptyIngredients: Ingredient[] = [];
+        for(let i: number = 0; i < inventory.length; ++i){
+            //console.log(`igroup ${i}:${inventory[i].ingredient_group}`);
+            if(groups.includes(inventory[i].ingredient_group)){
+                continue;
+            }
+            if(inventory[i].ingredient_group == "Scale" || inventory[i].ingredient_group == "Default"){
+                continue;
+            }
+            //console.log("\tadding");
+            console.log(`appending ${inventory[i].ingredient_group}`);
+            globalToppingsGroups.set(inventory[i].ingredient_group,emptyIngredients);
+            groups.push(inventory[i].ingredient_group);
+            console.log(globalToppingsGroups.keys.length);
+            console.log(globalToppingsGroups.size);
+        }
+        console.log(globalToppingsGroups.forEach( (value, key, ) => {
+            console.log(`key: ${key}, val: ${value}`);
+        }));
     };
-
+    
     useEffect(() => {
         loadMenuData();
     }, []);

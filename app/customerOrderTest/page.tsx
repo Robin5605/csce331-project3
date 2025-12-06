@@ -1012,9 +1012,20 @@ function Cart({
             </p>
             <ScrollArea className="h-150">
                 <div className="space-y-4">
-                    {items.map((i, idx) => (
+                    {items.length === 0 ? (
+                        // empty state
+                        <p className="text-center text-sm text-gray-500">
+                            Your cart is empty
+                        </p>
+                    ) : (
+                        // normal cart items
+                        items.map((i, idx) => (
+                            <CartItemCard key={idx} item={i} />
+                        ))
+                    )}
+                    {/* {items.map((i, idx) => (
                         <CartItemCard key={idx} item={i} />
-                    ))}
+                    ))} */}
                 </div>
             </ScrollArea>
 

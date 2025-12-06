@@ -939,7 +939,7 @@ function MenuItems({
     );
 }
 
-function CartItemCard({ item }: { item: CartItem }) {
+function CartItemCard({ item, onRemove }: { item: CartItem; onRemove: () => void; }) {
     const { isHighContrast } = useAccessibility();
 
     return (
@@ -959,7 +959,17 @@ function CartItemCard({ item }: { item: CartItem }) {
                 <p key={c.id}>{c.name}</p>
             ))}
             <Separator className="my-4" />
-            <p>Total: ${calculateSubtotal([item])}</p>
+            <div className="flex items-center justify-between">
+                <p>Total: ${calculateSubtotal([item])}</p>
+                <Button
+                    variant="outline"
+                    size="sm"
+                    className={isHighContrast ? "border-red-400 text-red-400" : ""}
+                    onClick={onRemove}
+                >
+                    Remove
+                </Button>
+            </div>
         </div>
     );
 }
@@ -984,6 +994,10 @@ function Cart({
     const subtotal = calculateSubtotal(items);
     const tax = TAX_RATE * subtotal;
     const total = subtotal + tax;
+
+    const handleRemoveCartItem = (index: number) => {
+        setItems((prev) => prev.filter((_, i) => i !== index));
+    };
 
     function handleCheckout() {
         fetch("/api/customer/order", {
@@ -1028,7 +1042,7 @@ function Cart({
                     ) : (
                         // normal cart items
                         items.map((i, idx) => (
-                            <CartItemCard key={idx} item={i} />
+                            <CartItemCard key={idx} item={i} onRemove={() => handleRemoveCartItem(idx)}/>
                         ))
                     )}
                     {/* {items.map((i, idx) => (

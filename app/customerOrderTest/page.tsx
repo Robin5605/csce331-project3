@@ -1011,16 +1011,13 @@ function Cart({
                 {labels.cart}
             </p>
             <ScrollArea
-                className="
-                    h-150
-                    bg-white/70
-                    border
-                    border-gray-300
-                    rounded-md
-                    p-3
-                    shadow-sm
-                    dark:bg-black/40
-                "
+                className={`
+                    h-150 p-3 rounded-md shadow-sm
+                    ${isHighContrast
+                        ? "bg-black border-2 border-yellow-300"
+                        : "bg-white/70 border border-gray-300"
+                    }
+                `}
             >
                 <div className="space-y-4">
                     {items.length === 0 ? (

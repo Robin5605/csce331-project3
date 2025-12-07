@@ -48,10 +48,14 @@ const handler = NextAuth({
             if (user) {
                 token.id = user.id as string;
 
-                if (account?.provider === "google") {
+                if (account?.provider === "credentials") {
+                    token.role = user.role;
+                    token.email = null;
+                    token.name = null;
+                } else if (account?.provider === "google") {
                     token.role = "customer";
-                } else {
-                    token.role = (user as any).role ?? "customer";
+                    token.email = user.email || null;
+                    token.name = user.name || null;
                 }
             }
             return token;

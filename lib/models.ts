@@ -40,6 +40,7 @@ interface Ingredient {
     stock: number;
     cost: number;
     ingredient_type: number;
+    ingredient_group: string;
 }
 
 interface DrinkIngredient {

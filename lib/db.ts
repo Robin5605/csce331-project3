@@ -672,6 +672,13 @@ export interface CreateOrder {
         id: number;
         customizations: number[];
         ice?: number; // Ice servings (0-4), optional for backward compatibility
+        scalars?: {
+            item: {
+                name: string;
+                id: number;
+            };
+            ammount: number;
+        }[];
     }[];
     employeeId: number;
     paymentMethod: string;
@@ -755,15 +762,25 @@ export async function createOrder({
                 );
             }
 
-            // Insert ice servings if provided and > 0
-            const iceServings = drink.ice ?? 0;
-            if (iceServings > 0) {
-                await insert_into_drinks_ingredients_table(
-                    drinksOrdersID,
-                    iceIngredientId,
-                    iceServings,
+            //insert scalar values like ice and sugar
+            const scalars = drink.scalars ?? [];
+            console.log(`scalars: ${drink.scalars}`);
+            for(const scale of scalars){
+                await client.query(
+                    `INSERT INTO drinks_ingredients (drink_id, ingredient_id, servings) SELECT $1, $2, $3`,
+                    [drinksOrdersID, scale.item.id, scale.ammount],
                 );
             }
+
+            // Insert ice servings if provided and > 0
+            //const iceServings = drink.ice ?? 0;
+            //if (iceServings > 0) {
+            //    await insert_into_drinks_ingredients_table(
+            //        drinksOrdersID,
+            //        iceIngredientId,
+            //        iceServings,
+            //    );
+            //}
         }
 
         await client.query("COMMIT");

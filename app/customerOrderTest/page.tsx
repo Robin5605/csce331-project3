@@ -43,10 +43,18 @@ interface CartItem {
     ice: number;
     name: string;
     cost: number;
+    scalars: {
+            item: {
+                name: string;
+                id: number
+            };
+            amount: number;
+    }[];
     customizations: {
         id: number;
         name: string;
         cost: number;
+        amount: number;
     }[];
 }
 
@@ -113,6 +121,7 @@ const emptyInventory: Ingredient[] = [];
 
 let inventory: Ingredient[] = [];
 let globalToppingsGroups: Map<string,Ingredient[]> = new Map<string,Ingredient[]>();
+let scaleItems: {name: string, id: number}[] = [];
 //const inventory: Ingredient[] = [];
 
 const TAX_RATE = parseFloat(process.env.NEXT_PUBLIC_TAX_RATE ?? "0.0825");
@@ -297,9 +306,7 @@ function ToppingCard({
             }}
         >
             <p className="text-center select-none">{item.name}</p>
-            {item.cost > 0 ? (
-                <p className="text-center select-none">(${item.cost})</p>
-            ) : null}
+            <p className="text-center select-none">(${item.cost})</p>
         </div>
     );
 }
@@ -383,11 +390,11 @@ function MenuItemCard({
     const [ice, setIce] = useState(4); // Default to 100% (4 servings)
     const [size, setSize] = useState<DrinkSize>("medium");
 
+    const [dumbVar, setDumbVar] = useState<boolean>(false);
     //const [selectedToppings, setSelectedToppings] = useState<
     //    Map<string, Ingredient[]>
     //>(globalToppingsGroups);
     let selectedToppings = globalToppingsGroups;
-    const [test,setTest] = useState<Map<string,Ingredient[]>>();
 
     function setToppingsForType(list: Ingredient[], id: string) {
         selectedToppings.set(id,list);
@@ -396,6 +403,14 @@ function MenuItemCard({
         //    [id]: list,
         //}));
     }
+
+    //let scalarServings: {item:{name: string, id: number}, amount: number}[] = scaleItems.map((sItem) => {
+    //    return {item: sItem, amount: 0};
+    //});
+
+    const [scalarServings, setScalarServings] = useState<{item:{name: string, id: number}, amount: number}[]>(scaleItems.map((sItem) => {
+        return {item: sItem, amount: 0};
+    }));
 
     //console.log(`inv size ${inventory.length}`);
     // Reset all customization state when dialog opens
@@ -419,8 +434,7 @@ function MenuItemCard({
             //});
         }
     };
-    console.log(`keys in global ${globalToppingsGroups.keys.length}`)
-    console.log(`keys of ingredients ${selectedToppings.keys.length}`);
+
     return (
         <Dialog open={open} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>
@@ -441,7 +455,7 @@ function MenuItemCard({
                         🔊
                     </button>
 
-                    {item.image_url !== "" ? (
+                    {item.image_url !== "" && item.image_url!== null ? (
                         <img
                             src={item.image_url}
                             alt={"drink image"}
@@ -471,74 +485,108 @@ function MenuItemCard({
                     <DialogTitle>Customize {item.name}</DialogTitle>
                 </DialogHeader>
                 <div className="flex flex-col space-y-4">
-                    <div>
-                        <p className="text-2xl">Size</p>
-                        <div className="flex space-x-4">
-                            <div
-                                className={`cursor-pointer duration-300 border rounded-full p-4 text-xl 
-                                    ${
-                                        isHighContrast
-                                            ? size === "small"
-                                                ? "bg-black text-blue-500"
-                                                : ""
-                                            : size === "small"
-                                              ? "bg-black text-white"
-                                              : ""
-                                    }`}
-                                onClick={() => setSize("small")}
-                            >
-                                S
-                            </div>
-                            <div
-                                className={`cursor-pointer duration-300 border rounded-full p-4 text-xl 
-                                     ${
-                                         isHighContrast
-                                             ? size === "medium"
-                                                 ? "bg-black text-blue-500"
-                                                 : ""
-                                             : size === "medium"
-                                               ? "bg-black text-white"
-                                               : ""
-                                     }`}
-                                onClick={() => setSize("medium")}
-                            >
-                                M
-                            </div>
-                            <div
-                                className={`cursor-pointer duration-300 border rounded-full p-4 text-xl  ${
-                                    isHighContrast
-                                        ? size === "large"
-                                            ? "bg-black text-blue-500"
-                                            : ""
-                                        : size === "large"
-                                          ? "bg-black text-white"
-                                          : ""
-                                }`}
-                                onClick={() => setSize("large")}
-                            >
-                                L
-                            </div>
-                        </div>
-                    </div>
+                    
 
                     <div>
-                        <p className="text-2xl">Ice</p>
-                        <div className="flex space-x-4">
-                            {[0, 1, 2, 3, 4].map((servings) => (
-                                <div
-                                    key={servings}
-                                    className={`cursor-pointer duration-300 border rounded-full p-4 text-xl ${ice === servings ? "bg-black text-white" : ""}`}
-                                    onClick={() => setIce(servings)}
-                                >
-                                    {iceToPercentage(servings)}
+                        {scaleItems.map( (sItem, index) => {
+                            return (
+                                <div key={index}>
+                                    <p className="text-2xl">{sItem.name}</p>
+                                    <div className="flex space-x-4">
+                                        {[0, 1, 2, 3, 4].map((servings) => (
+                                            <div
+                                                key={`${sItem.id}${servings}`}
+                                                className={`cursor-pointer duration-300 border rounded-full p-4 text-xl ${ scalarServings[index].amount === servings ? "bg-black text-white" : ""}`}
+                                                onClick={() => {//setIce(servings)}
+                                                    //scalarServings[index].amount = servings;
+                                                    setScalarServings([
+                                                        ...(scalarServings.filter((f_item, f_index) => {
+                                                            return f_index < index;
+                                                        })),
+                                                        {item: scalarServings[index].item, amount: servings},
+                                                        ...(scalarServings.filter((f_item, f_index) => {
+                                                            return f_index > index;
+                                                        })),
+                                                    ]);
+                                                    //console.log(`updating ${index} to ${servings}, now ${scalarServings[index].amount}`);
+                                                }}
+                                            >
+                                                {iceToPercentage(servings)}
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
-                            ))}
-                        </div>
+                            );
+                        })}
                     </div>
 
                     <div className="flex flex-col space-y-4">
                         {Array.from(globalToppingsGroups.keys()).map( (key) => {
-                            console.log(`key: ${key}`);
+                            //console.log(`key: ${key}`);
+                            if(key === "Toppings"){
+                                return (
+                                    <div key={key}>
+                                        <p className="text-2xl mb-3">{key}</p>
+                                        <ToppingSelector
+                                            globalToppings={selectedToppings}
+                                            onToppingSelect={setToppingsForType}
+                                            ingredientType={key}
+                                            multiSelect={true}
+                                        />
+                                    </div>
+                                );
+                            }
+                            if(key == "Size"){
+                                <div>
+                                    <p className="text-2xl">Size</p>
+                                    <div className="flex space-x-4">
+                                        <div
+                                            className={`cursor-pointer duration-300 border rounded-full p-4 text-xl 
+                                                ${
+                                                    isHighContrast
+                                                        ? size === "small"
+                                                            ? "bg-black text-blue-500"
+                                                            : ""
+                                                        : size === "small"
+                                                          ? "bg-black text-white"
+                                                          : ""
+                                                }`}
+                                            onClick={() => setSize("small")}
+                                        >
+                                            S
+                                        </div>
+                                        <div
+                                            className={`cursor-pointer duration-300 border rounded-full p-4 text-xl 
+                                                 ${
+                                                     isHighContrast
+                                                         ? size === "medium"
+                                                             ? "bg-black text-blue-500"
+                                                             : ""
+                                                         : size === "medium"
+                                                           ? "bg-black text-white"
+                                                           : ""
+                                                 }`}
+                                            onClick={() => setSize("medium")}
+                                        >
+                                            M
+                                        </div>
+                                        <div
+                                            className={`cursor-pointer duration-300 border rounded-full p-4 text-xl  ${
+                                                isHighContrast
+                                                    ? size === "large"
+                                                        ? "bg-black text-blue-500"
+                                                        : ""
+                                                    : size === "large"
+                                                      ? "bg-black text-white"
+                                                      : ""
+                                            }`}
+                                            onClick={() => setSize("large")}
+                                        >
+                                            L
+                                        </div>
+                                    </div>
+                                </div>
+                            }
                             return (
                                 <div key={key}>
                                     <p className="text-2xl mb-3">{key}</p>
@@ -549,8 +597,8 @@ function MenuItemCard({
                                         multiSelect={false}
                                     />
                                 </div>
-                            );})
-                        }
+                            );
+                        })}
                     </div>
                 </div>
                 <DialogFooter>
@@ -559,12 +607,14 @@ function MenuItemCard({
                             variant="default"
                             className="w-full"
                             onClick={() => {
+                                console.log("button clicked");
                                 const allCustomizations = Array.from(selectedToppings.values())
                                 .flatMap((topArr) =>
                                     topArr.map((t) => ({
                                         id: t.id,
                                         name: t.name,
                                         cost: t.cost,
+                                        amount: 1,
                                     })),
                                 );
 
@@ -574,6 +624,7 @@ function MenuItemCard({
                                     ice,
                                     name: item.name,
                                     cost: item.cost,
+                                    scalars: scalarServings,
                                     customizations: allCustomizations,
                                 });
                             }}
@@ -642,7 +693,16 @@ function CartItemCard({ item }: { item: CartItem }) {
                 {item.size.charAt(0).toUpperCase() + item.size.substring(1)}{" "}
                 {item.name}
             </p>
-            <p>Ice: {iceToPercentage(item.ice)}</p>
+            <p>{/*Ice: {iceToPercentage(item.ice)}*/}
+                
+            </p>
+            {
+                item.scalars.map( (value,index) => {
+                    return (<p key={index}>
+                        {value.item.name}:{iceToPercentage(value.amount)}
+                    </p>);
+                })
+            }
             {item.customizations.map((c) => (
                 <p key={c.id}>{c.name}</p>
             ))}
@@ -680,7 +740,8 @@ function Cart({
                 drinks: items.map((i) => ({
                     id: i.id,
                     customizations: i.customizations.map((i) => i.id),
-                    ice: i.ice, // Send ice servings (0-4)
+                    ice: 0, // Send ice servings (0-4)
+                    scalars: i.scalars,
                 })),
                 employeeId: 1,
                 paymentMethod: "CARD",
@@ -875,10 +936,14 @@ export default function CashierPage() {
         const emptyIngredients: Ingredient[] = [];
         for(let i: number = 0; i < inventory.length; ++i){
             //console.log(`igroup ${i}:${inventory[i].ingredient_group}`);
+            if(inventory[i].ingredient_group == "Scale"){
+                scaleItems.push({name: inventory[i].name, id: inventory[i].id});
+                continue;
+            }
             if(groups.includes(inventory[i].ingredient_group)){
                 continue;
             }
-            if(inventory[i].ingredient_group == "Scale" || inventory[i].ingredient_group == "Default"){
+            if(inventory[i].ingredient_group == "Default"){
                 continue;
             }
             //console.log("\tadding");
@@ -891,6 +956,7 @@ export default function CashierPage() {
         console.log(globalToppingsGroups.forEach( (value, key, ) => {
             console.log(`key: ${key}, val: ${value}`);
         }));
+        console.log(scaleItems);
     };
     
     useEffect(() => {
@@ -913,13 +979,17 @@ export default function CashierPage() {
         {
             id: 1,
             name: "Mango Green Tea",
-            ice: 3,
+            ice: 0,
             size: "large",
             cost: 6.5,
+            scalars: [
+                {item: {name: "Ice", id: 28}, amount: 2},
+                {item: {name: "Sugar", id: 4}, amount: 1},
+            ],
             customizations: [
-                { id: 9, name: "Red Bean", cost: 0.75 },
-                { id: 12, name: "Pudding", cost: 0.75 },
-                { id: 13, name: "Herb Jelly", cost: 0.75 },
+                { id: 9, name: "Red Bean", cost: 0.75, amount: 1 },
+                { id: 12, name: "Pudding", cost: 0.75, amount: 1 },
+                { id: 13, name: "Herb Jelly", cost: 0.75, amount: 1 },
             ],
         },
     ];

@@ -44,6 +44,19 @@ import { useTextToSpeech } from "@/hooks/useTextToSpeech";
 import GoogleTranslate from "@/components/GoogleTranslate";
 import { useSession } from "next-auth/react";
 import LogoutButton from "@/components/LogoutButton";
+import { MenuItem, Category, Ingredient } from "@/lib/models";
+import { useSession, SessionProvider } from "next-auth/react";
+import {
+    Field,
+    FieldContent,
+    FieldDescription,
+    FieldGroup,
+    FieldLabel,
+    FieldSet,
+    FieldTitle,
+} from "@/components/ui/field";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { cn } from "@/lib/utils";
 
 interface CartItem {
     id: number;
@@ -51,10 +64,18 @@ interface CartItem {
     ice: number;
     name: string;
     cost: number;
+    scalars: {
+        item: {
+            name: string;
+            id: number;
+        };
+        amount: number;
+    }[];
     customizations: {
         id: number;
         name: string;
         cost: number;
+        amount: number;
     }[];
 }
 
@@ -111,296 +132,22 @@ const EN_LABELS: Labels = {
     addToOrder: "Add to Order",
 };
 
-interface MenuItem {
-    id: number;
-    name: string;
-    stock: number;
-    cost: number;
-    image_url: string;
-}
-
 interface MenuData {
     [categoryName: string]: MenuItem[];
 }
 
-const menuData: MenuData = {
-    "Fruit Tea": [
-        {
-            id: 1,
-            name: "Mango Green Tea",
-            stock: 80,
-            cost: 6.5,
-            image_url: "/drinks/mango_green_tea.png",
-        },
-        {
-            id: 2,
-            name: "Peach Tea With Honey Jelly",
-            stock: 75,
-            cost: 6.25,
-            image_url: "/drinks/peach_tea_with_honey_jelly.png",
-        },
-        {
-            id: 3,
-            name: "Passion Chess",
-            stock: 75,
-            cost: 6.25,
-            image_url: "/drinks/passion_chess.png",
-        },
-        {
-            id: 5,
-            name: "Mango & Passion Fruit",
-            stock: 75,
-            cost: 6.25,
-            image_url: "/drinks/mango_passion_fruit.png",
-        },
-        {
-            id: 6,
-            name: "Honey Lemonade",
-            stock: 75,
-            cost: 5.2,
-            image_url: "/drinks/honey_lemonade.png",
-        },
-        {
-            id: 4,
-            name: "Berry Lychee Burst",
-            stock: 74,
-            cost: 6.25,
-            image_url: "/drinks/berry_lychee_burst.png",
-        },
-    ],
+const emptyMenuData: MenuData = {};
+const emptyInventory: Ingredient[] = [];
 
-    "Ice Blended": [
-        {
-            id: 7,
-            name: "Oreo w/ Pearl",
-            stock: 75,
-            cost: 6.75,
-            image_url: "/drinks/oreo_w_pearl.png",
-        },
-        {
-            id: 8,
-            name: "Taro w/ Pudding",
-            stock: 75,
-            cost: 6.95,
-            image_url: "/drinks/taro_w_pudding.png",
-        },
-        {
-            id: 9,
-            name: "Thai Tea w/ Pearl",
-            stock: 75,
-            cost: 6.95,
-            image_url: "/drinks/thai_tea_w_pearl.png",
-        },
-        {
-            id: 10,
-            name: "Coffee w/ Ice Cream",
-            stock: 75,
-            cost: 6.95,
-            image_url: "/drinks/coffee_w_ice_cream.png",
-        },
-        {
-            id: 11,
-            name: "Mango w/ Ice Cream",
-            stock: 75,
-            cost: 6.95,
-            image_url: "/drinks/mango_w_ice_cream.png",
-        },
-        {
-            id: 12,
-            name: "Strawberry w/ Ice Cream",
-            stock: 75,
-            cost: 6.95,
-            image_url: "/drinks/strawberry_w_ice_cream.png",
-        },
-    ],
-
-    Milky: [
-        {
-            id: 13,
-            name: "Clasic Pearl Milk Tea",
-            stock: 75,
-            cost: 5.8,
-            image_url: "/drinks/classic_pearl_milk_tea.png",
-        },
-        {
-            id: 14,
-            name: "Honey Pearl Milk Tea",
-            stock: 75,
-            cost: 6.0,
-            image_url: "/drinks/honey_pearl_milk_tea.png",
-        },
-        {
-            id: 15,
-            name: "Coffe Creama",
-            stock: 75,
-            cost: 6.5,
-            image_url: "/drinks/coffe_creama.png",
-        },
-        {
-            id: 16,
-            name: "Hokaido Pearl Milk Tea",
-            stock: 75,
-            cost: 6.25,
-            image_url: "/drinks/hokaido_pearl_milk_tea.png",
-        },
-        {
-            id: 17,
-            name: "Mango Green Milk Tea",
-            stock: 75,
-            cost: 6.5,
-            image_url: "/drinks/mango_green_milk_tea.png",
-        },
-        {
-            id: 18,
-            name: "Golden Retriever",
-            stock: 75,
-            cost: 6.75,
-            image_url: "/drinks/golden_retriever.png",
-        },
-    ],
-
-    "Non Caffenated": [
-        {
-            id: 19,
-            name: "Tiger Boba",
-            stock: 75,
-            cost: 6.5,
-            image_url: "/drinks/tiger_boba.png",
-        },
-        {
-            id: 20,
-            name: "Strawberry Coconut",
-            stock: 75,
-            cost: 6.5,
-            image_url: "/drinks/strawberry_coconut.png",
-        },
-        {
-            id: 21,
-            name: "Strawberry Coconut Ice Blended",
-            stock: 75,
-            cost: 6.5,
-            image_url: "/drinks/strawberry_coconut_ice_blended.png",
-        },
-        {
-            id: 22,
-            name: "Halo Halo",
-            stock: 75,
-            cost: 6.95,
-            image_url: "/drinks/halo_halo.png",
-        },
-        {
-            id: 23,
-            name: "Wintermellon Lemonade",
-            stock: 75,
-            cost: 5.8,
-            image_url: "/drinks/wintermellon_lemonade.png",
-        },
-        {
-            id: 24,
-            name: "Wintermellon w/ Fresh Milk",
-            stock: 75,
-            cost: 5.2,
-            image_url: "/drinks/wintermellon_w_fresh_milk.png",
-        },
-    ],
-
-    "Fall Seasonals": [
-        {
-            id: 25,
-            name: "Red Bean Matcha",
-            stock: 75,
-            cost: 6.95,
-            image_url: "/drinks/red_bean_matcha.png",
-        },
-        {
-            id: 26,
-            name: "Pumpkin Chai",
-            stock: 75,
-            cost: 6.95,
-            image_url: "/drinks/pumpkin_chai.png",
-        },
-        {
-            id: 27,
-            name: "Honey and Cinnamon Milk Tea",
-            stock: 75,
-            cost: 6.95,
-            image_url: "/drinks/honey_and_cinnamon_milk_tea.png",
-        },
-        { id: 31, name: "temp", stock: 99, cost: 5.0, image_url: "" },
-        { id: 32, name: "temp2", stock: 99, cost: 1.0, image_url: "" },
-    ],
-
-    Uncategorized: [
-        { id: 33, name: "New Item", stock: 0, cost: 0, image_url: "" },
-        { id: 34, name: "New Item", stock: 0, cost: 0, image_url: "" },
-        { id: 35, name: "New Item", stock: 0, cost: 0, image_url: "" },
-    ],
-};
-
-interface InventoryItem {
-    id: number;
-    name: string;
-    stock: number;
-    cost: number;
-    ingredient_type: number;
-}
-
-const inventory: InventoryItem[] = [
-    { id: 21, name: "Napkins", stock: 2000, cost: 0, ingredient_type: 0 },
-    { id: 22, name: "Large Cups", stock: 1000, cost: 0, ingredient_type: 0 },
-    { id: 23, name: "Small Cups", stock: 1000, cost: 0, ingredient_type: 0 },
-    { id: 24, name: "Medium Cups", stock: 1000, cost: 0, ingredient_type: 0 },
-    { id: 25, name: "Straws", stock: 1000, cost: 0, ingredient_type: 0 },
-    { id: 26, name: "Seal", stock: 1000, cost: 0, ingredient_type: 0 },
-    { id: 27, name: "Bag", stock: 1000, cost: 0, ingredient_type: 0 },
-    { id: 4, name: "Sugar", stock: 86, cost: 0, ingredient_type: 1 },
-    { id: 9, name: "Red Bean", stock: 96, cost: 0.75, ingredient_type: 100 },
-    { id: 12, name: "Pudding", stock: 92, cost: 0.75, ingredient_type: 100 },
-    { id: 8, name: "Mini Pearl", stock: 51, cost: 0.75, ingredient_type: 100 },
-    { id: 5, name: "Pearl", stock: 28, cost: 0.75, ingredient_type: 100 },
-    { id: 6, name: "Aloe Vera", stock: 89, cost: 0.75, ingredient_type: 100 },
-    { id: 20, name: "Crystal Boba", stock: 92, cost: 1, ingredient_type: 20 },
-    {
-        id: 18,
-        name: "Strawberry Popping Boba",
-        stock: 98,
-        cost: 1,
-        ingredient_type: 20,
-    },
-    {
-        id: 17,
-        name: "Mango Popping Boba",
-        stock: 89,
-        cost: 1,
-        ingredient_type: 20,
-    },
-    {
-        id: 19,
-        name: "Peach Popping Boba",
-        stock: 96,
-        cost: 1,
-        ingredient_type: 20,
-    },
-    { id: 3, name: "Oolong Tea", stock: 13, cost: 0, ingredient_type: 30 },
-    { id: 2, name: "Green Tea", stock: 0, cost: 0, ingredient_type: 30 },
-    { id: 1, name: "Black Tea", stock: 70, cost: 1, ingredient_type: 30 },
-    { id: 13, name: "Herb Jelly", stock: 100, cost: 0.75, ingredient_type: 40 },
-    { id: 7, name: "Lychee Jelly", stock: 37, cost: 0.75, ingredient_type: 40 },
-    { id: 14, name: "Alyu Jelly", stock: 96, cost: 0.75, ingredient_type: 40 },
-    {
-        id: 15,
-        name: "Coffee Jelly",
-        stock: 93,
-        cost: 0.75,
-        ingredient_type: 40,
-    },
-    { id: 16, name: "Honey Jelly", stock: 96, cost: 0.75, ingredient_type: 40 },
-    { id: 28, name: "Ice", stock: 813, cost: 0.0, ingredient_type: 1 },
-    { id: 10, name: "Creama", stock: 84, cost: 1.25, ingredient_type: 100 },
-    { id: 11, name: "Ice Cream", stock: 36, cost: 1.25, ingredient_type: 100 },
-];
+let inventory: Ingredient[] = [];
+let globalToppingsGroups: Map<string, Ingredient[]> = new Map<
+    string,
+    Ingredient[]
+>();
+let scaleItems: { name: string; id: number }[] = [];
 
 const TAX_RATE = parseFloat(process.env.NEXT_PUBLIC_TAX_RATE ?? "0.0825");
+const LOYALTY_POINTS_THRESHOLD = 50;
 
 const findInventoryCost = (name: string) => {
     const item = inventory.find(
@@ -410,7 +157,6 @@ const findInventoryCost = (name: string) => {
 };
 
 function calculateSubtotal(cartItems: CartItem[]): number {
-    //console.log(JSON.stringify(cartItems));
     let total = 0;
 
     for (const item of cartItems) {
@@ -439,9 +185,13 @@ function CategoryCard({
 
     const base = "border p-4 rounded cursor-pointer";
 
-    const normal = `hover:border-black transition duration-300 ${isSelected ? "bg-black text-white" : ""}`;
+    const normal = `hover:border-black transition duration-300 ${
+        isSelected ? "bg-black text-white" : ""
+    }`;
 
-    const highContrast = `bg-black ${isSelected ? "text-blue-400" : "text-white"} border-2 border-white`;
+    const highContrast = `bg-black ${
+        isSelected ? "text-blue-400" : "text-white"
+    } border-2 border-white`;
 
     return (
         <div
@@ -476,7 +226,9 @@ function CategorySelector({
     } = useAccessibility();
     return (
         <div
-            className={`w-fit space-y-4 flex-col items-center ${isHighContrast ? "text-white" : "text-black"} ${textMultipler >= 1.75 ? "max-w-50" : ""}`}
+            className={`w-fit space-y-4 flex-col items-center ${
+                isHighContrast ? "text-white" : "text-black"
+            } ${textMultipler >= 1.75 ? "max-w-50" : ""}`}
         >
             <Button
                 variant="default"
@@ -497,7 +249,7 @@ function CategorySelector({
                     onClick={() => {
                         if (textMultipler <= 1) return;
                         let z = textMultipler - 0.25;
-                        document.documentElement.style.fontSize = `${16 * z}px`; //This changes the magnification of the page
+                        document.documentElement.style.fontSize = `${16 * z}px`;
                         setTextMultipler(z);
                     }}
                 >
@@ -516,7 +268,7 @@ function CategorySelector({
                     onClick={() => {
                         if (textMultipler >= 2) return;
                         let z = textMultipler + 0.25;
-                        document.documentElement.style.fontSize = `${16 * z}px`; //This changes the magnification of the page
+                        document.documentElement.style.fontSize = `${16 * z}px`;
                         setTextMultipler(z);
                     }}
                 >
@@ -524,7 +276,9 @@ function CategorySelector({
                 </Button>
             </div>
             <p
-                className={`text-xl ${isHighContrast ? "text-white" : "text-black"}`}
+                className={`text-xl ${
+                    isHighContrast ? "text-white" : "text-black"
+                }`}
             >
                 {title}
             </p>
@@ -542,7 +296,7 @@ function CategorySelector({
 }
 
 interface InventoryItemCardProps {
-    item: InventoryItem;
+    item: Ingredient;
     isSelected: boolean;
     onSelect: () => void;
     onUnselect: () => void;
@@ -555,7 +309,6 @@ function ToppingCard({
     onUnselect,
 }: InventoryItemCardProps) {
     const { isHighContrast } = useAccessibility();
-    // const [selected, setSelected] = useState(isSelected);
     let selected = isSelected;
     return (
         <div
@@ -570,30 +323,23 @@ function ToppingCard({
             }`}
             onClick={() => {
                 if (selected) {
-                    // setSelected(false)
                     onUnselect();
                 } else {
-                    // setSelected(true)
                     onSelect();
                 }
-                // setSelected(!selected);
-                // if (!selected) onSelect();
-                // else onUnselect();
             }}
         >
             <p className="text-center select-none">{item.name}</p>
-            {item.cost > 0 ? (
-                <p className="text-center select-none">(${item.cost})</p>
-            ) : null}
+            <p className="text-center select-none">(${item.cost})</p>
         </div>
     );
 }
 
 interface ToppingSelectorProps {
-    onToppingSelect: (list: InventoryItem[], id: number) => void;
-    ingredientType: number;
+    onToppingSelect: (list: Ingredient[], id: string) => void;
+    ingredientType: string;
     multiSelect: boolean;
-    globalToppings: Record<number, InventoryItem[]>;
+    globalToppings: Map<string, Ingredient[]>;
 }
 
 function ToppingSelector({
@@ -602,18 +348,17 @@ function ToppingSelector({
     multiSelect,
     globalToppings,
 }: ToppingSelectorProps) {
-    const [selected, setSelected] = useState<InventoryItem[]>([]); //This is for local selections
+    const [selected, setSelected] = useState<Ingredient[]>([]);
 
-    // Sync local state with globalToppings when it changes
     useEffect(() => {
-        const globalSelection = globalToppings[ingredientType] || [];
+        const globalSelection = globalToppings.get(ingredientType) || [];
         setSelected(globalSelection);
     }, [globalToppings, ingredientType]);
 
     return (
         <div className={`grid grid-cols-4 gap-2`}>
             {inventory
-                .filter((i) => i.ingredient_type === ingredientType)
+                .filter((i) => i.ingredient_group === ingredientType)
                 .map((i) => (
                     <ToppingCard
                         key={i.id}
@@ -643,7 +388,7 @@ interface MenuItemCardProps {
     addToOrderLabel: string;
     speak: (text: string) => void;
 }
-// Helper function to convert ice servings (0-4) to percentage label
+
 const iceToPercentage = (servings: number): string => {
     const mapping: { [key: number]: string } = {
         0: "0%",
@@ -665,46 +410,46 @@ function MenuItemCard({
 
     const [open, setOpen] = useState(false);
 
-    const [ice, setIce] = useState(4); // Default to 100% (4 servings)
+    const [ice, setIce] = useState(4);
     const [size, setSize] = useState<DrinkSize>("medium");
 
-    const [selectedToppings, setSelectedToppings] = useState<
-        Record<number, InventoryItem[]>
-    >({
-        20: [],
-        30: [],
-        40: [],
-        100: [],
-    });
+    let selectedToppings = globalToppingsGroups;
 
-    function setToppingsForType(list: InventoryItem[], id: number) {
-        setSelectedToppings((prev) => ({
-            ...prev,
-            [id]: list,
-        }));
+    function setToppingsForType(list: Ingredient[], id: string) {
+        selectedToppings.set(id, list);
     }
 
-    // Reset all customization state when dialog opens
+    type ScalarServing = {
+        item: { name: string; id: number };
+        amount: number;
+    };
+
+    const [scalarServings, setScalarServings] = useState<ScalarServing[]>([]);
+
+    useEffect(() => {
+        if (open) {
+            setScalarServings(
+                scaleItems.map((sItem) => ({
+                    item: sItem,
+                    amount: 0,
+                })),
+            );
+        }
+    }, [open]);
+
     const handleOpenChange = (isOpen: boolean) => {
         setOpen(isOpen);
         if (isOpen) {
-            // Reset to defaults when opening
-            setIce(4); // 100%
+            setIce(4);
             setSize("medium");
 
-            // Find Black Tea from inventory
             const blackTea = inventory.find(
                 (item) =>
-                    item.ingredient_type === 30 && item.name === "Black Tea",
+                    item.ingredient_group === "Tea" &&
+                    item.name === "Black Tea",
             );
 
-            // Set Black Tea as default for new drinks
-            setSelectedToppings({
-                20: [],
-                30: blackTea ? [blackTea] : [],
-                40: [],
-                100: [],
-            });
+            setToppingsForType(blackTea ? [blackTea] : [], "Tea");
         }
     };
 
@@ -728,7 +473,7 @@ function MenuItemCard({
                         🔊
                     </button>
 
-                    {item.image_url !== "" ? (
+                    {item.image_url !== "" && item.image_url !== null ? (
                         <img
                             src={item.image_url}
                             alt={"drink image"}
@@ -759,107 +504,146 @@ function MenuItemCard({
                 </DialogHeader>
                 <div className="flex flex-col space-y-4">
                     <div>
-                        <p className="text-2xl">Size</p>
-                        <div className="flex space-x-4">
-                            <div
-                                className={`cursor-pointer duration-300 border rounded-full p-4 text-xl 
-                                    ${
-                                        isHighContrast
-                                            ? size === "small"
-                                                ? "bg-black text-blue-500"
-                                                : ""
-                                            : size === "small"
-                                              ? "bg-black text-white"
-                                              : ""
-                                    }`}
-                                onClick={() => setSize("small")}
-                            >
-                                S
-                            </div>
-                            <div
-                                className={`cursor-pointer duration-300 border rounded-full p-4 text-xl 
-                                     ${
-                                         isHighContrast
-                                             ? size === "medium"
-                                                 ? "bg-black text-blue-500"
-                                                 : ""
-                                             : size === "medium"
-                                               ? "bg-black text-white"
-                                               : ""
-                                     }`}
-                                onClick={() => setSize("medium")}
-                            >
-                                M
-                            </div>
-                            <div
-                                className={`cursor-pointer duration-300 border rounded-full p-4 text-xl  ${
-                                    isHighContrast
-                                        ? size === "large"
-                                            ? "bg-black text-blue-500"
-                                            : ""
-                                        : size === "large"
-                                          ? "bg-black text-white"
-                                          : ""
-                                }`}
-                                onClick={() => setSize("large")}
-                            >
-                                L
-                            </div>
-                        </div>
-                    </div>
-
-                    <div>
-                        <p className="text-2xl">Ice</p>
-                        <div className="flex space-x-4">
-                            {[0, 1, 2, 3, 4].map((servings) => (
-                                <div
-                                    key={servings}
-                                    className={`cursor-pointer duration-300 border rounded-full p-4 text-xl ${ice === servings ? "bg-black text-white" : ""}`}
-                                    onClick={() => setIce(servings)}
-                                >
-                                    {iceToPercentage(servings)}
+                        {scaleItems.map((sItem, index) => {
+                            return (
+                                <div key={index}>
+                                    <p className="text-2xl">{sItem.name}</p>
+                                    <div className="flex space-x-4">
+                                        {[0, 1, 2, 3, 4].map((servings) => {
+                                            const isSelected =
+                                                scalarServings[index] != null &&
+                                                scalarServings[index]
+                                                    ?.amount === servings;
+                                            return (
+                                                <div
+                                                    key={`${sItem.id}${servings}`}
+                                                    className={`cursor-pointer duration-300 border rounded-full p-4 text-xl ${
+                                                        isSelected
+                                                            ? "bg-black text-white"
+                                                            : ""
+                                                    }`}
+                                                    onClick={() => {
+                                                        setScalarServings(
+                                                            (prev) => {
+                                                                const copy = [
+                                                                    ...prev,
+                                                                ];
+                                                                if (
+                                                                    !copy[index]
+                                                                ) {
+                                                                    copy[
+                                                                        index
+                                                                    ] = {
+                                                                        item: sItem,
+                                                                        amount: servings,
+                                                                    };
+                                                                } else {
+                                                                    copy[
+                                                                        index
+                                                                    ] = {
+                                                                        ...copy[
+                                                                            index
+                                                                        ],
+                                                                        amount: servings,
+                                                                    };
+                                                                }
+                                                                return copy;
+                                                            },
+                                                        );
+                                                    }}
+                                                >
+                                                    {iceToPercentage(servings)}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
                                 </div>
-                            ))}
-                        </div>
+                            );
+                        })}
                     </div>
 
                     <div className="flex flex-col space-y-4">
-                        <div>
-                            <p className="text-2xl mb-3">Boba</p>
-                            <ToppingSelector
-                                globalToppings={selectedToppings}
-                                onToppingSelect={setToppingsForType}
-                                ingredientType={20}
-                                multiSelect={false}
-                            />
-                        </div>
-                        <div>
-                            <p className="text-2xl mb-3">Tea</p>
-                            <ToppingSelector
-                                globalToppings={selectedToppings}
-                                onToppingSelect={setToppingsForType}
-                                ingredientType={30}
-                                multiSelect={false}
-                            />
-                        </div>
-                        <div>
-                            <p className="text-2xl mb-3">Jelly</p>
-                            <ToppingSelector
-                                globalToppings={selectedToppings}
-                                onToppingSelect={setToppingsForType}
-                                ingredientType={40}
-                                multiSelect={false}
-                            />
-                        </div>
-                        <div>
-                            <p className="text-2xl mb-3">Other Toppings</p>
-                            <ToppingSelector
-                                globalToppings={selectedToppings}
-                                onToppingSelect={setToppingsForType}
-                                ingredientType={100}
-                                multiSelect={true}
-                            />
-                        </div>
+                        {Array.from(globalToppingsGroups.keys()).map((key) => {
+                            if (key === "Toppings") {
+                                return (
+                                    <div key={key}>
+                                        <p className="text-2xl mb-3">{key}</p>
+                                        <ToppingSelector
+                                            globalToppings={selectedToppings}
+                                            onToppingSelect={setToppingsForType}
+                                            ingredientType={key}
+                                            multiSelect={true}
+                                        />
+                                    </div>
+                                );
+                            }
+                            if (key === "Size") {
+                                return (
+                                    <div key={key}>
+                                        <p className="text-2xl">Size</p>
+                                        <div className="flex space-x-4">
+                                            <div
+                                                className={`cursor-pointer duration-300 border rounded-full p-4 text-xl 
+                                                ${
+                                                    isHighContrast
+                                                        ? size === "small"
+                                                            ? "bg-black text-blue-500"
+                                                            : ""
+                                                        : size === "small"
+                                                          ? "bg-black text-white"
+                                                          : ""
+                                                }`}
+                                                onClick={() => setSize("small")}
+                                            >
+                                                S
+                                            </div>
+                                            <div
+                                                className={`cursor-pointer duration-300 border rounded-full p-4 text-xl 
+                                                 ${
+                                                     isHighContrast
+                                                         ? size === "medium"
+                                                             ? "bg-black text-blue-500"
+                                                             : ""
+                                                         : size === "medium"
+                                                           ? "bg-black text-white"
+                                                           : ""
+                                                 }`}
+                                                onClick={() =>
+                                                    setSize("medium")
+                                                }
+                                            >
+                                                M
+                                            </div>
+                                            <div
+                                                className={`cursor-pointer duration-300 border rounded-full p-4 text-xl  ${
+                                                    isHighContrast
+                                                        ? size === "large"
+                                                            ? "bg-black text-blue-500"
+                                                            : ""
+                                                        : size === "large"
+                                                          ? "bg-black text-white"
+                                                          : ""
+                                                }`}
+                                                onClick={() => setSize("large")}
+                                            >
+                                                L
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            }
+                            return (
+                                <div key={key}>
+                                    <p className="text-2xl mb-3">{key}</p>
+                                    <ToppingSelector
+                                        globalToppings={selectedToppings}
+                                        onToppingSelect={setToppingsForType}
+                                        ingredientType={key}
+                                        multiSelect={false}
+                                    />
+                                </div>
+                            );
+                        })}
                     </div>
                 </div>
                 <DialogFooter>
@@ -868,13 +652,14 @@ function MenuItemCard({
                             variant="default"
                             className="w-full"
                             onClick={() => {
-                                const allCustomizations = Object.values(
-                                    selectedToppings,
+                                const allCustomizations = Array.from(
+                                    selectedToppings.values(),
                                 ).flatMap((topArr) =>
                                     topArr.map((t) => ({
                                         id: t.id,
                                         name: t.name,
                                         cost: t.cost,
+                                        amount: 1,
                                     })),
                                 );
 
@@ -884,6 +669,7 @@ function MenuItemCard({
                                     ice,
                                     name: item.name,
                                     cost: item.cost,
+                                    scalars: scalarServings,
                                     customizations: allCustomizations,
                                 });
                             }}
@@ -918,7 +704,9 @@ function MenuItems({
     return (
         <div className="space-y-4">
             <p
-                className={`text-xl ${isHighContrast ? "text-white" : "text-black"}`}
+                className={`text-xl ${
+                    isHighContrast ? "text-white" : "text-black"
+                }`}
             >
                 {title}
             </p>
@@ -941,7 +729,13 @@ function MenuItems({
     );
 }
 
-function CartItemCard({ item }: { item: CartItem }) {
+function CartItemCard({
+    item,
+    onRemove,
+}: {
+    item: CartItem;
+    onRemove: () => void;
+}) {
     const { isHighContrast } = useAccessibility();
 
     return (
@@ -956,13 +750,240 @@ function CartItemCard({ item }: { item: CartItem }) {
                 {item.size.charAt(0).toUpperCase() + item.size.substring(1)}{" "}
                 {item.name}
             </p>
-            <p>Ice: {iceToPercentage(item.ice)}</p>
+            <p>{/*Ice: {iceToPercentage(item.ice)}*/}</p>
+            {item.scalars.map((value, index) => {
+                return (
+                    <p key={index}>
+                        {value.item.name}:{iceToPercentage(value.amount)}
+                    </p>
+                );
+            })}
             {item.customizations.map((c) => (
                 <p key={c.id}>{c.name}</p>
             ))}
             <Separator className="my-4" />
-            <p>Total: ${calculateSubtotal([item])}</p>
+            <div className="flex items-center justify-between">
+                <p>Total: ${calculateSubtotal([item])}</p>
+                <Button
+                    variant="outline"
+                    size="sm"
+                    className={
+                        isHighContrast ? "border-red-400 text-red-400" : ""
+                    }
+                    onClick={onRemove}
+                >
+                    Remove
+                </Button>
+            </div>
         </div>
+    );
+}
+
+interface NoReceipt {
+    kind: "none";
+}
+interface EmailReceipt {
+    kind: "email";
+    email: string;
+}
+
+interface TextReceipt {
+    kind: "text";
+    phoneNumber: string;
+}
+
+type ReceiptType = NoReceipt | EmailReceipt | TextReceipt;
+
+interface ReceiptSelectorProps {
+    onSubmit: (receiptType: ReceiptType) => void;
+}
+function ReceiptSelector({ onSubmit }: ReceiptSelectorProps) {
+    const [selected, setSelected] = useState<string>("none");
+    const [email, setEmail] = useState<string>("");
+    const [phoneNumber, setPhoneNumber] = useState<string>("");
+    const { isHighContrast, textMultipler } = useAccessibility();
+
+    return (
+        <Dialog>
+            <DialogTrigger asChild>
+                <Button
+                    className={`w-full ${
+                        isHighContrast ? "border-4 border-green-400" : ""
+                    }`}
+                >
+                    {EN_LABELS.checkout}
+                </Button>
+            </DialogTrigger>
+
+            <DialogContent
+                className={`max-h-[90vh] ${
+                    isHighContrast ? "text-white bg-black" : "text-black"
+                }`}
+            >
+                <DialogHeader>
+                    <DialogTitle className={`text-center text-2xl`}>
+                        {EN_LABELS.confirmOrder}
+                    </DialogTitle>
+                </DialogHeader>
+
+                <div>
+                    <FieldGroup>
+                        <FieldSet>
+                            <FieldLabel>Receipt</FieldLabel>
+                            <FieldDescription>
+                                Choose how you'd like your receipt
+                            </FieldDescription>
+                            <RadioGroup
+                                value={selected}
+                                onValueChange={setSelected}
+                            >
+                                <FieldLabel
+                                    htmlFor="no-receipt-selector"
+                                    className={`border ${
+                                        isHighContrast
+                                            ? "border-primary"
+                                            : "border-secondary"
+                                    } ${
+                                        isHighContrast
+                                            ? "has-data-[state=checked]:border-secondary"
+                                            : "has-data-[state=checked]:border-primary"
+                                    }`}
+                                >
+                                    <Field orientation="horizontal">
+                                        <RadioGroupItem
+                                            value="none"
+                                            id="no-receipt-selector"
+                                            className={
+                                                isHighContrast
+                                                    ? "data-[state=checked]:bg-white"
+                                                    : ""
+                                            }
+                                        />
+                                        <FieldTitle>No receipt</FieldTitle>
+                                    </Field>
+                                </FieldLabel>
+
+                                <FieldLabel
+                                    htmlFor="email-receipt-selector"
+                                    className={`border ${
+                                        isHighContrast
+                                            ? "border-primary"
+                                            : "border-secondary"
+                                    } ${
+                                        isHighContrast
+                                            ? "has-data-[state=checked]:border-secondary"
+                                            : "has-data-[state=checked]:border-primary"
+                                    }`}
+                                >
+                                    <Field orientation="horizontal">
+                                        <RadioGroupItem
+                                            value="email"
+                                            id="email-receipt-selector"
+                                            className={
+                                                isHighContrast
+                                                    ? "data-[state=checked]:bg-white"
+                                                    : ""
+                                            }
+                                        />
+                                        <FieldContent>
+                                            <FieldTitle>Email</FieldTitle>
+                                            <FieldDescription>
+                                                <Input
+                                                    type="email"
+                                                    onFocus={() =>
+                                                        setSelected("email")
+                                                    }
+                                                    value={email}
+                                                    onChange={(e) =>
+                                                        setEmail(e.target.value)
+                                                    }
+                                                />
+                                            </FieldDescription>
+                                        </FieldContent>
+                                    </Field>
+                                </FieldLabel>
+
+                                <FieldLabel
+                                    htmlFor="txtmsg-receipt-selector"
+                                    className={`border ${
+                                        isHighContrast
+                                            ? "border-primary"
+                                            : "border-secondary"
+                                    } ${
+                                        isHighContrast
+                                            ? "has-data-[state=checked]:border-secondary"
+                                            : "has-data-[state=checked]:border-primary"
+                                    }`}
+                                >
+                                    <Field orientation="horizontal">
+                                        <RadioGroupItem
+                                            value="text"
+                                            id="txtmsg-receipt-selector"
+                                            className={
+                                                isHighContrast
+                                                    ? "data-[state=checked]:bg-white"
+                                                    : ""
+                                            }
+                                        />
+                                        <FieldContent>
+                                            <FieldTitle>
+                                                Text Message
+                                            </FieldTitle>
+                                            <FieldDescription>
+                                                <Input
+                                                    type="tel"
+                                                    onFocus={() =>
+                                                        setSelected("text")
+                                                    }
+                                                    value={phoneNumber}
+                                                    onChange={(e) =>
+                                                        setPhoneNumber(
+                                                            e.target.value,
+                                                        )
+                                                    }
+                                                />
+                                            </FieldDescription>
+                                        </FieldContent>
+                                    </Field>
+                                </FieldLabel>
+                            </RadioGroup>
+                        </FieldSet>
+                    </FieldGroup>
+                </div>
+
+                <DialogFooter>
+                    <DialogClose asChild>
+                        <Button
+                            variant="default"
+                            className={`w-full  ${
+                                isHighContrast
+                                    ? "border-4 border-green-400"
+                                    : ""
+                            }`}
+                            onClick={() => {
+                                switch (selected) {
+                                    case "none":
+                                        onSubmit({ kind: "none" });
+                                        return;
+                                    case "email":
+                                        onSubmit({ kind: "email", email });
+                                        return;
+
+                                    case "text":
+                                        onSubmit({
+                                            kind: "text",
+                                            phoneNumber,
+                                        });
+                                        return;
+                                }
+                            }}
+                        >
+                            {EN_LABELS.yesPlaceOrder}
+                        </Button>
+                    </DialogClose>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     );
 }
 
@@ -973,6 +994,10 @@ function Cart({
     currency,
     setCurrency,
     formatPrice,
+    loyaltyPoints,
+    isLoggedIn,
+    userId,
+    setLoyaltyPoints,
 }: {
     items: CartItem[];
     setItems: React.Dispatch<React.SetStateAction<CartItem[]>>;
@@ -980,51 +1005,125 @@ function Cart({
     currency: CurrencyCode;
     setCurrency: React.Dispatch<React.SetStateAction<CurrencyCode>>;
     formatPrice: (amount: number) => string;
+    loyaltyPoints: number;
+    isLoggedIn: boolean;
+    userId: number | null;
+    setLoyaltyPoints: React.Dispatch<React.SetStateAction<number>>;
 }) {
     const { isHighContrast, textMultipler } = useAccessibility();
 
-    const subtotal = calculateSubtotal(items);
+    const [useLoyalty, setUseLoyalty] = useState(false);
+
+    // Current cart value before any discounts
+    const rawSubtotal = calculateSubtotal(items);
+
+    // Should we apply loyalty on this order?
+    const shouldApplyLoyalty =
+        isLoggedIn &&
+        useLoyalty &&
+        loyaltyPoints >= LOYALTY_POINTS_THRESHOLD &&
+        items.length > 0;
+
+    // 50 points → up to $5 off, but not below zero
+    const LOYALTY_DISCOUNT_VALUE = 5;
+
+    const loyaltyDiscount = shouldApplyLoyalty
+        ? Math.min(LOYALTY_DISCOUNT_VALUE, rawSubtotal)
+        : 0;
+
+    // Subtotal after loyalty discount
+    const subtotal = rawSubtotal - loyaltyDiscount;
+
+    // Tax and final total are computed on the discounted subtotal
     const tax = TAX_RATE * subtotal;
     const total = subtotal + tax;
 
-    function handleCheckout() {
-        fetch("/api/customer/order", {
+    const handleRemoveCartItem = (index: number) => {
+        setItems((prev) => prev.filter((_, i) => i !== index));
+    };
+    async function handleCheckout(receiptType: ReceiptType) {
+        const res = await fetch("/api/customer/order", {
             method: "POST",
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 drinks: items.map((i) => ({
                     id: i.id,
-                    customizations: i.customizations.map((i) => i.id),
-                    ice: i.ice, // Send ice servings (0-4)
+                    customizations: i.customizations.map((c) => c.id),
+                    ice: 0,
+                    scalars: i.scalars,
                 })),
                 employeeId: 1,
                 paymentMethod: "CARD",
+                receiptType,
+                userId,
+                useLoyalty,
             }),
         });
+
+        if (res.ok && isLoggedIn) {
+            const earnedPoints = Math.floor(subtotal);
+
+            setLoyaltyPoints((prev) => {
+                if (shouldApplyLoyalty) {
+                    // subtract 50 and add earned points
+                    return prev - LOYALTY_POINTS_THRESHOLD + earnedPoints;
+                } else {
+                    return prev + earnedPoints;
+                }
+            });
+        }
+
         setItems([]);
+        setUseLoyalty(false);
     }
 
     return (
         <div
-            className={`grid grid-rows-[1fr_8fr_1fr] min-h-0 h-[900] gap-4 ${isHighContrast ? "bg-black text-white border-8 border-yellow-200" : ""}`}
+            className={`grid grid-rows-[1fr_8fr_1fr] min-h-0 h-[850] gap-4 ${isHighContrast ? "bg-black text-white border-8 border-yellow-200" : ""}`}
         >
             <p
-                className={`text-xl mb-4 text-center ${isHighContrast ? "text-white" : "text-black"}`}
+                className={`text-xl mb-4 text-center ${
+                    isHighContrast ? "text-white" : "text-black"
+                }`}
             >
                 {labels.cart}
             </p>
-            <ScrollArea className="h-150">
+            <ScrollArea
+                className={`
+                    max-h-[500px] p-3 rounded-md shadow-sm
+                    ${
+                        isHighContrast
+                            ? "bg-black border-2 border-yellow-300"
+                            : "bg-white/70 border border-gray-300"
+                    }
+                `}
+            >
                 <div className="space-y-4">
-                    {items.map((i, idx) => (
+                    {items.length === 0 ? (
+                        // empty state
+                        <p className="text-center text-sm text-gray-500">
+                            Your cart is empty
+                        </p>
+                    ) : (
+                        // normal cart items
+                        items.map((i, idx) => (
+                            <CartItemCard
+                                key={idx}
+                                item={i}
+                                onRemove={() => handleRemoveCartItem(idx)}
+                            />
+                        ))
+                    )}
+                    {/* {items.map((i, idx) => (
                         <CartItemCard key={idx} item={i} />
-                    ))}
+                    ))} */}
                 </div>
             </ScrollArea>
 
             <div
-                className={`grid grid-rows-4 grid-cols-2 p-4 border rounded h-50 ${
+                className={`p-4 border rounded space-y-2 ${
                     textMultipler >= 1.75 ? "text-sm" : "text-md"
-                }
-                ${
+                } ${
                     isHighContrast
                         ? "bg-black text-white border-4 border-blue-500"
                         : "bg-white text-black border"
@@ -1033,8 +1132,15 @@ function Cart({
                 <div className="col-span-2 space-y-2">
                     <div className="flex justify-between text-sm">
                         <span>{labels.subtotal}</span>
-                        <span>{formatPrice(subtotal)}</span>
+                        <span>{formatPrice(rawSubtotal)}</span>
                     </div>
+
+                    {shouldApplyLoyalty && (
+                        <div className="flex justify-between text-sm text-green-600">
+                            <span>Loyalty discount</span>
+                            <span>-{formatPrice(loyaltyDiscount)}</span>
+                        </div>
+                    )}
 
                     <div className="flex justify-between text-sm">
                         <span>{labels.tax}</span>
@@ -1046,38 +1152,52 @@ function Cart({
                         <span>{formatPrice(total)}</span>
                     </div>
 
-                    <Dialog>
-                        <DialogTrigger asChild>
-                            {/* Removed col-span-2 from Button as it should be inside the column structure */}
-                            <Button
-                                className={`w-full ${isHighContrast ? "border-4 border-green-400" : ""}`}
-                            >
-                                {labels.checkout}
-                            </Button>
-                        </DialogTrigger>
-
-                        <DialogContent
-                            className={`max-h-[90vh] ${isHighContrast ? "text-white bg-black" : "text-black"}`}
+                    {isLoggedIn && (
+                        <div
+                            className={`mt-2 p-2 rounded border text-sm ${
+                                isHighContrast
+                                    ? "bg-black text-white border-blue-400"
+                                    : "bg-gray-50 text-black border-gray-300"
+                            }`}
                         >
-                            <DialogHeader>
-                                <DialogTitle className={`text-center text-2xl`}>
-                                    {labels.confirmOrder}
-                                </DialogTitle>
-                            </DialogHeader>
+                            <div className="flex justify-between items-center">
+                                <span>Loyalty points:</span>
+                                <span className="font-semibold">
+                                    {loyaltyPoints}
+                                </span>
+                            </div>
 
-                            <DialogFooter>
-                                <DialogClose asChild>
-                                    <Button
-                                        variant="default"
-                                        className={`w-full  ${isHighContrast ? "border-4 border-green-400" : ""}`}
-                                        onClick={handleCheckout}
-                                    >
-                                        {labels.yesPlaceOrder}
-                                    </Button>
-                                </DialogClose>
-                            </DialogFooter>
-                        </DialogContent>
-                    </Dialog>
+                            <Button
+                                variant={useLoyalty ? "default" : "outline"}
+                                className={`mt-2 w-full ${
+                                    isHighContrast && useLoyalty
+                                        ? "border-4 border-green-400"
+                                        : ""
+                                }`}
+                                disabled={
+                                    !items.length ||
+                                    loyaltyPoints < LOYALTY_POINTS_THRESHOLD
+                                }
+                                onClick={() => setUseLoyalty((prev) => !prev)}
+                            >
+                                {useLoyalty
+                                    ? "Using loyalty points on this order"
+                                    : loyaltyPoints >= LOYALTY_POINTS_THRESHOLD
+                                      ? "Use loyalty points on this order"
+                                      : `Earn ${
+                                            LOYALTY_POINTS_THRESHOLD -
+                                            loyaltyPoints
+                                        } more points to redeem`}
+                            </Button>
+
+                            <p className="mt-1 text-xs opacity-80">
+                                Loyalty will be applied at checkout.
+                            </p>
+                        </div>
+                    )}
+
+                    <ReceiptSelector onSubmit={handleCheckout} />
+
                     <select
                         className={`rounded border px-2 py-1 text-sm w-full ${
                             isHighContrast
@@ -1101,11 +1221,13 @@ function Cart({
     );
 }
 
-export default function CashierPage() {
+function CashierContent() {
     const [selectedCategory, setSelectedCategory] = useState("Fruit Tea");
     const [cartItems, setCartItems] = useState<CartItem[]>([]);
-    const { data: session } = useSession();
     const labels = EN_LABELS;
+
+    const [menuData, setMenuData] = useState<MenuData>(emptyMenuData);
+    const [menuDataReady, setMenuDataReady] = useState<boolean>(false);
 
     const translatedMenuData = menuData;
 
@@ -1121,8 +1243,26 @@ export default function CashierPage() {
         USD: 1,
     });
 
+    // single useSession call
+    const { data: session, status } = useSession();
+    const isLoggedIn = status === "authenticated";
+    const rawLoyalty = (session?.user as any)?.loyaltyPoints;
+
+    const [loyaltyPoints, setLoyaltyPoints] = useState(
+        rawLoyalty != null ? Number(rawLoyalty) : 0,
+    );
+
+    // If the session changes, sync state from it
     useEffect(() => {
-        if (currency === "USD") return; // If just USD no need to convert any conversions. 1 is okay.
+        if (rawLoyalty != null) {
+            setLoyaltyPoints(Number(rawLoyalty));
+        }
+    }, [rawLoyalty]);
+
+    const userId = (session?.user as any)?.id ?? null;
+
+    useEffect(() => {
+        if (currency === "USD") return;
 
         async function fetchRate() {
             const res = await fetch(`/api/currency?currency=${currency}`);
@@ -1137,31 +1277,87 @@ export default function CashierPage() {
         fetchRate();
     }, [currency]);
 
-    //console.log(cartItems);
-    //Sets default selection for customization options
-    const defaultCustomizations = {
-        Size: "Medium Cups",
-        Ice: "100%",
-        Boba: "None",
-        Jelly: "None",
-        Tea: "Black Tea",
-        Toppings: [],
+    const loadMenuData = async () => {
+        setMenuDataReady(false);
+        setMenuData({});
+        let menuTempData: MenuData = {};
+        console.log("loading menu");
+        const catRes = await fetch("api/cashier/categories", {
+            method: "GET",
+            headers: { "Content-Type": "application/json" },
+        });
+        if (!catRes.ok) {
+            throw new Error(`GET /api/cashier/categories ${catRes.status}`);
+        }
+        const cats: Category[] = await catRes.json();
+        for (let cat_idx = 0; cat_idx < cats.length; cat_idx++) {
+            const cat = cats[cat_idx];
+            const queryBody = {
+                id: cat.id,
+            };
+            const queryRes = await fetch("/api/cashier/menu_by_category", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(queryBody),
+            });
+            const items: MenuItem[] = await queryRes.json();
+            menuTempData = { ...menuTempData, [cat.name]: items };
+        }
+        setMenuData(menuTempData);
+
+        console.log("loading ingredients");
+        const ingrRes = await fetch("api/ingredient", {
+            method: "GET",
+            headers: { "Content-Type": "application/json" },
+        });
+        inventory = await ingrRes.json();
+
+        for (const item of inventory) {
+            console.log(
+                `id: ${item.id}, name: ${item.name}, stock: ${item.stock}, cost: ${item.cost}, type: ${item.ingredient_type}, group: ${item.ingredient_group}`,
+            );
+        }
+
+        // reset globals
+        scaleItems = [];
+        globalToppingsGroups = new Map<string, Ingredient[]>();
+
+        let groups: string[] = [];
+        const emptyIngredients: Ingredient[] = [];
+        scaleItems = [];
+        for (let i: number = 0; i < inventory.length; ++i) {
+            const group = inventory[i].ingredient_group;
+            if (group === "Scale" && !groups.includes(inventory[i].name)) {
+                scaleItems.push({
+                    name: inventory[i].name,
+                    id: inventory[i].id,
+                });
+                groups.push(inventory[i].name);
+                continue;
+            }
+            if (group === "Default") {
+                continue;
+            }
+            if (groups.includes(group)) {
+                continue;
+            }
+            globalToppingsGroups.set(group, emptyIngredients);
+            groups.push(group);
+        }
+
+        console.log(
+            globalToppingsGroups.forEach((value, key) => {
+                console.log(`key: ${key}, val: ${value}`);
+            }),
+        );
+        console.log(scaleItems);
+
+        setMenuDataReady(true);
     };
 
-    const placeholderItems: CartItem[] = [
-        {
-            id: 1,
-            name: "Mango Green Tea",
-            ice: 3,
-            size: "large",
-            cost: 6.5,
-            customizations: [
-                { id: 9, name: "Red Bean", cost: 0.75 },
-                { id: 12, name: "Pudding", cost: 0.75 },
-                { id: 13, name: "Herb Jelly", cost: 0.75 },
-            ],
-        },
-    ];
+    useEffect(() => {
+        loadMenuData();
+    }, []);
 
     const formatPrice = useCallback(
         (amount: number) => {
@@ -1176,7 +1372,7 @@ export default function CashierPage() {
         <div className="min-h-screen bg-[#ffddd233] font-sans dark:bg-black flex flex-col text-white">
             <TopNav subtitle={labels.kioskTitle} variant="kiosk" />
 
-            <div
+            {/* <div
                 className={`flex justify-end px-8 pt-4 gap-2 items-center ${
                     isHighContrast ? "bg-black" : ""
                 }`}
@@ -1184,42 +1380,89 @@ export default function CashierPage() {
                 <div className="inline-block">
                     <GoogleTranslate />
                 </div>
+            </div> */}
+            <div className="relative">
+                <div className="absolute top-4 right-8 z-50">
+                    <GoogleTranslate />
+                </div>
             </div>
 
             <div
-                className={`flex-1 px-6 py-4 ${isHighContrast ? "bg-black" : ""}`}
+                className={`flex-1 px-6 py-4 ${
+                    isHighContrast ? "bg-black" : ""
+                }`}
             >
-                <div className="mx-auto max-w-6xl grid grid-cols-[1.1fr_2fr_1.2fr] gap-6">
-                    <CategorySelector
-                        categories={Object.keys(menuData)}
-                        selectedCategory={selectedCategory}
-                        onSelectedCategoryChange={setSelectedCategory}
-                        title={labels.categories}
-                        categoryLabels={categoryLabels}
-                    />
+                {menuDataReady ? (
+                    <div className="mx-auto max-w-6xl grid grid-cols-[1.1fr_2fr_1.2fr] gap-6">
+                        <CategorySelector
+                            categories={Object.keys(menuData)}
+                            selectedCategory={selectedCategory}
+                            onSelectedCategoryChange={setSelectedCategory}
+                            title={labels.categories}
+                            categoryLabels={categoryLabels}
+                        />
 
-                    <MenuItems
-                        menuData={translatedMenuData}
-                        selectedCategory={selectedCategory}
-                        onItemOrder={(item) =>
-                            setCartItems([...cartItems, item])
-                        }
-                        title={labels.drinks}
-                        addToOrderLabel={labels.addToOrder}
-                        speak={speak}
-                    />
+                        <MenuItems
+                            menuData={translatedMenuData}
+                            selectedCategory={selectedCategory}
+                            onItemOrder={(item) =>
+                                setCartItems([...cartItems, item])
+                            }
+                            title={labels.drinks}
+                            addToOrderLabel={labels.addToOrder}
+                            speak={speak}
+                        />
+                        <Cart
+                            items={cartItems}
+                            setItems={setCartItems}
+                            labels={labels}
+                            currency={currency}
+                            setCurrency={setCurrency}
+                            formatPrice={formatPrice}
+                            loyaltyPoints={loyaltyPoints}
+                            isLoggedIn={isLoggedIn}
+                            userId={userId}
+                            setLoyaltyPoints={setLoyaltyPoints}
+                        />
+                    </div>
+                ) : (
+                    <div className="mx-auto max-w-6xl grid grid-cols-[1.1fr_2fr_1.2fr] gap-6">
+                        <CategorySelector
+                            categories={["loading"]}
+                            selectedCategory={selectedCategory}
+                            onSelectedCategoryChange={() =>
+                                console.log("bad touch")
+                            }
+                            title={labels.categories}
+                            categoryLabels={categoryLabels}
+                        />
 
-                    <Cart
-                        items={cartItems}
-                        setItems={setCartItems}
-                        labels={labels}
-                        currency={currency}
-                        setCurrency={setCurrency}
-                        formatPrice={formatPrice}
-                    />
-                </div>
-                <LogoutButton />
+                        <div></div>
+
+                        <Cart
+                            items={cartItems}
+                            setItems={setCartItems}
+                            labels={labels}
+                            currency={currency}
+                            setCurrency={setCurrency}
+                            formatPrice={formatPrice}
+                            loyaltyPoints={loyaltyPoints}
+                            isLoggedIn={isLoggedIn}
+                            userId={userId}
+                            setLoyaltyPoints={setLoyaltyPoints}
+                        />
+                    </div>
+                )}
+               <LogoutButton />
             </div>
         </div>
+    );
+}
+
+export default function CashierPage() {
+    return (
+        <SessionProvider>
+            <CashierContent />
+        </SessionProvider>
     );
 }

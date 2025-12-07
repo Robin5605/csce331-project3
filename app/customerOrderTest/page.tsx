@@ -43,6 +43,7 @@ import { useAccessibility } from "@/contexts/AccessibilityContext";
 import { useTextToSpeech } from "@/hooks/useTextToSpeech";
 import GoogleTranslate from "@/components/GoogleTranslate";
 import { useSession } from "next-auth/react";
+import LogoutButton from "@/components/LogoutButton";
 
 interface CartItem {
     id: number;
@@ -1217,7 +1218,9 @@ export default function CashierPage() {
                         formatPrice={formatPrice}
                     />
                 </div>
+            <LogoutButton />
             </div>
         </div>
+
     );
 }

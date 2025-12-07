@@ -3,9 +3,25 @@
 import { signOut } from "next-auth/react";
 
 export default function LogoutButton() {
+    const handleLogout = async () => {
+    await signOut({ redirect: false });
+
+    const iframe = document.createElement("iframe");
+    iframe.style.display = "none";
+    iframe.src = "https://accounts.google.com/Logout";
+
+    document.body.appendChild(iframe);
+
+    setTimeout(() => {
+        window.location.href = "/";
+    }, 800);
+    };
+
+
+
     return (
         <button
-            onClick={() => signOut({ callbackUrl: "/loginPage" })}
+            onClick={handleLogout}
             className="
         fixed bottom-6 right-6
         flex items-center gap-2

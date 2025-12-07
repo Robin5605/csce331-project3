@@ -42,7 +42,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useAccessibility } from "@/contexts/AccessibilityContext";
 import { useTextToSpeech } from "@/hooks/useTextToSpeech";
 import GoogleTranslate from "@/components/GoogleTranslate";
-import { useSession } from "next-auth/react";
 import LogoutButton from "@/components/LogoutButton";
 import { MenuItem, Category, Ingredient } from "@/lib/models";
 import { useSession, SessionProvider } from "next-auth/react";
@@ -91,8 +90,8 @@ type CurrencyCode = "USD" | "EUR" | "CAD" | "GBP";
 const CURRENCIES = [
     { code: "USD", label: "USD - $", symbol: "$" },
     { code: "EUR", label: "EUR - €", symbol: "€" },
-    { code: "CAD", label: "CAD - $", symbol: "$"},
-    { code: "GBP", label: "GBP - £", symbol: "£"},
+    { code: "CAD", label: "CAD - $", symbol: "$" },
+    { code: "GBP", label: "GBP - £", symbol: "£" },
 ];
 
 const CURRENCY_SYMBOLS: Record<CurrencyCode, string> = {
@@ -1499,7 +1498,7 @@ function CashierContent() {
                         />
                     </div>
                 )}
-               <LogoutButton />
+                <LogoutButton />
             </div>
         </div>
     );

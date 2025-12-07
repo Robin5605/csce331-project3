@@ -508,9 +508,9 @@ function MenuItemCard({
                                     <p className="text-2xl">{sItem.name}</p>
                                     <div className="flex space-x-4">
                                         {[0, 1, 2, 3, 4].map((servings) => {
-                                            const isSelected = 
-                                                scalarServings[index] != null 
-                                                && scalarServings[index]
+                                            const isSelected =
+                                                scalarServings[index] != null &&
+                                                scalarServings[index]
                                                     ?.amount === servings;
                                             return (
                                                 <div
@@ -727,7 +727,13 @@ function MenuItems({
     );
 }
 
-function CartItemCard({ item }: { item: CartItem }) {
+function CartItemCard({
+    item,
+    onRemove,
+}: {
+    item: CartItem;
+    onRemove: () => void;
+}) {
     const { isHighContrast } = useAccessibility();
 
     return (
@@ -754,7 +760,19 @@ function CartItemCard({ item }: { item: CartItem }) {
                 <p key={c.id}>{c.name}</p>
             ))}
             <Separator className="my-4" />
-            <p>Total: ${calculateSubtotal([item])}</p>
+            <div className="flex items-center justify-between">
+                <p>Total: ${calculateSubtotal([item])}</p>
+                <Button
+                    variant="outline"
+                    size="sm"
+                    className={
+                        isHighContrast ? "border-red-400 text-red-400" : ""
+                    }
+                    onClick={onRemove}
+                >
+                    Remove
+                </Button>
+            </div>
         </div>
     );
 }
@@ -1018,6 +1036,9 @@ function Cart({
     const tax = TAX_RATE * subtotal;
     const total = subtotal + tax;
 
+    const handleRemoveCartItem = (index: number) => {
+        setItems((prev) => prev.filter((_, i) => i !== index));
+    };
     async function handleCheckout(receiptType: ReceiptType) {
         const res = await fetch("/api/customer/order", {
             method: "POST",
@@ -1056,11 +1077,7 @@ function Cart({
 
     return (
         <div
-            className={`grid grid-rows-[1fr_8fr_1fr] min-h-0 h-[900] gap-4 ${
-                isHighContrast
-                    ? "bg-black text-white border-8 border-yellow-200"
-                    : ""
-            }`}
+            className={`grid grid-rows-[1fr_8fr_1fr] min-h-0 h-[850] gap-4 ${isHighContrast ? "bg-black text-white border-8 border-yellow-200" : ""}`}
         >
             <p
                 className={`text-xl mb-4 text-center ${
@@ -1069,12 +1086,35 @@ function Cart({
             >
                 {labels.cart}
             </p>
-
-            <ScrollArea className="max-h-[320px]">
+            <ScrollArea
+                className={`
+                    max-h-[320px] p-3 rounded-md shadow-sm
+                    ${
+                        isHighContrast
+                            ? "bg-black border-2 border-yellow-300"
+                            : "bg-white/70 border border-gray-300"
+                    }
+                `}
+            >
                 <div className="space-y-4">
-                    {items.map((i, idx) => (
+                    {items.length === 0 ? (
+                        // empty state
+                        <p className="text-center text-sm text-gray-500">
+                            Your cart is empty
+                        </p>
+                    ) : (
+                        // normal cart items
+                        items.map((i, idx) => (
+                            <CartItemCard
+                                key={idx}
+                                item={i}
+                                onRemove={() => handleRemoveCartItem(idx)}
+                            />
+                        ))
+                    )}
+                    {/* {items.map((i, idx) => (
                         <CartItemCard key={idx} item={i} />
-                    ))}
+                    ))} */}
                 </div>
             </ScrollArea>
 
@@ -1330,12 +1370,17 @@ function CashierContent() {
         <div className="min-h-screen bg-[#ffddd233] font-sans dark:bg-black flex flex-col text-white">
             <TopNav subtitle={labels.kioskTitle} variant="kiosk" />
 
-            <div
+            {/* <div
                 className={`flex justify-end px-8 pt-4 gap-2 items-center ${
                     isHighContrast ? "bg-black" : ""
                 }`}
             >
                 <div className="inline-block">
+                    <GoogleTranslate />
+                </div>
+            </div> */}
+            <div className="relative">
+                <div className="absolute top-4 right-8 z-50">
                     <GoogleTranslate />
                 </div>
             </div>

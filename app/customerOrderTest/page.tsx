@@ -1088,7 +1088,7 @@ function Cart({
             </p>
             <ScrollArea
                 className={`
-                    max-h-[320px] p-3 rounded-md shadow-sm
+                    max-h-[500px] p-3 rounded-md shadow-sm
                     ${
                         isHighContrast
                             ? "bg-black border-2 border-yellow-300"
@@ -1119,7 +1119,7 @@ function Cart({
             </ScrollArea>
 
             <div
-                className={`grid grid-rows-4 grid-cols-2 p-4 border rounded ${
+                className={`p-4 border rounded space-y-2 ${
                     textMultipler >= 1.75 ? "text-sm" : "text-md"
                 } ${
                     isHighContrast

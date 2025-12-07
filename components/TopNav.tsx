@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 
-type TopNavVariant = "manager" | "cashier" | "kiosk";
+type TopNavVariant = "manager" | "cashier" | "kiosk" | "login";
 
 interface TopNavProps {
     subtitle?: string;
@@ -16,6 +16,7 @@ const variantLabel: Record<TopNavVariant, string> = {
     manager: "Manager Dashboard",
     cashier: "Cashier POS",
     kiosk: "Self-Service Kiosk",
+    login: "Login Page",
 };
 
 export default function TopNav({

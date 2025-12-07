@@ -709,7 +709,7 @@ export async function createOrder({
     userId,
     useLoyalty,
 }: CreateOrder) {
-    ensureConnected();
+    await ensureConnected();
     try {
         await client.query("BEGIN");
 
@@ -827,11 +827,12 @@ export async function createOrder({
 
             await client.query(
                 `UPDATE users
-                 SET loyalty_points = $1
-                 WHERE id = $2`,
+                SET loyalty_points = $1
+                WHERE id = $2`,
                 [newPoints, userId],
             );
         }
+
 
         await client.query("COMMIT");
     } catch (e) {

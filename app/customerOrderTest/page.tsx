@@ -975,6 +975,7 @@ function Cart({
     formatPrice,
     loyaltyPoints,
     isLoggedIn,
+    userId,
 }: {
     items: CartItem[];
     setItems: React.Dispatch<React.SetStateAction<CartItem[]>>;
@@ -984,18 +985,40 @@ function Cart({
     formatPrice: (amount: number) => string;
     loyaltyPoints: number;
     isLoggedIn: boolean;
+    userId: number | null;
 }) {
     const { isHighContrast, textMultipler } = useAccessibility();
 
     const [useLoyalty, setUseLoyalty] = useState(false);
 
-    const subtotal = calculateSubtotal(items);
+    // Current cart value before any discounts
+    const rawSubtotal = calculateSubtotal(items);
+
+    // Should we apply loyalty on this order?
+    const shouldApplyLoyalty =
+        isLoggedIn &&
+        useLoyalty &&
+        loyaltyPoints >= LOYALTY_POINTS_THRESHOLD &&
+        items.length > 0;
+
+    // 50 points → up to $5 off, but not below zero
+    const LOYALTY_DISCOUNT_VALUE = 5;
+
+    const loyaltyDiscount = shouldApplyLoyalty
+        ? Math.min(LOYALTY_DISCOUNT_VALUE, rawSubtotal)
+        : 0;
+
+    // Subtotal after loyalty discount
+    const subtotal = rawSubtotal - loyaltyDiscount;
+
+    // Tax and final total are computed on the discounted subtotal
     const tax = TAX_RATE * subtotal;
     const total = subtotal + tax;
 
     function handleCheckout(receiptType: ReceiptType) {
         fetch("/api/customer/order", {
             method: "POST",
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 drinks: items.map((i) => ({
                     id: i.id,
@@ -1006,13 +1029,15 @@ function Cart({
                 employeeId: 1,
                 paymentMethod: "CARD",
                 receiptType,
-                // TODO: send useLoyalty + user id when backend is ready
-                // useLoyalty,
+                userId,       // NEW
+                useLoyalty,   // NEW
             }),
         });
+
         setItems([]);
         setUseLoyalty(false);
     }
+
 
     return (
         <div
@@ -1050,8 +1075,15 @@ function Cart({
                 <div className="col-span-2 space-y-2">
                     <div className="flex justify-between text-sm">
                         <span>{labels.subtotal}</span>
-                        <span>{formatPrice(subtotal)}</span>
+                        <span>{formatPrice(rawSubtotal)}</span>
                     </div>
+
+                    {shouldApplyLoyalty && (
+                        <div className="flex justify-between text-sm text-green-600">
+                            <span>Loyalty discount</span>
+                            <span>-{formatPrice(loyaltyDiscount)}</span>
+                        </div>
+                    )}
 
                     <div className="flex justify-between text-sm">
                         <span>{labels.tax}</span>
@@ -1062,6 +1094,7 @@ function Cart({
                         <span>{labels.total}</span>
                         <span>{formatPrice(total)}</span>
                     </div>
+
 
                     {isLoggedIn && (
                         <div
@@ -1159,6 +1192,8 @@ function CashierContent() {
     const isLoggedIn = status === "authenticated";
     const rawLoyalty = (session?.user as any)?.loyaltyPoints;
     const loyaltyPoints = rawLoyalty != null ? Number(rawLoyalty) : 0;
+
+    const userId = (session?.user as any)?.id ?? null;
 
     useEffect(() => {
         if (currency === "USD") return;
@@ -1316,7 +1351,9 @@ function CashierContent() {
                             formatPrice={formatPrice}
                             loyaltyPoints={loyaltyPoints}
                             isLoggedIn={isLoggedIn}
+                            userId={userId}
                         />
+
                     </div>
                 ) : (
                     <div className="mx-auto max-w-6xl grid grid-cols-[1.1fr_2fr_1.2fr] gap-6">
@@ -1341,7 +1378,9 @@ function CashierContent() {
                             formatPrice={formatPrice}
                             loyaltyPoints={loyaltyPoints}
                             isLoggedIn={isLoggedIn}
+                            userId={userId}
                         />
+
                     </div>
                 )}
             </div>

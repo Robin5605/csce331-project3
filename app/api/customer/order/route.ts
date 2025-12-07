@@ -50,7 +50,6 @@ async function buildOrderSummary(order: CreateOrder): Promise<string> {
 async function sendOrderConfirmationEmail(orderData: CreateOrder, to: string) {
     // In dev, or if no key, just log and skip actual sending
     if (
-        process.env.NODE_ENV !== "production" ||
         !process.env.SENDGRID_API_KEY
     ) {
         console.log("[Email] Skipping SendGrid send (dev or no API key).");
@@ -89,14 +88,14 @@ export async function POST(req: Request) {
 
         const receiptType = json.receiptType as ReceiptType | undefined;
 
-        // Strip receiptType out and build CreateOrder
         const orderData: CreateOrder = {
             drinks: json.drinks,
             employeeId: json.employeeId,
             paymentMethod: json.paymentMethod,
+            userId: json.userId ?? null,
+            useLoyalty: Boolean(json.useLoyalty),
         };
 
-        // Create order in DB
         await createOrder(orderData);
         console.log("Successfully created order");
 

@@ -42,6 +42,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useAccessibility } from "@/contexts/AccessibilityContext";
 import { useTextToSpeech } from "@/hooks/useTextToSpeech";
 import GoogleTranslate from "@/components/GoogleTranslate";
+import { useSession } from "next-auth/react";
 
 interface CartItem {
     id: number;
@@ -1102,7 +1103,7 @@ function Cart({
 export default function CashierPage() {
     const [selectedCategory, setSelectedCategory] = useState("Fruit Tea");
     const [cartItems, setCartItems] = useState<CartItem[]>([]);
-
+    const { data: session } = useSession();
     const labels = EN_LABELS;
 
     const translatedMenuData = menuData;

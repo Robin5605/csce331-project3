@@ -1018,42 +1018,40 @@ function Cart({
     const total = subtotal + tax;
 
     async function handleCheckout(receiptType: ReceiptType) {
-    const res = await fetch("/api/customer/order", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            drinks: items.map((i) => ({
-                id: i.id,
-                customizations: i.customizations.map((c) => c.id),
-                ice: 0,
-                scalars: i.scalars,
-            })),
-            employeeId: 1,
-            paymentMethod: "CARD",
-            receiptType,
-            userId,
-            useLoyalty,
-        }),
-    });
-
-    if (res.ok && isLoggedIn) {
-        const earnedPoints = Math.floor(subtotal); 
-
-        setLoyaltyPoints((prev) => {
-            if (shouldApplyLoyalty) {
-                // subtract 50 and add earned points
-                return prev - LOYALTY_POINTS_THRESHOLD + earnedPoints;
-            } else {
-                return prev + earnedPoints;
-            }
+        const res = await fetch("/api/customer/order", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                drinks: items.map((i) => ({
+                    id: i.id,
+                    customizations: i.customizations.map((c) => c.id),
+                    ice: 0,
+                    scalars: i.scalars,
+                })),
+                employeeId: 1,
+                paymentMethod: "CARD",
+                receiptType,
+                userId,
+                useLoyalty,
+            }),
         });
+
+        if (res.ok && isLoggedIn) {
+            const earnedPoints = Math.floor(subtotal);
+
+            setLoyaltyPoints((prev) => {
+                if (shouldApplyLoyalty) {
+                    // subtract 50 and add earned points
+                    return prev - LOYALTY_POINTS_THRESHOLD + earnedPoints;
+                } else {
+                    return prev + earnedPoints;
+                }
+            });
+        }
+
+        setItems([]);
+        setUseLoyalty(false);
     }
-
-    setItems([]);
-    setUseLoyalty(false);
-}
-
-
 
     return (
         <div
@@ -1110,7 +1108,6 @@ function Cart({
                         <span>{labels.total}</span>
                         <span>{formatPrice(total)}</span>
                     </div>
-
 
                     {isLoggedIn && (
                         <div
@@ -1380,8 +1377,6 @@ function CashierContent() {
                             userId={userId}
                             setLoyaltyPoints={setLoyaltyPoints}
                         />
-
-
                     </div>
                 ) : (
                     <div className="mx-auto max-w-6xl grid grid-cols-[1.1fr_2fr_1.2fr] gap-6">
@@ -1409,8 +1404,6 @@ function CashierContent() {
                             userId={userId}
                             setLoyaltyPoints={setLoyaltyPoints}
                         />
-
-
                     </div>
                 )}
             </div>

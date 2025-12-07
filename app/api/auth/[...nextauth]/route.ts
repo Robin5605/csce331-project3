@@ -1,4 +1,4 @@
-import NextAuth , {type AuthOptions} from "next-auth";
+import NextAuth, { type AuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { upsertUserByEmail } from "@/lib/db";
@@ -47,7 +47,6 @@ export const authOptions: AuthOptions = {
     callbacks: {
         async jwt({ token, user, account }) {
             if (user) {
-
                 if (account?.provider === "google" && user?.email) {
                     // insert the user into the users table with their email.
                     const dbUser = await upsertUserByEmail(user.email);
@@ -70,7 +69,8 @@ export const authOptions: AuthOptions = {
             if (token.email) {
                 session.user.email = token.email as string;
             }
-            (session.user as any).loyaltyPoints = (token as any).loyaltyPoints ?? 0;
+            (session.user as any).loyaltyPoints =
+                (token as any).loyaltyPoints ?? 0;
 
             return session;
         },
@@ -91,8 +91,7 @@ export const authOptions: AuthOptions = {
             return baseUrl;
         },
     },
-}
-
+};
 
 const handler = NextAuth(authOptions);
 

@@ -49,9 +49,7 @@ async function buildOrderSummary(order: CreateOrder): Promise<string> {
 
 async function sendOrderConfirmationEmail(orderData: CreateOrder, to: string) {
     // In dev, or if no key, just log and skip actual sending
-    if (
-        !process.env.SENDGRID_API_KEY
-    ) {
+    if (!process.env.SENDGRID_API_KEY) {
         console.log("[Email] Skipping SendGrid send (dev or no API key).");
         console.log("[Email] Would send to:", to);
         console.log(await buildOrderSummary(orderData));

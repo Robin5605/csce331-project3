@@ -683,8 +683,8 @@ export interface CreateOrder {
     }[];
     employeeId: number;
     paymentMethod: string;
-    userId ?: number | null;
-    useLoyalty ?: boolean;
+    userId?: number | null;
+    useLoyalty?: boolean;
 }
 
 const TAX_RATE = parseFloat(process.env.NEXT_PUBLIC_TAX_RATE ?? "0.0825");
@@ -713,7 +713,7 @@ export async function createOrder({
     try {
         await client.query("BEGIN");
 
-        // Look up Ice ingredient ID once per order 
+        // Look up Ice ingredient ID once per order
         const iceIngredientId = await getIngredientByName(ICE_INGREDIENT_NAME);
         if (!iceIngredientId) {
             throw new Error(
@@ -833,7 +833,6 @@ export async function createOrder({
             );
         }
 
-
         await client.query("COMMIT");
     } catch (e) {
         await client.query("ROLLBACK");
@@ -878,8 +877,7 @@ export async function getManyIngredientsByIds(
     }));
 }
 
-
-// insert email into users table. Also, returns all details of even loyalty points for that user. 
+// insert email into users table. Also, returns all details of even loyalty points for that user.
 export async function upsertUserByEmail(email: string) {
     ensureConnected();
 

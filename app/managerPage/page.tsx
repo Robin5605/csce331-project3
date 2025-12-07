@@ -7,6 +7,7 @@ import ReportsPage from "@/app/ReportsPage/page";
 import XZReports from "@/app/x_and_z_reports/page";
 import KitchenPage from "@/app//KitchenPage/page";
 import TopNav from "@/components/TopNav";
+import LogoutButton from "@/components/LogoutButton";
 
 export default function ManagerPage() {
     return (
@@ -14,7 +15,7 @@ export default function ManagerPage() {
             <TopNav subtitle="Manager Dashboard" />
 
             <h1 className="text-3xl font-bold mb-6">Manager Dashboard</h1>
-            
+
             <Tabs defaultValue="cashier" className="w-full">
                 {/* ───── TAB HEADERS ───── */}
                 <TabsList className="grid grid-cols-6 w-full">
@@ -54,6 +55,7 @@ export default function ManagerPage() {
                     <KitchenPage />
                 </TabsContent>
             </Tabs>
+            <LogoutButton />
         </div>
     );
 }

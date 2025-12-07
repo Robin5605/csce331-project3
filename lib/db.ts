@@ -387,7 +387,7 @@ export async function updateEmployee(
 }
 
 export async function fetch_categories(): Promise<Category[]> {
-    await ensureConnected(); 
+    await ensureConnected();
     const { rows } = await client.query<Category>(
         `SELECT id, name, stock FROM categories ORDER BY id`,
     );

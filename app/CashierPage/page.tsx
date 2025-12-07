@@ -4,6 +4,7 @@ import { ReactNode, useState, JSX, useMemo, useEffect } from "react";
 import Image from "next/image";
 import IdleLogout from "@/components/idleLogout";
 import TopNav from "@/components/TopNav";
+import LogoutButton from "@/components/LogoutButton";
 
 import ItemCard from "../../components/ItemCard";
 import {
@@ -875,6 +876,8 @@ export default function CashierPage() {
                         </button>
                     </div>
                 </aside>
+
+                <LogoutButton />
             </div>
         </div>
     );

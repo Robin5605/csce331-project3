@@ -1,5 +1,5 @@
 // GET FUNCTION TO GET LATEST EXCHANGE RATE FOR PASSED IN CURRENCY
-export async function GET(request: Request){
+export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const currency = searchParams.get("currency") || "USD";
 

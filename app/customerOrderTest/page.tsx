@@ -508,9 +508,9 @@ function MenuItemCard({
                                     <p className="text-2xl">{sItem.name}</p>
                                     <div className="flex space-x-4">
                                         {[0, 1, 2, 3, 4].map((servings) => {
-                                            const isSelected = 
-                                                scalarServings[index] != null 
-                                                && scalarServings[index]
+                                            const isSelected =
+                                                scalarServings[index] != null &&
+                                                scalarServings[index]
                                                     ?.amount === servings;
                                             return (
                                                 <div
@@ -727,7 +727,13 @@ function MenuItems({
     );
 }
 
-function CartItemCard({ item, onRemove }: { item: CartItem; onRemove: () => void; }) {
+function CartItemCard({
+    item,
+    onRemove,
+}: {
+    item: CartItem;
+    onRemove: () => void;
+}) {
     const { isHighContrast } = useAccessibility();
 
     return (
@@ -759,7 +765,9 @@ function CartItemCard({ item, onRemove }: { item: CartItem; onRemove: () => void
                 <Button
                     variant="outline"
                     size="sm"
-                    className={isHighContrast ? "border-red-400 text-red-400" : ""}
+                    className={
+                        isHighContrast ? "border-red-400 text-red-400" : ""
+                    }
                     onClick={onRemove}
                 >
                     Remove
@@ -1081,9 +1089,10 @@ function Cart({
             <ScrollArea
                 className={`
                     max-h-[320px] p-3 rounded-md shadow-sm
-                    ${isHighContrast
-                        ? "bg-black border-2 border-yellow-300"
-                        : "bg-white/70 border border-gray-300"
+                    ${
+                        isHighContrast
+                            ? "bg-black border-2 border-yellow-300"
+                            : "bg-white/70 border border-gray-300"
                     }
                 `}
             >
@@ -1096,7 +1105,11 @@ function Cart({
                     ) : (
                         // normal cart items
                         items.map((i, idx) => (
-                            <CartItemCard key={idx} item={i} onRemove={() => handleRemoveCartItem(idx)}/>
+                            <CartItemCard
+                                key={idx}
+                                item={i}
+                                onRemove={() => handleRemoveCartItem(idx)}
+                            />
                         ))
                     )}
                     {/* {items.map((i, idx) => (

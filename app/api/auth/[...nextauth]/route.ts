@@ -1,8 +1,9 @@
-import NextAuth from "next-auth";
+import NextAuth, { type AuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
+import { upsertUserByEmail } from "@/lib/db";
 
-const handler = NextAuth({
+export const authOptions: AuthOptions = {
     providers: [
         GoogleProvider({
             clientId: process.env.GOOGLE_CLIENT_ID!,
@@ -49,25 +50,32 @@ const handler = NextAuth({
                 token.provider = account.provider;
             }
             if (user) {
-                token.id = user.id as string;
+                if (account?.provider === "google" && user?.email) {
+                    // insert the user into the users table with their email.
+                    const dbUser = await upsertUserByEmail(user.email);
 
-                if (account?.provider === "credentials") {
-                    token.role = user.role;
-                    token.email = null;
-                    token.name = null;
-                } else if (account?.provider === "google") {
+                    token.id = dbUser.id;
+                    token.email = dbUser.email;
                     token.role = "customer";
-                    token.email = user.email || null;
-                    token.name = user.name || null;
+                    (token as any).loyaltyPoints = dbUser.loyalty_points;
+                } else {
+                    token.id = user.id as string;
+                    token.role = (user as any).role ?? "customer";
                 }
             }
             return token;
         },
 
         async session({ session, token }) {
-            session.user.id = token.id as string;
+            session.user.id = token.id as any;
             session.user.role = token.role as any;
             session.user.provider = token.provider as string;
+            if (token.email) {
+                session.user.email = token.email as string;
+            }
+            (session.user as any).loyaltyPoints =
+                (token as any).loyaltyPoints ?? 0;
+
             return session;
         },
 
@@ -87,6 +95,8 @@ const handler = NextAuth({
             return baseUrl;
         },
     },
-});
+};
+
+const handler = NextAuth(authOptions);
 
 export { handler as GET, handler as POST };

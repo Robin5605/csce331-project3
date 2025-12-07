@@ -155,7 +155,7 @@ export async function populate_ingredient_management_table(): Promise<
     await ensureConnected();
     const { rows } = await client.query<Ingredient>(
         `
-    SELECT id, name, stock, cost::float8 AS cost, ingredient_type
+    SELECT id, name, stock, cost::float8 AS cost, ingredient_type, ingredient_group
     FROM ingredients
     ORDER BY id
     `,
@@ -247,6 +247,7 @@ export async function update_ingredient_inventory(
     amount: number,
     ingredient_id: number,
 ): Promise<void> {
+    console.log(`id: ${ingredient_id} : num: ${amount}`);
     await ensureConnected();
     await client.query(
         `
@@ -672,9 +673,18 @@ export interface CreateOrder {
         id: number;
         customizations: number[];
         ice?: number; // Ice servings (0-4), optional for backward compatibility
+        scalars?: {
+            item: {
+                name: string;
+                id: number;
+            };
+            amount: number;
+        }[];
     }[];
     employeeId: number;
     paymentMethod: string;
+    userId?: number | null;
+    useLoyalty?: boolean;
 }
 
 const TAX_RATE = parseFloat(process.env.NEXT_PUBLIC_TAX_RATE ?? "0.0825");
@@ -696,12 +706,14 @@ export async function createOrder({
     drinks,
     employeeId,
     paymentMethod,
+    userId,
+    useLoyalty,
 }: CreateOrder) {
-    ensureConnected();
+    await ensureConnected();
     try {
         await client.query("BEGIN");
 
-        // Look up Ice ingredient ID once per order (cache it)
+        // Look up Ice ingredient ID once per order
         const iceIngredientId = await getIngredientByName(ICE_INGREDIENT_NAME);
         if (!iceIngredientId) {
             throw new Error(
@@ -709,7 +721,8 @@ export async function createOrder({
             );
         }
 
-        let total = 0;
+        // 1) Compute subtotal (pre-tax, before discounts)
+        let subtotal = 0;
         console.log(drinks);
         for (const drink of drinks) {
             const drinkCost = Number(
@@ -725,17 +738,40 @@ export async function createOrder({
                     drink.customizations,
                 ])
                 .then((res) => res.rows[0].sum)
-                .then(Number);
+                .then((n) => (n == null ? 0 : Number(n)));
 
-            total += drinkCost + customizationsCost;
+            subtotal += drinkCost + customizationsCost;
         }
 
-        total += total * TAX_RATE;
+        // Loyalty: fetch current points and decide discount
+        let existingPoints = 0;
+        let pointsToDeduct = 0;
+        let discount = 0;
+
+        if (userId != null) {
+            const res = await client.query(
+                `SELECT loyalty_points FROM users WHERE id = $1 FOR UPDATE`,
+                [userId],
+            );
+            existingPoints = Number(res.rows[0]?.loyalty_points ?? 0);
+
+            if (useLoyalty && existingPoints >= 50) {
+                discount = Math.min(5, subtotal);
+                pointsToDeduct = 50;
+                subtotal -= discount;
+            }
+        }
+
+        // Tax + final total, after discount
+        const tax = subtotal * TAX_RATE;
+        const total = subtotal + tax;
 
         const orderId = (
             await client.query(
-                `INSERT INTO orders (cost, employee_id, payment_method) VALUES ($1, $2, $3) RETURNING id`,
-                [total, employeeId, paymentMethod],
+                `INSERT INTO orders (cost, employee_id, payment_method, user_id) 
+                 VALUES ($1, $2, $3, $4) 
+                 RETURNING id`,
+                [total, employeeId, paymentMethod, userId ?? null],
             )
         ).rows[0].id as number;
 
@@ -747,23 +783,54 @@ export async function createOrder({
                 )
             ).rows[0].id as number;
 
-            // Insert customizations (toppings, etc.)
+            await update_menu_inventory(1, drink.id);
+
+            // Insert customizations
             if (drink.customizations && drink.customizations.length > 0) {
                 await client.query(
-                    `INSERT INTO drinks_ingredients (drink_id, ingredient_id, servings) SELECT $1, unnest($2::int[]), 1`,
+                    `INSERT INTO drinks_ingredients (drink_id, ingredient_id, servings) 
+                     SELECT $1, unnest($2::int[]), 1`,
                     [drinksOrdersID, drink.customizations],
                 );
+                await drink.customizations.forEach(async (value) => {
+                    await update_ingredient_inventory(1, value);
+                });
+            }
+
+            //insert scalar values like ice and sugar
+            const scalars = drink.scalars ?? [];
+            console.log(`scalars: ${drink.scalars}`);
+            for (const scale of scalars) {
+                if (scale.amount < 1) continue;
+                await client.query(
+                    `INSERT INTO drinks_ingredients (drink_id, ingredient_id, servings) SELECT $1, $2, $3`,
+                    [drinksOrdersID, scale.item.id, scale.amount],
+                );
+                await update_ingredient_inventory(scale.amount, scale.item.id);
             }
 
             // Insert ice servings if provided and > 0
-            const iceServings = drink.ice ?? 0;
-            if (iceServings > 0) {
-                await insert_into_drinks_ingredients_table(
-                    drinksOrdersID,
-                    iceIngredientId,
-                    iceServings,
-                );
-            }
+            //const iceServings = drink.ice ?? 0;
+            //if (iceServings > 0) {
+            //    await insert_into_drinks_ingredients_table(
+            //        drinksOrdersID,
+            //        iceIngredientId,
+            //        iceServings,
+            //    );
+            //}
+        }
+
+        // Update loyalty points once per order
+        if (userId != null) {
+            const earnedPoints = Math.floor(subtotal);
+            const newPoints = existingPoints - pointsToDeduct + earnedPoints;
+
+            await client.query(
+                `UPDATE users
+                SET loyalty_points = $1
+                WHERE id = $2`,
+                [newPoints, userId],
+            );
         }
 
         await client.query("COMMIT");
@@ -771,4 +838,57 @@ export async function createOrder({
         await client.query("ROLLBACK");
         throw e;
     }
+}
+
+export async function getMenuItemById(drinkId: number): Promise<MenuItem> {
+    const res = await client.query(`SELECT * FROM menu WHERE id = $1`, [
+        drinkId,
+    ]);
+    if (res.rows.length > 0) {
+        const row = res.rows[0];
+        return {
+            id: Number(row.id),
+            name: row.name,
+            category_id: row.category_id ? Number(row.category_id) : null,
+            stock: Number(row.stock),
+            cost: Number(row.cost),
+            image_url: row.image_url,
+        };
+    } else {
+        throw `Unknown drink with ID ${drinkId}`;
+    }
+}
+
+export async function getManyIngredientsByIds(
+    ids: number[],
+): Promise<Ingredient[]> {
+    const res = await client.query(
+        `SELECT * FROM ingredients WHERE id = ANY($1)`,
+        [ids],
+    );
+
+    return res.rows.map((row) => ({
+        id: Number(row.id),
+        name: row.name,
+        stock: Number(row.stock),
+        cost: Number(row.cost),
+        ingredient_type: Number(row.ingredient_type),
+        ingredient_group: String(row.ingredient_group),
+    }));
+}
+
+// insert email into users table. Also, returns all details of even loyalty points for that user.
+export async function upsertUserByEmail(email: string) {
+    ensureConnected();
+
+    const query = `
+        INSERT INTO users (email) 
+        VALUES ($1)
+        ON CONFLICT (email) DO UPDATE SET email = EXCLUDED.email
+        RETURNING id, email, loyalty_points;
+    `;
+
+    const { rows } = await client.query(query, [email]);
+
+    return rows[0];
 }

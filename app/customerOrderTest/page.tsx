@@ -43,7 +43,7 @@ import { useAccessibility } from "@/contexts/AccessibilityContext";
 import { useTextToSpeech } from "@/hooks/useTextToSpeech";
 import GoogleTranslate from "@/components/GoogleTranslate";
 import { MenuItem, Category, Ingredient } from "@/lib/models";
-import { useSession } from "next-auth/react";
+import { useSession, SessionProvider } from "next-auth/react";
 import {
     Field,
     FieldContent,
@@ -145,6 +145,7 @@ let globalToppingsGroups: Map<string, Ingredient[]> = new Map<
 let scaleItems: { name: string; id: number }[] = [];
 
 const TAX_RATE = parseFloat(process.env.NEXT_PUBLIC_TAX_RATE ?? "0.0825");
+const LOYALTY_POINTS_THRESHOLD = 50;
 
 const findInventoryCost = (name: string) => {
     const item = inventory.find(
@@ -973,6 +974,10 @@ function Cart({
     currency,
     setCurrency,
     formatPrice,
+    loyaltyPoints,
+    isLoggedIn,
+    userId,
+    setLoyaltyPoints,
 }: {
     items: CartItem[];
     setItems: React.Dispatch<React.SetStateAction<CartItem[]>>;
@@ -980,29 +985,73 @@ function Cart({
     currency: CurrencyCode;
     setCurrency: React.Dispatch<React.SetStateAction<CurrencyCode>>;
     formatPrice: (amount: number) => string;
+    loyaltyPoints: number;
+    isLoggedIn: boolean;
+    userId: number | null;
+    setLoyaltyPoints: React.Dispatch<React.SetStateAction<number>>;
 }) {
     const { isHighContrast, textMultipler } = useAccessibility();
 
-    const subtotal = calculateSubtotal(items);
+    const [useLoyalty, setUseLoyalty] = useState(false);
+
+    // Current cart value before any discounts
+    const rawSubtotal = calculateSubtotal(items);
+
+    // Should we apply loyalty on this order?
+    const shouldApplyLoyalty =
+        isLoggedIn &&
+        useLoyalty &&
+        loyaltyPoints >= LOYALTY_POINTS_THRESHOLD &&
+        items.length > 0;
+
+    // 50 points → up to $5 off, but not below zero
+    const LOYALTY_DISCOUNT_VALUE = 5;
+
+    const loyaltyDiscount = shouldApplyLoyalty
+        ? Math.min(LOYALTY_DISCOUNT_VALUE, rawSubtotal)
+        : 0;
+
+    // Subtotal after loyalty discount
+    const subtotal = rawSubtotal - loyaltyDiscount;
+
+    // Tax and final total are computed on the discounted subtotal
     const tax = TAX_RATE * subtotal;
     const total = subtotal + tax;
 
-    function handleCheckout(receiptType: ReceiptType) {
-        fetch("/api/customer/order", {
+    async function handleCheckout(receiptType: ReceiptType) {
+        const res = await fetch("/api/customer/order", {
             method: "POST",
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 drinks: items.map((i) => ({
                     id: i.id,
-                    customizations: i.customizations.map((i) => i.id),
+                    customizations: i.customizations.map((c) => c.id),
                     ice: 0,
                     scalars: i.scalars,
                 })),
                 employeeId: 1,
                 paymentMethod: "CARD",
                 receiptType,
+                userId,
+                useLoyalty,
             }),
         });
+
+        if (res.ok && isLoggedIn) {
+            const earnedPoints = Math.floor(subtotal);
+
+            setLoyaltyPoints((prev) => {
+                if (shouldApplyLoyalty) {
+                    // subtract 50 and add earned points
+                    return prev - LOYALTY_POINTS_THRESHOLD + earnedPoints;
+                } else {
+                    return prev + earnedPoints;
+                }
+            });
+        }
+
         setItems([]);
+        setUseLoyalty(false);
     }
 
     return (
@@ -1020,7 +1069,8 @@ function Cart({
             >
                 {labels.cart}
             </p>
-            <ScrollArea className="h-150">
+
+            <ScrollArea className="max-h-[320px]">
                 <div className="space-y-4">
                     {items.map((i, idx) => (
                         <CartItemCard key={idx} item={i} />
@@ -1029,10 +1079,9 @@ function Cart({
             </ScrollArea>
 
             <div
-                className={`grid grid-rows-4 grid-cols-2 p-4 border rounded h-50 ${
+                className={`grid grid-rows-4 grid-cols-2 p-4 border rounded ${
                     textMultipler >= 1.75 ? "text-sm" : "text-md"
-                }
-                ${
+                } ${
                     isHighContrast
                         ? "bg-black text-white border-4 border-blue-500"
                         : "bg-white text-black border"
@@ -1041,8 +1090,15 @@ function Cart({
                 <div className="col-span-2 space-y-2">
                     <div className="flex justify-between text-sm">
                         <span>{labels.subtotal}</span>
-                        <span>{formatPrice(subtotal)}</span>
+                        <span>{formatPrice(rawSubtotal)}</span>
                     </div>
+
+                    {shouldApplyLoyalty && (
+                        <div className="flex justify-between text-sm text-green-600">
+                            <span>Loyalty discount</span>
+                            <span>-{formatPrice(loyaltyDiscount)}</span>
+                        </div>
+                    )}
 
                     <div className="flex justify-between text-sm">
                         <span>{labels.tax}</span>
@@ -1053,6 +1109,50 @@ function Cart({
                         <span>{labels.total}</span>
                         <span>{formatPrice(total)}</span>
                     </div>
+
+                    {isLoggedIn && (
+                        <div
+                            className={`mt-2 p-2 rounded border text-sm ${
+                                isHighContrast
+                                    ? "bg-black text-white border-blue-400"
+                                    : "bg-gray-50 text-black border-gray-300"
+                            }`}
+                        >
+                            <div className="flex justify-between items-center">
+                                <span>Loyalty points:</span>
+                                <span className="font-semibold">
+                                    {loyaltyPoints}
+                                </span>
+                            </div>
+
+                            <Button
+                                variant={useLoyalty ? "default" : "outline"}
+                                className={`mt-2 w-full ${
+                                    isHighContrast && useLoyalty
+                                        ? "border-4 border-green-400"
+                                        : ""
+                                }`}
+                                disabled={
+                                    !items.length ||
+                                    loyaltyPoints < LOYALTY_POINTS_THRESHOLD
+                                }
+                                onClick={() => setUseLoyalty((prev) => !prev)}
+                            >
+                                {useLoyalty
+                                    ? "Using loyalty points on this order"
+                                    : loyaltyPoints >= LOYALTY_POINTS_THRESHOLD
+                                      ? "Use loyalty points on this order"
+                                      : `Earn ${
+                                            LOYALTY_POINTS_THRESHOLD -
+                                            loyaltyPoints
+                                        } more points to redeem`}
+                            </Button>
+
+                            <p className="mt-1 text-xs opacity-80">
+                                Loyalty will be applied at checkout.
+                            </p>
+                        </div>
+                    )}
 
                     <ReceiptSelector onSubmit={handleCheckout} />
 
@@ -1079,10 +1179,9 @@ function Cart({
     );
 }
 
-export default function CashierPage() {
+function CashierContent() {
     const [selectedCategory, setSelectedCategory] = useState("Fruit Tea");
     const [cartItems, setCartItems] = useState<CartItem[]>([]);
-    const { data: session } = useSession();
     const labels = EN_LABELS;
 
     const [menuData, setMenuData] = useState<MenuData>(emptyMenuData);
@@ -1101,6 +1200,24 @@ export default function CashierPage() {
     const [rates, setRates] = useState<Partial<Record<CurrencyCode, number>>>({
         USD: 1,
     });
+
+    // single useSession call
+    const { data: session, status } = useSession();
+    const isLoggedIn = status === "authenticated";
+    const rawLoyalty = (session?.user as any)?.loyaltyPoints;
+
+    const [loyaltyPoints, setLoyaltyPoints] = useState(
+        rawLoyalty != null ? Number(rawLoyalty) : 0,
+    );
+
+    // If the session changes, sync state from it
+    useEffect(() => {
+        if (rawLoyalty != null) {
+            setLoyaltyPoints(Number(rawLoyalty));
+        }
+    }, [rawLoyalty]);
+
+    const userId = (session?.user as any)?.id ?? null;
 
     useEffect(() => {
         if (currency === "USD") return;
@@ -1200,34 +1317,6 @@ export default function CashierPage() {
         loadMenuData();
     }, []);
 
-    const defaultCustomizations = {
-        Size: "Medium Cups",
-        Ice: "100%",
-        Boba: "None",
-        Jelly: "None",
-        Tea: "Black Tea",
-        Toppings: [],
-    };
-
-    const placeholderItems: CartItem[] = [
-        {
-            id: 1,
-            name: "Mango Green Tea",
-            ice: 0,
-            size: "large",
-            cost: 6.5,
-            scalars: [
-                { item: { name: "Ice", id: 28 }, amount: 2 },
-                { item: { name: "Sugar", id: 4 }, amount: 1 },
-            ],
-            customizations: [
-                { id: 9, name: "Red Bean", cost: 0.75, amount: 1 },
-                { id: 12, name: "Pudding", cost: 0.75, amount: 1 },
-                { id: 13, name: "Herb Jelly", cost: 0.75, amount: 1 },
-            ],
-        },
-    ];
-
     const formatPrice = useCallback(
         (amount: number) => {
             const rate = rates[currency] ?? 1;
@@ -1284,6 +1373,10 @@ export default function CashierPage() {
                             currency={currency}
                             setCurrency={setCurrency}
                             formatPrice={formatPrice}
+                            loyaltyPoints={loyaltyPoints}
+                            isLoggedIn={isLoggedIn}
+                            userId={userId}
+                            setLoyaltyPoints={setLoyaltyPoints}
                         />
                     </div>
                 ) : (
@@ -1307,10 +1400,22 @@ export default function CashierPage() {
                             currency={currency}
                             setCurrency={setCurrency}
                             formatPrice={formatPrice}
+                            loyaltyPoints={loyaltyPoints}
+                            isLoggedIn={isLoggedIn}
+                            userId={userId}
+                            setLoyaltyPoints={setLoyaltyPoints}
                         />
                     </div>
                 )}
             </div>
         </div>
+    );
+}
+
+export default function CashierPage() {
+    return (
+        <SessionProvider>
+            <CashierContent />
+        </SessionProvider>
     );
 }

@@ -43,7 +43,7 @@ import { useAccessibility } from "@/contexts/AccessibilityContext";
 import { useTextToSpeech } from "@/hooks/useTextToSpeech";
 import GoogleTranslate from "@/components/GoogleTranslate";
 import { MenuItem, Category, Ingredient } from "@/lib/models";
-import { useSession } from "next-auth/react";
+import { useSession, SessionProvider } from "next-auth/react";
 import {
     Field,
     FieldContent,
@@ -1006,6 +1006,8 @@ function Cart({
                 employeeId: 1,
                 paymentMethod: "CARD",
                 receiptType,
+                // TODO: send useLoyalty + user id when backend is ready
+                // useLoyalty,
             }),
         });
         setItems([]);
@@ -1083,14 +1085,20 @@ function Cart({
                                         ? "border-4 border-green-400"
                                         : ""
                                 }`}
-                                disabled={!items.length || loyaltyPoints < 50}
+                                disabled={
+                                    !items.length ||
+                                    loyaltyPoints < LOYALTY_POINTS_THRESHOLD
+                                }
                                 onClick={() => setUseLoyalty((prev) => !prev)}
                             >
                                 {useLoyalty
                                     ? "Using loyalty points on this order"
-                                    : loyaltyPoints >= 50
+                                    : loyaltyPoints >= LOYALTY_POINTS_THRESHOLD
                                       ? "Use loyalty points on this order"
-                                      : `Earn ${50 - loyaltyPoints} more points to redeem`}
+                                      : `Earn ${
+                                            LOYALTY_POINTS_THRESHOLD -
+                                            loyaltyPoints
+                                        } more points to redeem`}
                             </Button>
 
                             <p className="mt-1 text-xs opacity-80">
@@ -1124,11 +1132,9 @@ function Cart({
     );
 }
 
-
 function CashierContent() {
     const [selectedCategory, setSelectedCategory] = useState("Fruit Tea");
     const [cartItems, setCartItems] = useState<CartItem[]>([]);
-    const { data: session } = useSession();
     const labels = EN_LABELS;
 
     const [menuData, setMenuData] = useState<MenuData>(emptyMenuData);
@@ -1148,11 +1154,11 @@ function CashierContent() {
         USD: 1,
     });
 
+    // single useSession call
     const { data: session, status } = useSession();
     const isLoggedIn = status === "authenticated";
     const rawLoyalty = (session?.user as any)?.loyaltyPoints;
     const loyaltyPoints = rawLoyalty != null ? Number(rawLoyalty) : 0;
-    const userId = isLoggedIn ? ((session?.user as any)?.id ?? null) : null;
 
     useEffect(() => {
         if (currency === "USD") return;
@@ -1252,34 +1258,6 @@ function CashierContent() {
         loadMenuData();
     }, []);
 
-    const defaultCustomizations = {
-        Size: "Medium Cups",
-        Ice: "100%",
-        Boba: "None",
-        Jelly: "None",
-        Tea: "Black Tea",
-        Toppings: [],
-    };
-
-    const placeholderItems: CartItem[] = [
-        {
-            id: 1,
-            name: "Mango Green Tea",
-            ice: 0,
-            size: "large",
-            cost: 6.5,
-            scalars: [
-                { item: { name: "Ice", id: 28 }, amount: 2 },
-                { item: { name: "Sugar", id: 4 }, amount: 1 },
-            ],
-            customizations: [
-                { id: 9, name: "Red Bean", cost: 0.75, amount: 1 },
-                { id: 12, name: "Pudding", cost: 0.75, amount: 1 },
-                { id: 13, name: "Herb Jelly", cost: 0.75, amount: 1 },
-            ],
-        },
-    ];
-
     const formatPrice = useCallback(
         (amount: number) => {
             const rate = rates[currency] ?? 1;
@@ -1336,6 +1314,8 @@ function CashierContent() {
                             currency={currency}
                             setCurrency={setCurrency}
                             formatPrice={formatPrice}
+                            loyaltyPoints={loyaltyPoints}
+                            isLoggedIn={isLoggedIn}
                         />
                     </div>
                 ) : (
@@ -1359,6 +1339,8 @@ function CashierContent() {
                             currency={currency}
                             setCurrency={setCurrency}
                             formatPrice={formatPrice}
+                            loyaltyPoints={loyaltyPoints}
+                            isLoggedIn={isLoggedIn}
                         />
                     </div>
                 )}

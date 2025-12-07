@@ -48,7 +48,6 @@ export const authOptions: AuthOptions = {
         async jwt({ token, user, account }) {
             if (user) {
 
-<<<<<<< HEAD
                 if (account?.provider === "google" && user?.email) {
                     // insert the user into the users table with their email.
                     const dbUser = await upsertUserByEmail(user.email);
@@ -60,16 +59,6 @@ export const authOptions: AuthOptions = {
                 } else {
                     token.id = user.id as string;
                     token.role = (user as any).role ?? "customer";
-=======
-                if (account?.provider === "credentials") {
-                    token.role = user.role;
-                    token.email = null;
-                    token.name = null;
-                } else if (account?.provider === "google") {
-                    token.role = "customer";
-                    token.email = user.email || null;
-                    token.name = user.name || null;
->>>>>>> main
                 }
             }
             return token;

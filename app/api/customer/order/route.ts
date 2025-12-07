@@ -1,63 +1,41 @@
 import { NextResponse } from "next/server";
-<<<<<<< HEAD
-import { getServerSession } from "next-auth";
-import { createOrder, CreateOrder, insert_into_orders_table } from "@/lib/db";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
-
-export async function POST(req: Request) {
-    // Body comes from client (drinks, employeeId, paymentMethod)
-    const body = (await req.json()) as Omit<CreateOrder, "userId">;
-    console.log(body);
-
-    // Get current session using the same authOptions we defined in auth route
-    const session = await getServerSession(authOptions);
-
-    // DB user id if logged in, otherwise null (guest order)
-    const userId = session?.user?.id ? Number(session.user.id) : null;
-
-    // Call createOrder with server-side userId, not trusting client
-    await createOrder({
-        ...body,
-        userId, // optional field on CreateOrder
-    });
-
-    console.log("Successfully created order");
-
-    // Return a proper status + json body
-    return NextResponse.json(
-        { success: true },
-        { status: 201 }, // 201 Created is nice here
-    );
-}
-=======
 import {
     createOrder,
     CreateOrder,
     getManyIngredientsByIds,
     getMenuItemById,
-    insert_into_orders_table,
 } from "@/lib/db";
 import * as sgMail from "@sendgrid/mail";
 import dayjs from "dayjs";
 
-sgMail.setApiKey(process.env.SENDGRID_API_KEY!);
-
 const TAX_RATE = parseFloat(process.env.NEXT_PUBLIC_TAX_RATE ?? "0.0825");
 
+// Only configure SendGrid if we actually have a key
+if (process.env.SENDGRID_API_KEY) {
+    sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+} else {
+    console.warn(
+        "[SendGrid] SENDGRID_API_KEY not set. Emails will be skipped (dev mode or misconfigured env).",
+    );
+}
+
 async function buildOrderSummary(order: CreateOrder): Promise<string> {
-    let text = `Order placed on ${dayjs().format("MMM D, YYYY h:mm a")}\n`;
+    let text = `Order placed on ${dayjs().format("MMM D, YYYY h:mm a")}\n\n`;
 
     let subtotal = 0;
+
     for (const drink of order.drinks) {
         const menuItem = await getMenuItemById(drink.id);
         const ingredients = await getManyIngredientsByIds(drink.customizations);
+
         text += `${menuItem.name} ($${menuItem.cost.toFixed(2)})\n`;
         subtotal += menuItem.cost;
 
         for (const ingredient of ingredients) {
-            text += `${ingredient.name} ($${ingredient.cost.toFixed(2)})\n`;
+            text += `  - ${ingredient.name} ($${ingredient.cost.toFixed(2)})\n`;
             subtotal += ingredient.cost;
         }
+
         text += "-".repeat(20) + "\n";
     }
 
@@ -70,46 +48,81 @@ async function buildOrderSummary(order: CreateOrder): Promise<string> {
 }
 
 async function sendOrderConfirmationEmail(orderData: CreateOrder, to: string) {
-    const res = await sgMail.send({
-        to,
-        from: "csce331-project3@em8237.robinjs.dev",
-        subject: "Order Confirmation",
-        text: await buildOrderSummary(orderData),
-    });
-
-    console.log(
-        `Sent order confirmation email. Response code: ${res[0].statusCode}`,
-    );
-}
-
-export async function POST(req: Request) {
-    const json = await req.json();
-    console.log(json);
-
-    // we do this to strip out the extra receiptType field from `json`
-    const orderData: CreateOrder = {
-        drinks: json.drinks,
-        employeeId: json.employeeId,
-        paymentMethod: json.paymentMethod,
-    };
-    await createOrder(orderData);
-
-    console.log("Successfully created order");
-
-    switch (json.receiptType.kind) {
-        case "none":
-            console.log(`No receipt generated`);
-            break;
-        case "email":
-            await sendOrderConfirmationEmail(orderData, json.receiptType.email);
-            break;
-        case "text":
-            console.warn(
-                "WARNING: Text message order confirmation is not implemented.",
-            );
-            break;
+    // In dev, or if no key, just log and skip actual sending
+    if (
+        process.env.NODE_ENV !== "production" ||
+        !process.env.SENDGRID_API_KEY
+    ) {
+        console.log("[Email] Skipping SendGrid send (dev or no API key).");
+        console.log("[Email] Would send to:", to);
+        console.log(await buildOrderSummary(orderData));
+        return;
     }
 
-    return NextResponse.json({ status: 204 });
+    try {
+        const res = await sgMail.send({
+            to,
+            from: "csce331-project3@em8237.robinjs.dev",
+            subject: "Order Confirmation",
+            text: await buildOrderSummary(orderData),
+        });
+
+        console.log(
+            `Sent order confirmation email. Response code: ${res[0].statusCode}`,
+        );
+    } catch (err) {
+        console.error("Failed to send confirmation email:", err);
+        // Don't throw – email failure should NOT break the order
+    }
 }
->>>>>>> main
+
+// Narrow type for receiptType we expect from the client
+type ReceiptType =
+    | { kind: "none" }
+    | { kind: "email"; email: string }
+    | { kind: "text"; phoneNumber: string };
+
+export async function POST(req: Request) {
+    try {
+        const json = await req.json();
+        console.log("Incoming order payload:", json);
+
+        const receiptType = json.receiptType as ReceiptType | undefined;
+
+        // Strip receiptType out and build CreateOrder
+        const orderData: CreateOrder = {
+            drinks: json.drinks,
+            employeeId: json.employeeId,
+            paymentMethod: json.paymentMethod,
+        };
+
+        // Create order in DB
+        await createOrder(orderData);
+        console.log("Successfully created order");
+
+        // Handle receipt **after** order is created
+        switch (receiptType?.kind) {
+            case "none":
+            case undefined:
+                console.log("No receipt generated");
+                break;
+            case "email":
+                await sendOrderConfirmationEmail(orderData, receiptType.email);
+                break;
+            case "text":
+                console.warn(
+                    "WARNING: Text message order confirmation is not implemented.",
+                );
+                break;
+        }
+
+        // 201 Created
+        return NextResponse.json({ success: true }, { status: 201 });
+    } catch (err) {
+        console.error("Error in /api/customer/order:", err);
+        return NextResponse.json(
+            { error: "Failed to create order" },
+            { status: 500 },
+        );
+    }
+}

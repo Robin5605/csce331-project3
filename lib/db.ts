@@ -155,7 +155,7 @@ export async function populate_ingredient_management_table(): Promise<
     await ensureConnected();
     const { rows } = await client.query<Ingredient>(
         `
-    SELECT id, name, stock, cost::float8 AS cost, ingredient_type
+    SELECT id, name, stock, cost::float8 AS cost, ingredient_type, ingredient_group
     FROM ingredients
     ORDER BY id
     `,
@@ -247,6 +247,7 @@ export async function update_ingredient_inventory(
     amount: number,
     ingredient_id: number,
 ): Promise<void> {
+    console.log(`id: ${ingredient_id} : num: ${amount}`);
     await ensureConnected();
     await client.query(
         `
@@ -672,6 +673,13 @@ export interface CreateOrder {
         id: number;
         customizations: number[];
         ice?: number; // Ice servings (0-4), optional for backward compatibility
+        scalars?: {
+            item: {
+                name: string;
+                id: number;
+            };
+            amount: number;
+        }[];
     }[];
     employeeId: number;
     paymentMethod: string;
@@ -746,6 +754,8 @@ export async function createOrder({
                     [drink.id, orderId],
                 )
             ).rows[0].id as number;
+            
+            await update_menu_inventory(1,drink.id);
 
             // Insert customizations (toppings, etc.)
             if (drink.customizations && drink.customizations.length > 0) {
@@ -753,17 +763,30 @@ export async function createOrder({
                     `INSERT INTO drinks_ingredients (drink_id, ingredient_id, servings) SELECT $1, unnest($2::int[]), 1`,
                     [drinksOrdersID, drink.customizations],
                 );
+                await drink.customizations.forEach( async (value) => { await update_ingredient_inventory(1,value)} );
+            }
+
+            //insert scalar values like ice and sugar
+            const scalars = drink.scalars ?? [];
+            console.log(`scalars: ${drink.scalars}`);
+            for(const scale of scalars){
+                if(scale.amount < 1) continue;
+                await client.query(
+                    `INSERT INTO drinks_ingredients (drink_id, ingredient_id, servings) SELECT $1, $2, $3`,
+                    [drinksOrdersID, scale.item.id, scale.amount],
+                );
+                await update_ingredient_inventory(scale.amount,scale.item.id);
             }
 
             // Insert ice servings if provided and > 0
-            const iceServings = drink.ice ?? 0;
-            if (iceServings > 0) {
-                await insert_into_drinks_ingredients_table(
-                    drinksOrdersID,
-                    iceIngredientId,
-                    iceServings,
-                );
-            }
+            //const iceServings = drink.ice ?? 0;
+            //if (iceServings > 0) {
+            //    await insert_into_drinks_ingredients_table(
+            //        drinksOrdersID,
+            //        iceIngredientId,
+            //        iceServings,
+            //    );
+            //}
         }
 
         await client.query("COMMIT");

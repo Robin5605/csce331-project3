@@ -4,20 +4,18 @@ import { signOut } from "next-auth/react";
 
 export default function LogoutButton() {
     const handleLogout = async () => {
-    await signOut({ redirect: false });
+        await signOut({ redirect: false });
 
-    const iframe = document.createElement("iframe");
-    iframe.style.display = "none";
-    iframe.src = "https://accounts.google.com/Logout";
+        const iframe = document.createElement("iframe");
+        iframe.style.display = "none";
+        iframe.src = "https://accounts.google.com/Logout";
 
-    document.body.appendChild(iframe);
+        document.body.appendChild(iframe);
 
-    setTimeout(() => {
-        window.location.href = "/";
-    }, 800);
+        setTimeout(() => {
+            window.location.href = "/";
+        }, 800);
     };
-
-
 
     return (
         <button

@@ -1218,9 +1218,8 @@ export default function CashierPage() {
                         formatPrice={formatPrice}
                     />
                 </div>
-            <LogoutButton />
+                <LogoutButton />
             </div>
         </div>
-
     );
 }

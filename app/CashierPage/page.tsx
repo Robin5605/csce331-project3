@@ -37,47 +37,51 @@ interface MenuData {
 
 const emptyMenuData: MenuData = {};
 const emptyInventory: Ingredient[] = [];
-const inventory: Ingredient[] = [];
 
 // configurable tax rate for UI display (8.25% default)
 const TAX_RATE = parseFloat(process.env.NEXT_PUBLIC_TAX_RATE ?? "0.0825");
 
 // price helpers
-const findInventoryCost = (name: string) => {
+const findInventoryCost = (name: string, inventory: Ingredient[]) => {
     const item = inventory.find(
         (it) => it.name.trim().toLowerCase() === name.trim().toLowerCase(),
     );
-    return item ? item.cost : 0;
+    return item ? Number(item.cost) : 0;
 };
 
 // compute a single order's price from its fields
-function getOrderPrice(order: Record<string, any>) {
+const getOrderPrice = (
+    order: Record<string, any>,
+    inventory: Ingredient[],
+) => {
     let price = 0;
     const quantity = (order.quantity as number) || 1;
+
     for (const [key, value] of Object.entries(order)) {
         if (
             value === "None" ||
             value === null ||
             (Array.isArray(value) && value.length === 0) ||
             key === "quantity"
-        ) {
+        )
             continue;
-        }
+
         if (key.toLowerCase() === "drink") {
             price += (value as MenuItem).cost;
             continue;
         }
-        // Ice/Sugar affect display only (no price)
+
         if (key === "Ice" || key === "Sugar") continue;
 
         if (Array.isArray(value)) {
-            for (const v of value) price += findInventoryCost(v);
+            for (const v of value) price += findInventoryCost(v, inventory);
         } else {
-            price += findInventoryCost(String(value));
+            price += findInventoryCost(String(value), inventory);
         }
     }
+
     return price * quantity;
-}
+};
 
 export default function CashierPage() {
     //Sets default selection for customization options
@@ -89,6 +93,7 @@ export default function CashierPage() {
         Tea: "Black Tea",
         Toppings: [],
     };
+    const [inventory, setInventory] = useState<Ingredient[]>(emptyInventory);
 
     //Serves as the state used for showing the Customization page
     const [isCustomizationOpen, setIsCustomizationOpen] =
@@ -105,7 +110,7 @@ export default function CashierPage() {
         })[]
     >([]);
     const { subtotal, tax, total } = useMemo(() => {
-        const sub = curOrders.reduce((sum, o) => sum + getOrderPrice(o), 0);
+        const sub = curOrders.reduce((sum, o) => sum + getOrderPrice(o, inventory), 0);
         const t = sub * TAX_RATE;
         const tot = sub + t;
         return {
@@ -116,7 +121,6 @@ export default function CashierPage() {
     }, [curOrders]);
     const [menuData, setMenuData] = useState<MenuData>(emptyMenuData);
     const [menuDataReady, setMenuDataReady] = useState<boolean>(false);
-    const [inventory, setInventory] = useState<Ingredient[]>(emptyInventory);
 
     // for changing payment method
     const [paymentMethod, setPaymentMethod] = useState<"CARD" | "CASH">("CARD");
@@ -278,7 +282,7 @@ export default function CashierPage() {
         try {
             let tempCost = 0;
             curOrders.forEach((cOrder) => {
-                tempCost += getOrderPrice(cOrder);
+                tempCost += getOrderPrice(cOrder, inventory);
             });
             tempCost = tempCost + tempCost * TAX_RATE;
             const orderBody = {
@@ -729,7 +733,7 @@ export default function CashierPage() {
                                             } else if (Array.isArray(value)) {
                                                 value.forEach((o: string) => {
                                                     const p =
-                                                        findInventoryCost(o);
+                                                        findInventoryCost(o, inventory);
                                                     itemsJSX.push(
                                                         <div
                                                             key={`suborder-${key}-${o}-single`}
@@ -746,7 +750,7 @@ export default function CashierPage() {
                                                 });
                                             } else {
                                                 const p = findInventoryCost(
-                                                    String(value),
+                                                    String(value), inventory
                                                 );
                                                 itemsJSX.push(
                                                     <div
@@ -763,7 +767,7 @@ export default function CashierPage() {
                                         },
                                     );
 
-                                    const order_price = getOrderPrice(order);
+                                    const order_price = getOrderPrice(order, inventory);
                                     const quantity =
                                         (order.quantity as number) || 1;
 

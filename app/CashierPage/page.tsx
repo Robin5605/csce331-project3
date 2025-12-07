@@ -421,7 +421,7 @@ export default function CashierPage() {
     const Category = ({ name }: { name: string }) => {
         return (
             <div
-                className="shadow-lg w-[90%] h-15 flex justify-center items-center bg-[#9d8189] rounded-md transform transition-transform duration-100 hover:scale-105"
+                className="shadow-lg w-[90%] h-15 flex justify-center items-center bg-[#b2b2b256] border-1 border-black rounded-md transform transition-transform duration-100 hover:scale-105"
                 onClick={() => setSelectedCateory(name)}
             >
                 {name}
@@ -633,9 +633,9 @@ export default function CashierPage() {
             </AlertDialog>
 
             {/* Main content row under the top nav */}
-            <div className="flex flex-1 gap-6 justify-between px-6 py-4">
+            <div className="flex flex-1 gap-6 bg-[#ffeee233] justify-between px-6 py-4">
                 {/* Left: Categories */}
-                <aside className="w-[300px] h-full bg-gradient-to-b from-[#9d8189] to-[#ffe5d9] flex flex-col justify-center rounded-xl">
+                <aside className="w-[300px] h-full bg-[#ffeee233] border-2 border-[#a4a4b1ff] flex flex-col justify-center rounded-xl">
                     <h2 className="font-semibold text-3xl mt-3 mb-10 text-center">
                         Categories
                     </h2>
@@ -678,12 +678,12 @@ export default function CashierPage() {
                 </main>
 
                 {/* Right: Checkout */}
-                <aside className="w-[300px] h-full bg-gradient-to-b from-[#9d8189] to-[#ffe5d9] flex flex-col justify-between p-4 rounded-xl">
+                <aside className="w-[300px] h-full bg-[#ffffff00] border-0 border-[#a4a4b1ff] flex flex-col justify-between p-4 rounded-xl">
                     <div>
                         <h2 className="font-semibold text-3xl text-center mt-3 mb-4">
                             Checkout
                         </h2>
-                        <div className="bg-white/40 rounded-xl p-3 shadow-inner max-h-[60vh] overflow-y-auto">
+                        <div className="bg-[#feffffff] border-1 border-[#a4a4b1ff] rounded-xl p-3 shadow-inner max-h-[60vh] overflow-y-auto">
                             {curOrders.length === 0 ? (
                                 <div className="flex items-center justify-center h-full min-h-[200px]">
                                     <p className="text-gray-600 font-medium text-lg">
@@ -766,7 +766,7 @@ export default function CashierPage() {
                                     return (
                                         <div
                                             key={`order-${orderIndex}`}
-                                            className="bg-[#fffaf8] rounded-xl p-3 mb-4 shadow flex-col"
+                                            className="bg-[#eef0ff33] border-2 border-[#a4a4b180] rounded-xl p-3 mb-4 shadow flex-col"
                                         >
                                             <div className="flex justify-between items-start mb-2">
                                                 <h3 className="font-semibold text-lg">
@@ -854,7 +854,7 @@ export default function CashierPage() {
                             )}
                         </div>
                     </div>
-                    <div className="bg-white/60 rounded-xl p-3 mt-4 shadow-md space-y-1">
+                    <div className="bg-[#feffffff] border-1 border-[#a4a4b1ff] rounded-xl p-3 mt-4 shadow-md space-y-1">
                         <div className="flex justify-between">
                             <span>Subtotal</span>
                             <span>${subtotal.toFixed(2)}</span>
@@ -869,7 +869,7 @@ export default function CashierPage() {
                             <span>${total.toFixed(2)}</span>
                         </div>
                         <button
-                            className="w-full bg-[#6d6875] hover:bg-[#564f5a] text-white font-semibold py-2 rounded-xl transition"
+                            className="w-full bg-[#101010] hover:bg-[#505055] text-white font-semibold py-2 rounded-xl transition"
                             onClick={checkoutOrder}
                         >
                             Checkout

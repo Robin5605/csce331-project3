@@ -246,9 +246,7 @@ function CategorySelector({
                     onClick={() => {
                         if (textMultipler <= 1) return;
                         let z = textMultipler - 0.25;
-                        document.documentElement.style.fontSize = `${
-                            16 * z
-                        }px`;
+                        document.documentElement.style.fontSize = `${16 * z}px`;
                         setTextMultipler(z);
                     }}
                 >
@@ -267,9 +265,7 @@ function CategorySelector({
                     onClick={() => {
                         if (textMultipler >= 2) return;
                         let z = textMultipler + 0.25;
-                        document.documentElement.style.fontSize = `${
-                            16 * z
-                        }px`;
+                        document.documentElement.style.fontSize = `${16 * z}px`;
                         setTextMultipler(z);
                     }}
                 >
@@ -512,8 +508,8 @@ function MenuItemCard({
                                     <div className="flex space-x-4">
                                         {[0, 1, 2, 3, 4].map((servings) => {
                                             const isSelected =
-                                                scalarServings[index]?.amount ===
-                                                servings;
+                                                scalarServings[index]
+                                                    ?.amount === servings;
                                             return (
                                                 <div
                                                     key={`${sItem.id}${servings}`}
@@ -529,16 +525,13 @@ function MenuItemCard({
                                                                     ...prev,
                                                                 ];
                                                                 if (
-                                                                    !copy[
-                                                                        index
-                                                                    ]
+                                                                    !copy[index]
                                                                 ) {
                                                                     copy[
                                                                         index
                                                                     ] = {
                                                                         item: sItem,
-                                                                        amount:
-                                                                            servings,
+                                                                        amount: servings,
                                                                     };
                                                                 } else {
                                                                     copy[
@@ -547,8 +540,7 @@ function MenuItemCard({
                                                                         ...copy[
                                                                             index
                                                                         ],
-                                                                        amount:
-                                                                            servings,
+                                                                        amount: servings,
                                                                     };
                                                                 }
                                                                 return copy;
@@ -597,9 +589,7 @@ function MenuItemCard({
                                                           ? "bg-black text-white"
                                                           : ""
                                                 }`}
-                                                onClick={() =>
-                                                    setSize("small")
-                                                }
+                                                onClick={() => setSize("small")}
                                             >
                                                 S
                                             </div>
@@ -630,9 +620,7 @@ function MenuItemCard({
                                                           ? "bg-black text-white"
                                                           : ""
                                                 }`}
-                                                onClick={() =>
-                                                    setSize("large")
-                                                }
+                                                onClick={() => setSize("large")}
                                             >
                                                 L
                                             </div>
@@ -749,8 +737,7 @@ function CartItemCard({ item }: { item: CartItem }) {
             }`}
         >
             <p className="text-xl font-bold">
-                {item.size.charAt(0).toUpperCase() +
-                    item.size.substring(1)}{" "}
+                {item.size.charAt(0).toUpperCase() + item.size.substring(1)}{" "}
                 {item.name}
             </p>
             <p>{/*Ice: {iceToPercentage(item.ice)}*/}</p>

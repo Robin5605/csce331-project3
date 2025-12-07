@@ -2,15 +2,13 @@
 
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { cn } from "@/lib/utils"; // if you don't have cn, remove and inline classes
+import { useSession } from "next-auth/react";
 
 type TopNavVariant = "manager" | "cashier" | "kiosk";
 
 interface TopNavProps {
     subtitle?: string;
-    /** Which surface is this? (controls accent + label) */
     variant?: TopNavVariant;
-    /** Hide the "Back to Home" button (e.g., on kiosk) */
     hideBackButton?: boolean;
 }
 
@@ -26,10 +24,11 @@ export default function TopNav({
     hideBackButton = false,
 }: TopNavProps) {
     const router = useRouter();
+    const { data: session } = useSession();
 
     return (
         <header className="sticky top-0 z-40 flex w-full items-center justify-between border-b border-zinc-200 bg-white/80 px-6 py-3 shadow-sm backdrop-blur-sm dark:border-zinc-800 dark:bg-zinc-900/80">
-            {/* Left: Logo + brand */}
+            {/* Left: logo + title */}
             <div className="flex items-center gap-3">
                 <Image
                     src="/sharetea.png"
@@ -50,10 +49,20 @@ export default function TopNav({
                 </div>
             </div>
 
-            {/* Right: Back / session controls */}
-            <div className="flex items-center gap-3">
-                {/* You can add a user indicator, store name, etc. here later */}
+            {/* Center: current user */}
+            <div className="flex flex-col item-center">
+                {/* GOOGLE USER INFO — only shows when logged in with Google */}
+                {session?.user?.name && (
+                    <div className="flex items-center gap-2 align-center">
+                        <span className="text-sm font-medium text-zinc-700 dark:text-zinc-200">
+                            {session.user.name}
+                        </span>
+                    </div>
+                )}
+            </div>
 
+            {/* Right side: user info + Back button */}
+            <div className="flex items-center gap-4">
                 {!hideBackButton && (
                     <button
                         onClick={() => router.push("/")}

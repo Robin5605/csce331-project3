@@ -84,16 +84,20 @@ const LANGUAGES = [
     { code: "ar", label: "العربية" },
 ];
 
-type CurrencyCode = "USD" | "EUR";
+type CurrencyCode = "USD" | "EUR" | "CAD" | "GBP";
 
 const CURRENCIES = [
     { code: "USD", label: "USD - $", symbol: "$" },
     { code: "EUR", label: "EUR - €", symbol: "€" },
+    { code: "CAD", label: "CAD - $", symbol: "$"},
+    { code: "GBP", label: "GBP - £", symbol: "£"},
 ];
 
 const CURRENCY_SYMBOLS: Record<CurrencyCode, string> = {
     USD: "$",
     EUR: "€",
+    CAD: "$",
+    GBP: "£",
 };
 
 const LABEL_KEYS = [

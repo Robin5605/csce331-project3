@@ -755,7 +755,7 @@ export async function createOrder({
                 )
             ).rows[0].id as number;
             
-            update_menu_inventory(1,drink.id);
+            await update_menu_inventory(1,drink.id);
 
             // Insert customizations (toppings, etc.)
             if (drink.customizations && drink.customizations.length > 0) {
@@ -763,7 +763,7 @@ export async function createOrder({
                     `INSERT INTO drinks_ingredients (drink_id, ingredient_id, servings) SELECT $1, unnest($2::int[]), 1`,
                     [drinksOrdersID, drink.customizations],
                 );
-                drink.customizations.forEach( (value) => update_ingredient_inventory(1,value) );
+                await drink.customizations.forEach( async (value) => { await update_ingredient_inventory(1,value)} );
             }
 
             //insert scalar values like ice and sugar
@@ -775,7 +775,7 @@ export async function createOrder({
                     `INSERT INTO drinks_ingredients (drink_id, ingredient_id, servings) SELECT $1, $2, $3`,
                     [drinksOrdersID, scale.item.id, scale.amount],
                 );
-                update_ingredient_inventory(scale.amount,scale.item.id);
+                await update_ingredient_inventory(scale.amount,scale.item.id);
             }
 
             // Insert ice servings if provided and > 0

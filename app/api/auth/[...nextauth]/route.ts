@@ -46,6 +46,9 @@ export const authOptions: AuthOptions = {
 
     callbacks: {
         async jwt({ token, user, account }) {
+            if (account?.provider) {
+                token.provider = account.provider;
+            }
             if (user) {
                 if (account?.provider === "google" && user?.email) {
                     // insert the user into the users table with their email.
@@ -66,6 +69,7 @@ export const authOptions: AuthOptions = {
         async session({ session, token }) {
             session.user.id = token.id as any;
             session.user.role = token.role as any;
+            session.user.provider = token.provider as string;
             if (token.email) {
                 session.user.email = token.email as string;
             }

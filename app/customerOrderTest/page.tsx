@@ -42,6 +42,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useAccessibility } from "@/contexts/AccessibilityContext";
 import { useTextToSpeech } from "@/hooks/useTextToSpeech";
 import GoogleTranslate from "@/components/GoogleTranslate";
+import LogoutButton from "@/components/LogoutButton";
 import { MenuItem, Category, Ingredient } from "@/lib/models";
 import { useSession, SessionProvider } from "next-auth/react";
 import {
@@ -1456,7 +1457,6 @@ function CashierContent() {
                             addToOrderLabel={labels.addToOrder}
                             speak={speak}
                         />
-
                         <Cart
                             items={cartItems}
                             setItems={setCartItems}
@@ -1498,6 +1498,7 @@ function CashierContent() {
                         />
                     </div>
                 )}
+                <LogoutButton />
             </div>
         </div>
     );

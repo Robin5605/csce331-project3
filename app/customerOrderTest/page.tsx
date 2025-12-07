@@ -976,6 +976,7 @@ function Cart({
     loyaltyPoints,
     isLoggedIn,
     userId,
+    setLoyaltyPoints,
 }: {
     items: CartItem[];
     setItems: React.Dispatch<React.SetStateAction<CartItem[]>>;
@@ -986,6 +987,7 @@ function Cart({
     loyaltyPoints: number;
     isLoggedIn: boolean;
     userId: number | null;
+    setLoyaltyPoints: React.Dispatch<React.SetStateAction<number>>;
 }) {
     const { isHighContrast, textMultipler } = useAccessibility();
 
@@ -1015,28 +1017,42 @@ function Cart({
     const tax = TAX_RATE * subtotal;
     const total = subtotal + tax;
 
-    function handleCheckout(receiptType: ReceiptType) {
-        fetch("/api/customer/order", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                drinks: items.map((i) => ({
-                    id: i.id,
-                    customizations: i.customizations.map((i) => i.id),
-                    ice: 0,
-                    scalars: i.scalars,
-                })),
-                employeeId: 1,
-                paymentMethod: "CARD",
-                receiptType,
-                userId,       // NEW
-                useLoyalty,   // NEW
-            }),
-        });
+    async function handleCheckout(receiptType: ReceiptType) {
+    const res = await fetch("/api/customer/order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            drinks: items.map((i) => ({
+                id: i.id,
+                customizations: i.customizations.map((c) => c.id),
+                ice: 0,
+                scalars: i.scalars,
+            })),
+            employeeId: 1,
+            paymentMethod: "CARD",
+            receiptType,
+            userId,
+            useLoyalty,
+        }),
+    });
 
-        setItems([]);
-        setUseLoyalty(false);
+    if (res.ok && isLoggedIn) {
+        const earnedPoints = Math.floor(subtotal); 
+
+        setLoyaltyPoints((prev) => {
+            if (shouldApplyLoyalty) {
+                // subtract 50 and add earned points
+                return prev - LOYALTY_POINTS_THRESHOLD + earnedPoints;
+            } else {
+                return prev + earnedPoints;
+            }
+        });
     }
+
+    setItems([]);
+    setUseLoyalty(false);
+}
+
 
 
     return (
@@ -1191,7 +1207,17 @@ function CashierContent() {
     const { data: session, status } = useSession();
     const isLoggedIn = status === "authenticated";
     const rawLoyalty = (session?.user as any)?.loyaltyPoints;
-    const loyaltyPoints = rawLoyalty != null ? Number(rawLoyalty) : 0;
+
+    const [loyaltyPoints, setLoyaltyPoints] = useState(
+        rawLoyalty != null ? Number(rawLoyalty) : 0,
+    );
+
+    // If the session changes, sync state from it
+    useEffect(() => {
+        if (rawLoyalty != null) {
+            setLoyaltyPoints(Number(rawLoyalty));
+        }
+    }, [rawLoyalty]);
 
     const userId = (session?.user as any)?.id ?? null;
 
@@ -1352,7 +1378,9 @@ function CashierContent() {
                             loyaltyPoints={loyaltyPoints}
                             isLoggedIn={isLoggedIn}
                             userId={userId}
+                            setLoyaltyPoints={setLoyaltyPoints}
                         />
+
 
                     </div>
                 ) : (
@@ -1379,7 +1407,9 @@ function CashierContent() {
                             loyaltyPoints={loyaltyPoints}
                             isLoggedIn={isLoggedIn}
                             userId={userId}
+                            setLoyaltyPoints={setLoyaltyPoints}
                         />
+
 
                     </div>
                 )}

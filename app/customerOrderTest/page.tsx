@@ -504,7 +504,7 @@ function MenuItemCard({
                                         {[0, 1, 2, 3, 4].map((servings) => (
                                             <div
                                                 key={`${sItem.id}${servings}`}
-                                                className={`cursor-pointer duration-300 border rounded-full p-4 text-xl ${ scalarServings[index].amount === servings ? "bg-black text-white" : ""}`}
+                                                className={`cursor-pointer duration-300 border rounded-full p-4 text-xl ${ scalarServings[index] != null && scalarServings[index].amount === servings ? "bg-black text-white" : ""}`}
                                                 onClick={() => {//setIce(servings)}
                                                     //scalarServings[index].amount = servings;
                                                     setScalarServings([
@@ -954,12 +954,15 @@ export default function CashierPage() {
         //GenerateToppingsGroups();
         let groups: string[] = [];
         const emptyIngredients: Ingredient[] = [];
+        scaleItems = [];
         for(let i: number = 0; i < inventory.length; ++i){
             //console.log(`igroup ${i}:${inventory[i].ingredient_group}`);
-            if(inventory[i].ingredient_group == "Scale"){
+            if(inventory[i].ingredient_group == "Scale" && !groups.includes(inventory[i].name)){
                 scaleItems.push({name: inventory[i].name, id: inventory[i].id});
+                groups.push(inventory[i].name);
                 continue;
             }
+            console.log(scaleItems.length);
             if(groups.includes(inventory[i].ingredient_group)){
                 continue;
             }
@@ -967,7 +970,7 @@ export default function CashierPage() {
                 continue;
             }
             //console.log("\tadding");
-            console.log(`appending ${inventory[i].ingredient_group}`);
+            //console.log(`appending ${inventory[i].ingredient_group}`);
             globalToppingsGroups.set(inventory[i].ingredient_group,emptyIngredients);
             groups.push(inventory[i].ingredient_group);
             console.log(globalToppingsGroups.keys.length);

@@ -22,6 +22,7 @@ import CustomizationCard from "@/components/CustomizationCard";
 import { MenuItem, Category, Ingredient } from "@/lib/models";
 import { Button } from "@/components/ui/button";
 
+
 //[REMOVE WHEN API IS IMPLEMENTED] Temporary data for now
 //interface MenuItem {
 //    id: number;
@@ -116,6 +117,9 @@ export default function CashierPage() {
     const [menuData, setMenuData] = useState<MenuData>(emptyMenuData);
     const [menuDataReady, setMenuDataReady] = useState<boolean>(false);
     const [inventory, setInventory] = useState<Ingredient[]>(emptyInventory);
+
+    // for changing payment method
+    const [paymentMethod, setPaymentMethod] = useState<"CARD" | "CASH">("CARD");
 
     const loadMenuData = async () => {
         setMenuDataReady(false);
@@ -269,7 +273,7 @@ export default function CashierPage() {
     };
 
     //handles current order and sends completed order to database
-    const checkoutOrder = async () => {
+    const checkoutOrder = async (method: "CARD" | "CASH") => {
         //console.log("checking out");
         try {
             let tempCost = 0;
@@ -280,7 +284,7 @@ export default function CashierPage() {
             const orderBody = {
                 cost: Math.round(tempCost * 100) / 100,
                 employeeId: "1",
-                paymentMethod: "CARD",
+                paymentMethod: method,
             };
             //console.log(orderBody.cost);
             const orderRes = await fetch("api/cashier/order", {
@@ -421,7 +425,7 @@ export default function CashierPage() {
     const Category = ({ name }: { name: string }) => {
         return (
             <div
-                className="shadow-lg w-[90%] h-15 flex justify-center items-center bg-[#9d8189] rounded-md transform transition-transform duration-100 hover:scale-105"
+                className="shadow-lg w-[90%] h-15 flex justify-center items-center bg-[#b2b2b256] border-1 border-black rounded-md transform transition-transform duration-100 hover:scale-105"
                 onClick={() => setSelectedCateory(name)}
             >
                 {name}
@@ -633,9 +637,9 @@ export default function CashierPage() {
             </AlertDialog>
 
             {/* Main content row under the top nav */}
-            <div className="flex flex-1 gap-6 justify-between px-6 py-4">
+            <div className="flex flex-1 gap-6 bg-[#ffeee233] justify-between px-6 py-4">
                 {/* Left: Categories */}
-                <aside className="w-[300px] h-full bg-gradient-to-b from-[#9d8189] to-[#ffe5d9] flex flex-col justify-center rounded-xl">
+                <aside className="w-[300px] h-full bg-[#ffeee233] border-2 border-[#a4a4b1ff] flex flex-col justify-center rounded-xl">
                     <h2 className="font-semibold text-3xl mt-3 mb-10 text-center">
                         Categories
                     </h2>
@@ -678,12 +682,12 @@ export default function CashierPage() {
                 </main>
 
                 {/* Right: Checkout */}
-                <aside className="w-[300px] h-full bg-gradient-to-b from-[#9d8189] to-[#ffe5d9] flex flex-col justify-between p-4 rounded-xl">
+                <aside className="w-[300px] h-full bg-[#ffffff00] border-0 border-[#a4a4b1ff] flex flex-col justify-between p-4 rounded-xl">
                     <div>
                         <h2 className="font-semibold text-3xl text-center mt-3 mb-4">
                             Checkout
                         </h2>
-                        <div className="bg-white/40 rounded-xl p-3 shadow-inner max-h-[60vh] overflow-y-auto">
+                        <div className="bg-[#feffffff] border-1 border-[#a4a4b1ff] rounded-xl p-3 shadow-inner max-h-[60vh] overflow-y-auto">
                             {curOrders.length === 0 ? (
                                 <div className="flex items-center justify-center h-full min-h-[200px]">
                                     <p className="text-gray-600 font-medium text-lg">
@@ -766,7 +770,7 @@ export default function CashierPage() {
                                     return (
                                         <div
                                             key={`order-${orderIndex}`}
-                                            className="bg-[#fffaf8] rounded-xl p-3 mb-4 shadow flex-col"
+                                            className="bg-[#eef0ff33] border-2 border-[#a4a4b180] rounded-xl p-3 mb-4 shadow flex-col"
                                         >
                                             <div className="flex justify-between items-start mb-2">
                                                 <h3 className="font-semibold text-lg">
@@ -854,7 +858,7 @@ export default function CashierPage() {
                             )}
                         </div>
                     </div>
-                    <div className="bg-white/60 rounded-xl p-3 mt-4 shadow-md space-y-1">
+                    <div className="bg-[#feffffff] border-1 border-[#a4a4b1ff] rounded-xl p-3 mt-4 shadow-md space-y-1">
                         <div className="flex justify-between">
                             <span>Subtotal</span>
                             <span>${subtotal.toFixed(2)}</span>
@@ -868,12 +872,49 @@ export default function CashierPage() {
                             <span>Total</span>
                             <span>${total.toFixed(2)}</span>
                         </div>
-                        <button
-                            className="w-full bg-[#6d6875] hover:bg-[#564f5a] text-white font-semibold py-2 rounded-xl transition"
-                            onClick={checkoutOrder}
-                        >
-                            Checkout
-                        </button>
+                        <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                            <button
+                                className="w-full bg-[#101010] hover:bg-[#505055] text-white font-semibold py-2 rounded-xl transition"
+                            >
+                                Checkout
+                            </button>
+                        </AlertDialogTrigger>
+
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>Confirm Checkout</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    Select a payment method before completing the order.
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+
+                            {/* PAYMENT METHOD DROPDOWN */}
+                            <div className="mt-4">
+                                <label className="block text-sm mb-1 font-medium">
+                                    Payment Method
+                                </label>
+                                <select
+                                    value={paymentMethod}
+                                    onChange={(e) => setPaymentMethod(e.target.value as "CARD" | "CASH")}
+                                    className="w-full border px-3 py-2 rounded-md bg-white"
+                                >
+                                    <option value="CARD">Card</option>
+                                    <option value="CASH">Cash</option>
+                                </select>
+                            </div>
+
+                            <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                    onClick={() => checkoutOrder(paymentMethod)}
+                                >
+                                    Confirm Payment
+                                </AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
+
                     </div>
                 </aside>
 

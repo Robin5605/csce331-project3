@@ -42,6 +42,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useAccessibility } from "@/contexts/AccessibilityContext";
 import { useTextToSpeech } from "@/hooks/useTextToSpeech";
 import GoogleTranslate from "@/components/GoogleTranslate";
+import { useSession, SessionProvider } from "next-auth/react";
 
 interface CartItem {
     id: number;
@@ -399,6 +400,7 @@ const inventory: InventoryItem[] = [
 ];
 
 const TAX_RATE = parseFloat(process.env.NEXT_PUBLIC_TAX_RATE ?? "0.0825");
+const LOYALTY_POINTS_THRESHOLD = 50;
 
 const findInventoryCost = (name: string) => {
     const item = inventory.find(
@@ -971,6 +973,8 @@ function Cart({
     currency,
     setCurrency,
     formatPrice,
+    loyaltyPoints,
+    isLoggedIn,
 }: {
     items: CartItem[];
     setItems: React.Dispatch<React.SetStateAction<CartItem[]>>;
@@ -978,8 +982,12 @@ function Cart({
     currency: CurrencyCode;
     setCurrency: React.Dispatch<React.SetStateAction<CurrencyCode>>;
     formatPrice: (amount: number) => string;
+    loyaltyPoints: number;
+    isLoggedIn: boolean;
 }) {
     const { isHighContrast, textMultipler } = useAccessibility();
+
+    const [useLoyalty, setUseLoyalty] = useState(false);
 
     const subtotal = calculateSubtotal(items);
     const tax = TAX_RATE * subtotal;
@@ -992,25 +1000,32 @@ function Cart({
                 drinks: items.map((i) => ({
                     id: i.id,
                     customizations: i.customizations.map((i) => i.id),
-                    ice: i.ice, // Send ice servings (0-4)
+                    ice: i.ice,
                 })),
                 employeeId: 1,
                 paymentMethod: "CARD",
+                useLoyalty,
             }),
         });
         setItems([]);
+        setUseLoyalty(false);
     }
 
     return (
         <div
-            className={`grid grid-rows-[1fr_8fr_1fr] min-h-0 h-[900] gap-4 ${isHighContrast ? "bg-black text-white border-8 border-yellow-200" : ""}`}
+            className={`flex flex-col gap-4 ${
+                isHighContrast ? "bg-black text-white border-8 border-yellow-200" : ""
+            }`}
         >
             <p
-                className={`text-xl mb-4 text-center ${isHighContrast ? "text-white" : "text-black"}`}
+                className={`text-xl mb-2 text-center ${
+                    isHighContrast ? "text-white" : "text-black"
+                }`}
             >
                 {labels.cart}
             </p>
-            <ScrollArea className="h-150">
+
+            <ScrollArea className="max-h-[320px]">
                 <div className="space-y-4">
                     {items.map((i, idx) => (
                         <CartItemCard key={idx} item={i} />
@@ -1019,10 +1034,9 @@ function Cart({
             </ScrollArea>
 
             <div
-                className={`grid grid-rows-4 grid-cols-2 p-4 border rounded h-50 ${
+                className={`grid grid-rows-4 grid-cols-2 p-4 border rounded ${
                     textMultipler >= 1.75 ? "text-sm" : "text-md"
-                }
-                ${
+                } ${
                     isHighContrast
                         ? "bg-black text-white border-4 border-blue-500"
                         : "bg-white text-black border"
@@ -1044,21 +1058,62 @@ function Cart({
                         <span>{formatPrice(total)}</span>
                     </div>
 
+                    {isLoggedIn && (
+                        <div
+                            className={`mt-2 p-2 rounded border text-sm ${
+                                isHighContrast
+                                    ? "bg-black text-white border-blue-400"
+                                    : "bg-gray-50 text-black border-gray-300"
+                            }`}
+                        >
+                            <div className="flex justify-between items-center">
+                                <span>Loyalty points:</span>
+                                <span className="font-semibold">
+                                    {loyaltyPoints}
+                                </span>
+                            </div>
+
+                            <Button
+                                variant={useLoyalty ? "default" : "outline"}
+                                className={`mt-2 w-full ${
+                                    isHighContrast && useLoyalty
+                                        ? "border-4 border-green-400"
+                                        : ""
+                                }`}
+                                disabled={!items.length || loyaltyPoints < 50}
+                                onClick={() => setUseLoyalty((prev) => !prev)}
+                            >
+                                {useLoyalty
+                                    ? "Using loyalty points on this order"
+                                    : loyaltyPoints >= 50
+                                      ? "Use loyalty points on this order"
+                                      : `Earn ${50 - loyaltyPoints} more points to redeem`}
+                            </Button>
+
+                            <p className="mt-1 text-xs opacity-80">
+                                Loyalty will be applied at checkout.
+                            </p>
+                        </div>
+                    )}
+
                     <Dialog>
                         <DialogTrigger asChild>
-                            {/* Removed col-span-2 from Button as it should be inside the column structure */}
                             <Button
-                                className={`w-full ${isHighContrast ? "border-4 border-green-400" : ""}`}
+                                className={`w-full ${
+                                    isHighContrast ? "border-4 border-green-400" : ""
+                                }`}
                             >
                                 {labels.checkout}
                             </Button>
                         </DialogTrigger>
 
                         <DialogContent
-                            className={`max-h-[90vh] ${isHighContrast ? "text-white bg-black" : "text-black"}`}
+                            className={`max-h-[90vh] ${
+                                isHighContrast ? "text-white bg-black" : "text-black"
+                            }`}
                         >
                             <DialogHeader>
-                                <DialogTitle className={`text-center text-2xl`}>
+                                <DialogTitle className="text-center text-2xl">
                                     {labels.confirmOrder}
                                 </DialogTitle>
                             </DialogHeader>
@@ -1067,7 +1122,9 @@ function Cart({
                                 <DialogClose asChild>
                                     <Button
                                         variant="default"
-                                        className={`w-full  ${isHighContrast ? "border-4 border-green-400" : ""}`}
+                                        className={`w-full ${
+                                            isHighContrast ? "border-4 border-green-400" : ""
+                                        }`}
                                         onClick={handleCheckout}
                                     >
                                         {labels.yesPlaceOrder}
@@ -1076,6 +1133,7 @@ function Cart({
                             </DialogFooter>
                         </DialogContent>
                     </Dialog>
+
                     <select
                         className={`rounded border px-2 py-1 text-sm w-full ${
                             isHighContrast
@@ -1099,7 +1157,8 @@ function Cart({
     );
 }
 
-export default function CashierPage() {
+
+function CashierContent() {
     const [selectedCategory, setSelectedCategory] = useState("Fruit Tea");
     const [cartItems, setCartItems] = useState<CartItem[]>([]);
 
@@ -1118,6 +1177,12 @@ export default function CashierPage() {
     const [rates, setRates] = useState<Partial<Record<CurrencyCode, number>>>({
         USD: 1,
     });
+
+    const { data: session, status } = useSession();
+    const isLoggedIn = status === "authenticated";
+    const rawLoyalty = (session?.user as any)?.loyaltyPoints;
+    const loyaltyPoints = rawLoyalty != null ? Number(rawLoyalty) : 0;
+    const userId = isLoggedIn ? ((session?.user as any)?.id ?? null) : null;
 
     useEffect(() => {
         if (currency === "USD") return; // If just USD no need to convert any conversions. 1 is okay.
@@ -1214,9 +1279,20 @@ export default function CashierPage() {
                         currency={currency}
                         setCurrency={setCurrency}
                         formatPrice={formatPrice}
+                        loyaltyPoints={loyaltyPoints}
+                        isLoggedIn={isLoggedIn}
+                        userId={userId}
                     />
                 </div>
             </div>
         </div>
+    );
+}
+
+export default function CashierPage() {
+    return (
+        <SessionProvider>
+            <CashierContent />
+        </SessionProvider>
     );
 }

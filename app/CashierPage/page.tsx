@@ -22,7 +22,6 @@ import CustomizationCard from "@/components/CustomizationCard";
 import { MenuItem, Category, Ingredient } from "@/lib/models";
 import { Button } from "@/components/ui/button";
 
-
 //[REMOVE WHEN API IS IMPLEMENTED] Temporary data for now
 //interface MenuItem {
 //    id: number;
@@ -50,10 +49,7 @@ const findInventoryCost = (name: string, inventory: Ingredient[]) => {
 };
 
 // compute a single order's price from its fields
-const getOrderPrice = (
-    order: Record<string, any>,
-    inventory: Ingredient[],
-) => {
+const getOrderPrice = (order: Record<string, any>, inventory: Ingredient[]) => {
     let price = 0;
     const quantity = (order.quantity as number) || 1;
 
@@ -110,7 +106,10 @@ export default function CashierPage() {
         })[]
     >([]);
     const { subtotal, tax, total } = useMemo(() => {
-        const sub = curOrders.reduce((sum, o) => sum + getOrderPrice(o, inventory), 0);
+        const sub = curOrders.reduce(
+            (sum, o) => sum + getOrderPrice(o, inventory),
+            0,
+        );
         const t = sub * TAX_RATE;
         const tot = sub + t;
         return {
@@ -732,8 +731,10 @@ export default function CashierPage() {
                                                 );
                                             } else if (Array.isArray(value)) {
                                                 value.forEach((o: string) => {
-                                                    const p =
-                                                        findInventoryCost(o, inventory);
+                                                    const p = findInventoryCost(
+                                                        o,
+                                                        inventory,
+                                                    );
                                                     itemsJSX.push(
                                                         <div
                                                             key={`suborder-${key}-${o}-single`}
@@ -750,7 +751,8 @@ export default function CashierPage() {
                                                 });
                                             } else {
                                                 const p = findInventoryCost(
-                                                    String(value), inventory
+                                                    String(value),
+                                                    inventory,
                                                 );
                                                 itemsJSX.push(
                                                     <div
@@ -767,7 +769,10 @@ export default function CashierPage() {
                                         },
                                     );
 
-                                    const order_price = getOrderPrice(order, inventory);
+                                    const order_price = getOrderPrice(
+                                        order,
+                                        inventory,
+                                    );
                                     const quantity =
                                         (order.quantity as number) || 1;
 
@@ -877,48 +882,58 @@ export default function CashierPage() {
                             <span>${total.toFixed(2)}</span>
                         </div>
                         <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                            <button
-                                className="w-full bg-[#101010] hover:bg-[#505055] text-white font-semibold py-2 rounded-xl transition"
-                            >
-                                Checkout
-                            </button>
-                        </AlertDialogTrigger>
+                            <AlertDialogTrigger asChild>
+                                <button className="w-full bg-[#101010] hover:bg-[#505055] text-white font-semibold py-2 rounded-xl transition">
+                                    Checkout
+                                </button>
+                            </AlertDialogTrigger>
 
-                        <AlertDialogContent>
-                            <AlertDialogHeader>
-                                <AlertDialogTitle>Confirm Checkout</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                    Select a payment method before completing the order.
-                                </AlertDialogDescription>
-                            </AlertDialogHeader>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>
+                                        Confirm Checkout
+                                    </AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        Select a payment method before
+                                        completing the order.
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
 
-                            {/* PAYMENT METHOD DROPDOWN */}
-                            <div className="mt-4">
-                                <label className="block text-sm mb-1 font-medium">
-                                    Payment Method
-                                </label>
-                                <select
-                                    value={paymentMethod}
-                                    onChange={(e) => setPaymentMethod(e.target.value as "CARD" | "CASH")}
-                                    className="w-full border px-3 py-2 rounded-md bg-white"
-                                >
-                                    <option value="CARD">Card</option>
-                                    <option value="CASH">Cash</option>
-                                </select>
-                            </div>
+                                {/* PAYMENT METHOD DROPDOWN */}
+                                <div className="mt-4">
+                                    <label className="block text-sm mb-1 font-medium">
+                                        Payment Method
+                                    </label>
+                                    <select
+                                        value={paymentMethod}
+                                        onChange={(e) =>
+                                            setPaymentMethod(
+                                                e.target.value as
+                                                    | "CARD"
+                                                    | "CASH",
+                                            )
+                                        }
+                                        className="w-full border px-3 py-2 rounded-md bg-white"
+                                    >
+                                        <option value="CARD">Card</option>
+                                        <option value="CASH">Cash</option>
+                                    </select>
+                                </div>
 
-                            <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction
-                                    onClick={() => checkoutOrder(paymentMethod)}
-                                >
-                                    Confirm Payment
-                                </AlertDialogAction>
-                            </AlertDialogFooter>
-                        </AlertDialogContent>
-                    </AlertDialog>
-
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel>
+                                        Cancel
+                                    </AlertDialogCancel>
+                                    <AlertDialogAction
+                                        onClick={() =>
+                                            checkoutOrder(paymentMethod)
+                                        }
+                                    >
+                                        Confirm Payment
+                                    </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
                     </div>
                 </aside>
 

@@ -58,7 +58,6 @@ import { cn } from "@/lib/utils";
 
 interface CartItem {
     id: number;
-    size: DrinkSize;
     ice: number;
     name: string;
     cost: number;
@@ -146,6 +145,14 @@ let scaleItems: { name: string; id: number }[] = [];
 
 const TAX_RATE = parseFloat(process.env.NEXT_PUBLIC_TAX_RATE ?? "0.0825");
 const LOYALTY_POINTS_THRESHOLD = 50;
+
+function getCartItemSize(item: CartItem): DrinkSize {
+    if (item.customizations.some((c) => c.id === 23)) return "small";
+    if (item.customizations.some((c) => c.id === 24)) return "medium";
+    if (item.customizations.some((c) => c.id === 22)) return "large";
+
+    return "small";
+}
 
 const findInventoryCost = (name: string) => {
     const item = inventory.find(
@@ -650,7 +657,7 @@ function MenuItemCard({
                             variant="default"
                             className="w-full"
                             onClick={() => {
-                                const allCustomizations = Array.from(
+                                let allCustomizations = Array.from(
                                     selectedToppings.values(),
                                 ).flatMap((topArr) =>
                                     topArr.map((t) => ({
@@ -661,9 +668,43 @@ function MenuItemCard({
                                     })),
                                 );
 
+                                switch (size) {
+                                    case "small":
+                                        const smallCup = inventory.find(
+                                            (i) => i.id === 23,
+                                        )!;
+                                        allCustomizations.push({
+                                            id: smallCup.id,
+                                            name: smallCup.name,
+                                            cost: smallCup.cost,
+                                            amount: 1,
+                                        });
+                                        break;
+                                    case "medium":
+                                        const mediumCup = inventory.find(
+                                            (i) => i.id === 24,
+                                        )!;
+                                        allCustomizations.push({
+                                            id: mediumCup.id,
+                                            name: mediumCup.name,
+                                            cost: mediumCup.cost,
+                                            amount: 1,
+                                        });
+                                        break;
+                                    case "large":
+                                        const largeCup = inventory.find(
+                                            (i) => i.id === 22,
+                                        )!;
+                                        allCustomizations.push({
+                                            id: largeCup.id,
+                                            name: largeCup.name,
+                                            cost: largeCup.cost,
+                                            amount: 1,
+                                        });
+                                        break;
+                                }
                                 onConfirm({
                                     id: item.id,
-                                    size,
                                     ice,
                                     name: item.name,
                                     cost: item.cost,
@@ -736,6 +777,7 @@ function CartItemCard({
 }) {
     const { isHighContrast } = useAccessibility();
 
+    const itemSize = getCartItemSize(item);
     return (
         <div
             className={`rounded p-4 border ${
@@ -745,7 +787,7 @@ function CartItemCard({
             }`}
         >
             <p className="text-xl font-bold">
-                {item.size.charAt(0).toUpperCase() + item.size.substring(1)}{" "}
+                {itemSize.charAt(0).toUpperCase() + itemSize.substring(1)}{" "}
                 {item.name}
             </p>
             <p>{/*Ice: {iceToPercentage(item.ice)}*/}</p>

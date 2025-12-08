@@ -5,6 +5,7 @@ import Image from "next/image";
 import IdleLogout from "@/components/idleLogout";
 import TopNav from "@/components/TopNav";
 import LogoutButton from "@/components/LogoutButton";
+import KitchenButton from "@/components/KitchenButton";
 
 import ItemCard from "../../components/ItemCard";
 import {
@@ -936,7 +937,7 @@ export default function CashierPage() {
                         </AlertDialog>
                     </div>
                 </aside>
-
+                <KitchenButton />
                 <LogoutButton />
             </div>
         </div>

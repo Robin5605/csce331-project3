@@ -29,12 +29,16 @@ export async function POST(req: Request) {
         );
     }
 
-    if (!groupName || groupName.trim() === "" || typeof groupName !== "string") {
-            return NextResponse.json(
-                { error: "Group Name is required." },
-                { status: 400 },
-            );
-        }
+    if (
+        !groupName ||
+        groupName.trim() === "" ||
+        typeof groupName !== "string"
+    ) {
+        return NextResponse.json(
+            { error: "Group Name is required." },
+            { status: 400 },
+        );
+    }
 
     const stockNum = Number(stock);
     const costNum = Number(cost);
@@ -104,8 +108,12 @@ export async function PUT(req: Request) {
                 { status: 400 },
             );
         }
-        
-        if (!groupName || groupName.trim() === "" || typeof groupName !== "string") {
+
+        if (
+            !groupName ||
+            groupName.trim() === "" ||
+            typeof groupName !== "string"
+        ) {
             return NextResponse.json(
                 { error: "Group Name is required." },
                 { status: 400 },

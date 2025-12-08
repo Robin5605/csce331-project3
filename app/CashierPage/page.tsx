@@ -466,7 +466,7 @@ export default function CashierPage() {
         toFilterBy: string;
         category: string;
     }) => {
-        console.log(category)
+        console.log(category);
         const itemsToIgnore = ["napkins", "straws", "seal", "bag"];
 
         interface OptionItem {
@@ -516,21 +516,31 @@ export default function CashierPage() {
                             is_disabled: i.stock < 1,
                         }));
 
-            return (
+        return (
             <div className="flex flex-wrap gap-8">
                 {options
                     .slice() // to avoid mutating the original array
                     .sort((a, b) => {
                         if (category === "Size") {
-                            const sizeOrder = ["Small Cups", "Medium Cups", "Large Cups"];
-                            return sizeOrder.indexOf(a.name) - sizeOrder.indexOf(b.name);
+                            const sizeOrder = [
+                                "Small Cups",
+                                "Medium Cups",
+                                "Large Cups",
+                            ];
+                            return (
+                                sizeOrder.indexOf(a.name) -
+                                sizeOrder.indexOf(b.name)
+                            );
                         }
                         return 0; // No sorting for other categories
                     })
                     .map((item) => {
                         const isSelected: boolean = allowsMultipleSelections
-                            ? selectedCustomizationOptions[category].includes(item.name)
-                            : item.name === selectedCustomizationOptions[category];
+                            ? selectedCustomizationOptions[category].includes(
+                                  item.name,
+                              )
+                            : item.name ===
+                              selectedCustomizationOptions[category];
 
                         return (
                             <CustomizationCard
@@ -541,16 +551,16 @@ export default function CashierPage() {
                                 whenClicked={
                                     allowsMultipleSelections
                                         ? () =>
-                                            customizationCardClickedMultipleSelections(
-                                                item.name,
-                                                category,
-                                                isSelected
-                                            )
+                                              customizationCardClickedMultipleSelections(
+                                                  item.name,
+                                                  category,
+                                                  isSelected,
+                                              )
                                         : () =>
-                                            customizationCardClicked(
-                                                item.name,
-                                                category
-                                            )
+                                              customizationCardClicked(
+                                                  item.name,
+                                                  category,
+                                              )
                                 }
                             />
                         );

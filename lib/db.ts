@@ -243,6 +243,7 @@ export async function insert_into_drinks_ingredients_table(
 
 /**
  * Decrement ingredient stock safely (parameterized).
+ * Throws an error if stock is insufficient.
  */
 export async function update_ingredient_inventory(
     amount: number,
@@ -250,16 +251,22 @@ export async function update_ingredient_inventory(
 ): Promise<void> {
     console.log(`id: ${ingredient_id} : num: ${amount}`);
     await ensureConnected();
-    await client.query(
-        `
-    UPDATE ingredients
-    SET stock = stock - $1
-    WHERE id = $2
-    `,
-        [amount, ingredient_id],
-    );
-}
 
+    const result = await client.query(
+        `
+        UPDATE ingredients
+        SET stock = stock - $1
+        WHERE id = $2 AND stock >= $1
+        `,
+        [amount, ingredient_id]
+    );
+
+    if (result.rowCount === 0) {
+        throw new Error(
+            `Insufficient stock for ingredient ID ${ingredient_id}. Requested: ${amount}`
+        );
+    }
+}
 /**
  * Delete an ingredient by id and return the deleted id.
  */

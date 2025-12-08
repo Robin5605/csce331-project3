@@ -584,7 +584,7 @@ function MenuItemCard({
                                                     className={`cursor-pointer duration-300 border rounded-full p-4 text-xl ${
                                                         isSelected 
                                                             ? isHighContrast 
-                                                                ? "bg-black text-blue-00"
+                                                                ? "bg-black text-blue-500"
                                                                 : "bg-black text-white"
                                                                 : ""
                                                     }`}

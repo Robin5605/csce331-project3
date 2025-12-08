@@ -889,6 +889,31 @@ export async function createOrder({
     }
 }
 
+export async function getFavoriteDrinkForUser(
+    userId: number,
+): Promise<number | null> {
+    await ensureConnected();
+
+    const res = await client.query(
+        `
+        SELECT d.menu_id, COUNT(*) AS times
+        FROM drinks_orders d
+        JOIN orders o ON o.id = d.order_id
+        WHERE o.user_id = $1
+        GROUP BY d.menu_id
+        ORDER BY times DESC
+        LIMIT 1
+        `,
+        [userId],
+    );
+
+    if (res.rows.length === 0) {
+        return null;
+    }
+
+    return Number(res.rows[0].menu_id);
+}
+
 export async function getMenuItemById(drinkId: number): Promise<MenuItem> {
     const res = await client.query(`SELECT * FROM menu WHERE id = $1`, [
         drinkId,

@@ -75,7 +75,9 @@ interface CartItem {
         cost: number;
         amount: number;
     }[];
+    quantity: number;   
 }
+
 
 type DrinkSize = "small" | "medium" | "large";
 
@@ -172,9 +174,11 @@ function calculateSubtotal(cartItems: CartItem[]): number {
     let total = 0;
 
     for (const item of cartItems) {
-        for (const customization of item.customizations)
-            total += customization.cost;
-        total += item.cost;
+        let itemCost = item.cost;
+        for (const customization of item.customizations) {
+            itemCost += customization.cost;
+        }
+        total += itemCost * item.quantity;  
     }
 
     return total;
@@ -411,7 +415,9 @@ interface MenuItemCardProps {
     onConfirm: (item: CartItem) => void;
     addToOrderLabel: string;
     speak: (text: string) => void;
+    isFavorite: boolean;
 }
+
 
 const iceToPercentage = (servings: number): string => {
     const mapping: { [key: number]: string } = {
@@ -429,6 +435,7 @@ function MenuItemCard({
     onConfirm,
     addToOrderLabel,
     speak,
+    isFavorite,
 }: MenuItemCardProps) {
     const { isHighContrast, textMultipler } = useAccessibility();
 
@@ -517,6 +524,12 @@ function MenuItemCard({
                     ${isHighContrast ? "text-white" : "text-black"}
                 `}
                 >
+                    {isFavorite && (
+                        <div className="absolute top-1 left-1 bg-yellow-400 text-black text-[0.65rem] font-semibold px-2 py-0.5 rounded-full shadow">
+                            ⭐ Favorite
+                        </div>
+                    )}
+
                     <button
                         type="button"
                         onClick={(e) => {
@@ -760,6 +773,7 @@ function MenuItemCard({
                                     cost: item.cost,
                                     scalars: scalarServings,
                                     customizations: allCustomizations,
+                                    quantity: 1,   
                                 });
                             }}
                         >
@@ -779,6 +793,7 @@ interface MenuItemsInterface {
     title: string;
     addToOrderLabel: string;
     speak: (text: string) => void;
+    favoriteMenuId: number | null;
 }
 
 function MenuItems({
@@ -788,6 +803,7 @@ function MenuItems({
     title,
     addToOrderLabel,
     speak,
+    favoriteMenuId,
 }: MenuItemsInterface) {
     const { isHighContrast } = useAccessibility();
     return (
@@ -810,6 +826,7 @@ function MenuItems({
                                 onConfirm={onItemOrder}
                                 addToOrderLabel={addToOrderLabel}
                                 speak={speak}
+                                isFavorite={favoriteMenuId === item.id}
                             />
                         )),
                     )}
@@ -821,9 +838,13 @@ function MenuItems({
 function CartItemCard({
     item,
     onRemove,
+    onIncrease,
+    onDecrease,
 }: {
     item: CartItem;
     onRemove: () => void;
+    onIncrease: () => void;
+    onDecrease: () => void;
 }) {
     const { isHighContrast } = useAccessibility();
 
@@ -852,18 +873,40 @@ function CartItemCard({
                 <p key={c.id}>{c.name}</p>
             ))}
             <Separator className="my-4" />
-            <div className="flex items-center justify-between">
-                <p>Total: ${calculateSubtotal([item])}</p>
-                <Button
-                    variant="outline"
-                    size="sm"
-                    className={
-                        isHighContrast ? "border-red-400 text-red-400" : ""
-                    }
-                    onClick={onRemove}
-                >
-                    Remove
-                </Button>
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <Button
+                            variant="outline"
+                            size="icon"
+                            className={isHighContrast ? "border-red-400 text-red-400" : ""}
+                            onClick={onDecrease}
+                        >
+                            -
+                        </Button>
+                        <span className="min-w-[2rem] text-center">
+                            {item.quantity}
+                        </span>
+                        <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={onIncrease}
+                        >
+                            +
+                        </Button>
+                    </div>
+                    <div className="text-right">
+                        <p className="text-sm text-gray-500">
+                            ${calculateSubtotal([item]).toFixed(2)}
+                        </p>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className={isHighContrast ? "border-red-400 text-red-400" : ""}
+                            onClick={onRemove}
+                        >
+                            Remove
+                        </Button>
+                    </div>
             </div>
         </div>
     );
@@ -1165,12 +1208,14 @@ function Cart({
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-                drinks: items.map((i) => ({
-                    id: i.id,
-                    customizations: i.customizations.map((c) => c.id),
-                    ice: 0,
-                    scalars: i.scalars,
-                })),
+                drinks: items.flatMap((i) =>
+                    Array.from({ length: i.quantity }, () => ({
+                        id: i.id,
+                        customizations: i.customizations.map((c) => c.id),
+                        ice: 0,
+                        scalars: i.scalars,
+                    })),
+                ),
                 employeeId: 1,
                 paymentMethod: paymentMethod,
                 receiptType,
@@ -1229,6 +1274,25 @@ function Cart({
                                 key={idx}
                                 item={i}
                                 onRemove={() => handleRemoveCartItem(idx)}
+                                onIncrease={() =>
+                                    setItems((prev) =>
+                                        prev.map((it, j) =>
+                                            j === idx ? { ...it, quantity: it.quantity + 1 } : it,
+                                        ),
+                                    )
+                                }
+                                onDecrease={() =>
+                                    setItems((prev) =>
+                                        prev.flatMap((it, j) => {
+                                            if (j !== idx) return [it];
+                                            if (it.quantity <= 1) {
+                                                // if quantity would go below 1, remove the line
+                                                return [];
+                                            }
+                                            return [{ ...it, quantity: it.quantity - 1 }];
+                                        }),
+                                    )
+                                }
                             />
                         ))
                     )}
@@ -1364,6 +1428,8 @@ function CashierContent() {
         USD: 1,
     });
 
+    const [favoriteMenuId, setFavoriteMenuId] = useState<number | null>(null);
+
     const { data: session, status } = useSession();
     const isLoggedIn = status === "authenticated";
     const rawLoyalty = (session?.user as any)?.loyaltyPoints;
@@ -1395,6 +1461,30 @@ function CashierContent() {
 
         fetchRate();
     }, [currency]);
+
+    useEffect(() => {
+        if (!isLoggedIn || !userId) {
+            setFavoriteMenuId(null);
+            return;
+        }
+
+        async function fetchFavorite() {
+            try {
+                const res = await fetch(
+                    `/api/customer/favoriteDrink?userId=${userId}`,
+                );
+                if (!res.ok) return;
+                const data = await res.json();
+                setFavoriteMenuId(data?.favoriteMenuId ?? null);
+            } catch (e) {
+                console.error("Failed to fetch favorite drink", e);
+            }
+        }
+
+        fetchFavorite();
+    // Re-fetch whenever loyalty points change (i.e., after successful orders)
+    }, [isLoggedIn, userId, loyaltyPoints]);
+
 
     const loadMenuData = async () => {
         setMenuDataReady(false);
@@ -1515,11 +1605,29 @@ function CashierContent() {
                             menuData={translatedMenuData}
                             selectedCategory={selectedCategory}
                             onItemOrder={(item) =>
-                                setCartItems([...cartItems, item])
+                                setCartItems((prev) => {
+                                    const idx = prev.findIndex((p) =>
+                                        p.id === item.id &&
+                                        JSON.stringify(p.customizations) === JSON.stringify(item.customizations) &&
+                                        JSON.stringify(p.scalars) === JSON.stringify(item.scalars)
+                                    );
+
+                                    if (idx === -1) {
+                                        return [...prev, item]; // item already has quantity: 1
+                                    }
+
+                                    const copy = [...prev];
+                                    copy[idx] = {
+                                        ...copy[idx],
+                                        quantity: copy[idx].quantity + 1,
+                                    };
+                                    return copy;
+                                })
                             }
                             title={labels.drinks}
                             addToOrderLabel={labels.addToOrder}
                             speak={speak}
+                            favoriteMenuId={favoriteMenuId}
                         />
                         <Cart
                             items={cartItems}

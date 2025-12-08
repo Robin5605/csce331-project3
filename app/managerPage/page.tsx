@@ -1,8 +1,6 @@
 // app/managerPage/page.tsx
 import { Suspense } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import TopNav from "@/components/TopNav";
-import LogoutButton from "@/components/LogoutButton";
 
 // These are SERVER components (pages) – normal imports are fine
 import EmployeesPage from "@/app/employees/page";

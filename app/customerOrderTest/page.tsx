@@ -1062,50 +1062,6 @@ function ReceiptSelector({
                                             </FieldContent>
                                         </Field>
                                     </FieldLabel>
-
-                                    <FieldLabel
-                                        htmlFor="txtmsg-receipt-selector"
-                                        className={`border ${
-                                            isHighContrast
-                                                ? "border-primary"
-                                                : "border-secondary"
-                                        } ${
-                                            isHighContrast
-                                                ? "has-data-[state=checked]:border-secondary"
-                                                : "has-data-[state=checked]:border-primary"
-                                        }`}
-                                    >
-                                        <Field orientation="horizontal">
-                                            <RadioGroupItem
-                                                value="text"
-                                                id="txtmsg-receipt-selector"
-                                                className={
-                                                    isHighContrast
-                                                        ? "data-[state=checked]:bg-white"
-                                                        : ""
-                                                }
-                                            />
-                                            <FieldContent>
-                                                <FieldTitle>
-                                                    Text Message
-                                                </FieldTitle>
-                                                <FieldDescription>
-                                                    <Input
-                                                        type="tel"
-                                                        onFocus={() =>
-                                                            setSelected("text")
-                                                        }
-                                                        value={phoneNumber}
-                                                        onChange={(e) =>
-                                                            setPhoneNumber(
-                                                                e.target.value,
-                                                            )
-                                                        }
-                                                    />
-                                                </FieldDescription>
-                                            </FieldContent>
-                                        </Field>
-                                    </FieldLabel>
                                 </RadioGroup>
                             </FieldSet>
                         </FieldGroup>

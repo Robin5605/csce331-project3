@@ -67,9 +67,7 @@ function DrinkCard({ item }: { item: MenuItem }) {
                 <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-black/5 to-transparent opacity-0 group-hover:opacity-100 transition" />
                 <div className="absolute bottom-2 left-3 right-3 flex justify-between items-end text-black drop-shadow">
                     <p className="font-semibold text-lg">{item.name}</p>
-                    <p className="font-bold text-xl">
-                        ${item.cost.toFixed(2)}
-                    </p>
+                    <p className="font-bold text-xl">${item.cost.toFixed(2)}</p>
                 </div>
             </div>
             <div className="px-4 py-3 flex items-center justify-between text-sm text-[#6d6875]">
@@ -80,8 +78,9 @@ function DrinkCard({ item }: { item: MenuItem }) {
 }
 
 export default function MenuBoardPage() {
-    const [selectedCategory, setSelectedCategory] =
-        useState<CategoryName>(CATEGORY_ORDER[0]);
+    const [selectedCategory, setSelectedCategory] = useState<CategoryName>(
+        CATEGORY_ORDER[0],
+    );
 
     const [menuData, setMenuData] = useState<MenuData>(emptyMenuData);
     const [menuDataReady, setMenuDataReady] = useState<boolean>(false);

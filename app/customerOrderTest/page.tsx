@@ -75,9 +75,8 @@ interface CartItem {
         cost: number;
         amount: number;
     }[];
-    quantity: number;   
+    quantity: number;
 }
-
 
 type DrinkSize = "small" | "medium" | "large";
 
@@ -178,7 +177,7 @@ function calculateSubtotal(cartItems: CartItem[]): number {
         for (const customization of item.customizations) {
             itemCost += customization.cost;
         }
-        total += itemCost * item.quantity;  
+        total += itemCost * item.quantity;
     }
 
     return total;
@@ -362,7 +361,6 @@ function ToppingCard({
     );
 }
 
-
 interface ToppingSelectorProps {
     onToppingSelect: (list: Ingredient[], id: string) => void;
     ingredientType: string;
@@ -418,7 +416,6 @@ interface MenuItemCardProps {
     isFavorite: boolean;
 }
 
-
 const iceToPercentage = (servings: number): string => {
     const mapping: { [key: number]: string } = {
         0: "0%",
@@ -439,8 +436,7 @@ function MenuItemCard({
 }: MenuItemCardProps) {
     const { isHighContrast, textMultipler } = useAccessibility();
 
-    const outOfStock =
-        typeof item.stock === "number" && item.stock <= 0;
+    const outOfStock = typeof item.stock === "number" && item.stock <= 0;
     const [open, setOpen] = useState(false);
 
     const [ice, setIce] = useState(4);
@@ -516,7 +512,7 @@ function MenuItemCard({
     }
 
     return (
-       <Dialog open={open} onOpenChange={handleOpenChange}>
+        <Dialog open={open} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>
                 <div
                     className={`relative flex flex-col gap-2 items-center 
@@ -773,7 +769,7 @@ function MenuItemCard({
                                     cost: item.cost,
                                     scalars: scalarServings,
                                     customizations: allCustomizations,
-                                    quantity: 1,   
+                                    quantity: 1,
                                 });
                             }}
                         >
@@ -873,40 +869,40 @@ function CartItemCard({
                 <p key={c.id}>{c.name}</p>
             ))}
             <Separator className="my-4" />
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                        <Button
-                            variant="outline"
-                            size="icon"
-                            className={isHighContrast ? "border-red-400 text-red-400" : ""}
-                            onClick={onDecrease}
-                        >
-                            -
-                        </Button>
-                        <span className="min-w-[2rem] text-center">
-                            {item.quantity}
-                        </span>
-                        <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={onIncrease}
-                        >
-                            +
-                        </Button>
-                    </div>
-                    <div className="text-right">
-                        <p className="text-sm text-gray-500">
-                            ${calculateSubtotal([item]).toFixed(2)}
-                        </p>
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            className={isHighContrast ? "border-red-400 text-red-400" : ""}
-                            onClick={onRemove}
-                        >
-                            Remove
-                        </Button>
-                    </div>
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                    <Button
+                        variant="outline"
+                        size="icon"
+                        className={
+                            isHighContrast ? "border-red-400 text-red-400" : ""
+                        }
+                        onClick={onDecrease}
+                    >
+                        -
+                    </Button>
+                    <span className="min-w-[2rem] text-center">
+                        {item.quantity}
+                    </span>
+                    <Button variant="outline" size="icon" onClick={onIncrease}>
+                        +
+                    </Button>
+                </div>
+                <div className="text-right">
+                    <p className="text-sm text-gray-500">
+                        ${calculateSubtotal([item]).toFixed(2)}
+                    </p>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className={
+                            isHighContrast ? "border-red-400 text-red-400" : ""
+                        }
+                        onClick={onRemove}
+                    >
+                        Remove
+                    </Button>
+                </div>
             </div>
         </div>
     );
@@ -1053,9 +1049,7 @@ function ReceiptSelector({
                                                     <Input
                                                         type="email"
                                                         onFocus={() =>
-                                                            setSelected(
-                                                                "email",
-                                                            )
+                                                            setSelected("email")
                                                         }
                                                         value={email}
                                                         onChange={(e) =>
@@ -1243,7 +1237,9 @@ function Cart({
     return (
         <div
             className={`grid grid-rows-[1fr_8fr_1fr] min-h-0 h-[850] gap-4 ${
-                isHighContrast ? "bg-black text-white border-8 border-yellow-200" : ""
+                isHighContrast
+                    ? "bg-black text-white border-8 border-yellow-200"
+                    : ""
             }`}
         >
             <p
@@ -1277,7 +1273,12 @@ function Cart({
                                 onIncrease={() =>
                                     setItems((prev) =>
                                         prev.map((it, j) =>
-                                            j === idx ? { ...it, quantity: it.quantity + 1 } : it,
+                                            j === idx
+                                                ? {
+                                                      ...it,
+                                                      quantity: it.quantity + 1,
+                                                  }
+                                                : it,
                                         ),
                                     )
                                 }
@@ -1289,7 +1290,12 @@ function Cart({
                                                 // if quantity would go below 1, remove the line
                                                 return [];
                                             }
-                                            return [{ ...it, quantity: it.quantity - 1 }];
+                                            return [
+                                                {
+                                                    ...it,
+                                                    quantity: it.quantity - 1,
+                                                },
+                                            ];
                                         }),
                                     )
                                 }
@@ -1482,9 +1488,8 @@ function CashierContent() {
         }
 
         fetchFavorite();
-    // Re-fetch whenever loyalty points change (i.e., after successful orders)
+        // Re-fetch whenever loyalty points change (i.e., after successful orders)
     }, [isLoggedIn, userId, loyaltyPoints]);
-
 
     const loadMenuData = async () => {
         setMenuDataReady(false);
@@ -1606,10 +1611,15 @@ function CashierContent() {
                             selectedCategory={selectedCategory}
                             onItemOrder={(item) =>
                                 setCartItems((prev) => {
-                                    const idx = prev.findIndex((p) =>
-                                        p.id === item.id &&
-                                        JSON.stringify(p.customizations) === JSON.stringify(item.customizations) &&
-                                        JSON.stringify(p.scalars) === JSON.stringify(item.scalars)
+                                    const idx = prev.findIndex(
+                                        (p) =>
+                                            p.id === item.id &&
+                                            JSON.stringify(p.customizations) ===
+                                                JSON.stringify(
+                                                    item.customizations,
+                                                ) &&
+                                            JSON.stringify(p.scalars) ===
+                                                JSON.stringify(item.scalars),
                                     );
 
                                     if (idx === -1) {

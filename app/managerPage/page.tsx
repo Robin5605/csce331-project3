@@ -25,7 +25,9 @@ export default function ManagerPage() {
                     <TabsTrigger value="ingredients">Ingredients</TabsTrigger>
                     <TabsTrigger value="menu">Menu</TabsTrigger>
                     <TabsTrigger value="reports">Reports</TabsTrigger>
-                    <TabsTrigger value="xz_reports">X and Z Reports</TabsTrigger>
+                    <TabsTrigger value="xz_reports">
+                        X and Z Reports
+                    </TabsTrigger>
                     <TabsTrigger value="kitchenpage">Kitchen Page</TabsTrigger>
                 </TabsList>
 

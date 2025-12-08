@@ -416,7 +416,6 @@ export async function deleteEmployee(id: number) {
     );
 }
 
-
 export async function fetch_categories(): Promise<Category[]> {
     await ensureConnected();
     const { rows } = await client.query<Category>(
@@ -796,10 +795,10 @@ export async function createOrder({
         let finalUserId: number | null = null;
 
         if (userId != null) {
-            const checkUser = await client.query(
+            const checkUser = (await client.query(
                 `SELECT id FROM users WHERE id = $1`,
                 [userId],
-            ) as any;
+            )) as any;
 
             if (checkUser.rowCount > 0) {
                 finalUserId = userId;
@@ -809,7 +808,6 @@ export async function createOrder({
                 );
             }
         }
-
 
         // Tax + final total, after discount
         const tax = subtotal * TAX_RATE;

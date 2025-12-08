@@ -630,19 +630,6 @@ function MenuItemCard({
 
                     <div className="flex flex-col space-y-4">
                         {Array.from(globalToppingsGroups.keys()).map((key) => {
-                            if (key === "Toppings") {
-                                return (
-                                    <div key={key}>
-                                        <p className="text-2xl mb-3">{key}</p>
-                                        <ToppingSelector
-                                            globalToppings={selectedToppings}
-                                            onToppingSelect={setToppingsForType}
-                                            ingredientType={key}
-                                            multiSelect={true}
-                                        />
-                                    </div>
-                                );
-                            }
                             if (key === "Size") {
                                 return (
                                     <div key={key}>
@@ -695,6 +682,19 @@ function MenuItemCard({
                                                 L
                                             </div>
                                         </div>
+                                    </div>
+                                );
+                            }
+                            if (!(key === "Tea" || key ==="Temperature")) {
+                                return (
+                                    <div key={key}>
+                                        <p className="text-2xl mb-3">{key}</p>
+                                        <ToppingSelector
+                                            globalToppings={selectedToppings}
+                                            onToppingSelect={setToppingsForType}
+                                            ingredientType={key}
+                                            multiSelect={true}
+                                        />
                                     </div>
                                 );
                             }

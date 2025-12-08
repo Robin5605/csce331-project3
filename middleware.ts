@@ -41,7 +41,6 @@ export async function middleware(req: NextRequest) {
         "/ingredientManagementPage",
         "/menuManagementPage",
         "/x_and_z_reports",
-        "/KitchenPage",
     ];
 
     // manager-only routes
@@ -52,7 +51,10 @@ export async function middleware(req: NextRequest) {
     }
 
     // cashier routes
-    if (pathname.startsWith("/CashierPage")) {
+    if (
+        pathname.startsWith("/CashierPage") ||
+        pathname.startsWith("/KitchenPage")
+    ) {
         if (role !== "cashier" && role !== "manager") {
             return NextResponse.redirect(new URL("/loginPage", req.url));
         }
@@ -69,5 +71,6 @@ export const config = {
         "/menuManagementPage/:path*",
         "/x_and_z_reports/:path*",
         "/CashierPage/:path*",
+        "/KitchenPage/:path*",
     ],
 };

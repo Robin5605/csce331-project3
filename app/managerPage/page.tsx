@@ -10,7 +10,10 @@ import IngredientManagementPage from "@/app/ingredientManagementPage/page";
 import MenuManagementPage from "@/app/menuManagementPage/page";
 import ReportsPage from "@/app/ReportsPage/page";
 import XZReports from "@/app/x_and_z_reports/page";
-import KitchenPage from "@/app/KitchenPage/page";
+import TopNav from "@/components/TopNav";
+import LogoutButton from "@/components/LogoutButton";
+import KitchenButton from "@/components/KitchenButton";
+
 
 export default function ManagerPage() {
     return (
@@ -28,7 +31,6 @@ export default function ManagerPage() {
                     <TabsTrigger value="xz_reports">
                         X and Z Reports
                     </TabsTrigger>
-                    <TabsTrigger value="kitchenpage">Kitchen Page</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="employees" className="pt-5">
@@ -61,14 +63,8 @@ export default function ManagerPage() {
                         <XZReports />
                     </Suspense>
                 </TabsContent>
-
-                <TabsContent value="kitchenpage" className="pt-4">
-                    <Suspense fallback={<p>Loading kitchen…</p>}>
-                        <KitchenPage />
-                    </Suspense>
-                </TabsContent>
             </Tabs>
-
+            <KitchenButton />
             <LogoutButton />
         </div>
     );

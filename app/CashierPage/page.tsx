@@ -623,7 +623,7 @@ export default function CashierPage() {
                                 isOneItem={false}
                                 toFilterBy="boba"
                                 category="Boba"
-                                allowsMultipleSelections={false}
+                                allowsMultipleSelections={true}
                             />
                         </CustomizationCategory>
 
@@ -632,7 +632,7 @@ export default function CashierPage() {
                                 isOneItem={false}
                                 toFilterBy="jelly"
                                 category="Jelly"
-                                allowsMultipleSelections={false}
+                                allowsMultipleSelections={true}
                             />
                         </CustomizationCategory>
 

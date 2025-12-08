@@ -924,12 +924,14 @@ interface TextReceipt {
 type ReceiptType = NoReceipt | EmailReceipt | TextReceipt;
 
 interface ReceiptSelectorProps {
+    isTriggerDisabled: boolean;
     onSubmit: (receiptType: ReceiptType) => void;
     paymentMethod: "CARD" | "CASH";
     setPaymentMethod: React.Dispatch<React.SetStateAction<"CARD" | "CASH">>;
 }
 
 function ReceiptSelector({
+    isTriggerDisabled,
     onSubmit,
     paymentMethod,
     setPaymentMethod,
@@ -946,6 +948,7 @@ function ReceiptSelector({
                     className={`w-full ${
                         isHighContrast ? "border-4 border-green-400" : ""
                     }`}
+                    disabled={isTriggerDisabled}
                 >
                     {EN_LABELS.checkout}
                 </Button>
@@ -1382,6 +1385,7 @@ function Cart({
                     )}
 
                     <ReceiptSelector
+                        isTriggerDisabled={items.length === 0}
                         onSubmit={handleCheckout}
                         paymentMethod={paymentMethod}
                         setPaymentMethod={setPaymentMethod}

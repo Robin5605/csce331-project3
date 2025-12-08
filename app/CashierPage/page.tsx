@@ -590,6 +590,15 @@ export default function CashierPage() {
                             />
                         </CustomizationCategory>
 
+                        <CustomizationCategory name="Sugar">
+                            <CustomizationData
+                                isOneItem={true}
+                                toFilterBy="sugar"
+                                category="Sugar"
+                                allowsMultipleSelections={false}
+                            />
+                        </CustomizationCategory>
+
                         <CustomizationCategory name="Tea">
                             <CustomizationData
                                 isOneItem={false}

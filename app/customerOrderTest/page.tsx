@@ -85,13 +85,14 @@ const LANGUAGES = [
     { code: "ar", label: "العربية" },
 ];
 
-type CurrencyCode = "USD" | "EUR" | "CAD" | "GBP";
+type CurrencyCode = "USD" | "EUR" | "CAD" | "GBP" | "MXN";
 
 const CURRENCIES = [
     { code: "USD", label: "USD - $", symbol: "$" },
     { code: "EUR", label: "EUR - €", symbol: "€" },
     { code: "CAD", label: "CAD - $", symbol: "$" },
     { code: "GBP", label: "GBP - £", symbol: "£" },
+    { code: "MXN", label: "MXN - $", symbol: "MX$"},
 ];
 
 const CURRENCY_SYMBOLS: Record<CurrencyCode, string> = {
@@ -99,6 +100,7 @@ const CURRENCY_SYMBOLS: Record<CurrencyCode, string> = {
     EUR: "€",
     CAD: "$",
     GBP: "£",
+    MXN: "MX$"
 };
 
 const LABEL_KEYS = [

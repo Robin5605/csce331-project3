@@ -762,6 +762,24 @@ export async function createOrder({
             }
         }
 
+        let finalUserId: number | null = null;
+
+        if (userId != null) {
+            const checkUser = await client.query(
+                `SELECT id FROM users WHERE id = $1`,
+                [userId],
+            ) as any;
+
+            if (checkUser.rowCount > 0) {
+                finalUserId = userId;
+            } else {
+                console.warn(
+                    `createOrder: user_id=${userId} not found in users, inserting NULL for guest order`,
+                );
+            }
+        }
+
+
         // Tax + final total, after discount
         const tax = subtotal * TAX_RATE;
         const total = subtotal + tax;
@@ -771,7 +789,7 @@ export async function createOrder({
                 `INSERT INTO orders (cost, employee_id, payment_method, user_id) 
                  VALUES ($1, $2, $3, $4) 
                  RETURNING id`,
-                [total, employeeId, paymentMethod, userId ?? null],
+                [total, employeeId, paymentMethod, finalUserId],
             )
         ).rows[0].id as number;
 

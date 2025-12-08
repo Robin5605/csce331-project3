@@ -189,15 +189,16 @@ export async function insert_into_ingredient_management_table(
     name: string,
     stock: number,
     cost: number,
+    groupName: string,
 ): Promise<Ingredient[]> {
     await ensureConnected();
     const { rows } = await client.query<Ingredient>(
         `
-    INSERT INTO ingredients (name, stock, cost)
-    VALUES ($1, $2, $3)
-    RETURNING id, name, stock, cost::float8 AS cost
+    INSERT INTO ingredients (name, stock, cost, ingredient_group)
+    VALUES ($1, $2, $3, $4)
+    RETURNING id, name, stock, cost::float8 AS cost, ingredient_group
     `,
-        [name, stock ?? 0, cost ?? 0],
+        [name, stock ?? 0, cost ?? 0, groupName ?? "Toppings"],
     );
     return rows;
 }
@@ -319,6 +320,7 @@ export async function update_ingredient_management_table(
     name: string,
     stock: number,
     cost: number,
+    groupName: string,
 ): Promise<Ingredient> {
     await ensureConnected();
     const { rows, rowCount } = await client.query<Ingredient>(
@@ -326,11 +328,12 @@ export async function update_ingredient_management_table(
     UPDATE ingredients
        SET name = $2,
            stock = $3,
-           cost  = $4
+           cost  = $4,
+           ingredient_group = $5
      WHERE id = $1
-     RETURNING id, name, stock, cost::float8 AS cost
+     RETURNING id, name, stock, cost::float8 AS cost, ingredient_group
     `,
-        [id, name, stock, cost],
+        [id, name, stock, cost, groupName],
     );
 
     if (rowCount === 0) {

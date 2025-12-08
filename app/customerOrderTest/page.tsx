@@ -584,7 +584,7 @@ function MenuItemCard({
                                                     className={`cursor-pointer duration-300 border rounded-full p-4 text-xl ${
                                                         isSelected 
                                                             ? isHighContrast 
-                                                                ? "bg-black text-blue-400"
+                                                                ? "bg-black text-blue-00"
                                                                 : "bg-black text-white"
                                                                 : ""
                                                     }`}
@@ -877,7 +877,7 @@ function CartItemCard({
                         variant="outline"
                         size="icon"
                         className={
-                            isHighContrast ? "border-red-400 text-red-400" : ""
+                            isHighContrast ? "border-red-400 border-4 text-black" : ""
                         }
                         onClick={onDecrease}
                     >
@@ -886,7 +886,9 @@ function CartItemCard({
                     <span className="min-w-[2rem] text-center">
                         {item.quantity}
                     </span>
-                    <Button variant="outline" size="icon" onClick={onIncrease}>
+                    <Button variant="outline" size="icon"                         className={
+                            isHighContrast ? "border-green-400 border-4 text-black" : ""
+                        } onClick={onIncrease}>
                         +
                     </Button>
                 </div>
@@ -1070,29 +1072,32 @@ function ReceiptSelector({
                     </div>
                 </div>
 
-                <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+               <AlertDialogFooter className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+                    <AlertDialogCancel className="w-full sm:w-auto">
+                        Cancel
+                    </AlertDialogCancel>
+
                     <AlertDialogAction
                         asChild
-                        className={`w-full ${
-                            isHighContrast ? "border-4 border-green-400" : ""
+                        className={`w-full sm:w-auto ${
+                        isHighContrast ? "border-4 border-green-400" : ""
                         }`}
                         onClick={() => {
-                            switch (selected) {
-                                case "none":
-                                    onSubmit({ kind: "none" });
-                                    break;
-                                case "email":
-                                    onSubmit({ kind: "email", email });
-                                    break;
-                                case "text":
-                                    onSubmit({ kind: "text", phoneNumber });
-                                    break;
-                            }
+                        switch (selected) {
+                            case "none":
+                            onSubmit({ kind: "none" });
+                            break;
+                            case "email":
+                            onSubmit({ kind: "email", email });
+                            break;
+                            case "text":
+                            onSubmit({ kind: "text", phoneNumber });
+                            break;
+                        }
                         }}
                     >
-                        <Button variant="default" className="w-full">
-                            {EN_LABELS.yesPlaceOrder}
+                        <Button variant="default" className="w-full sm:w-auto">
+                        {EN_LABELS.yesPlaceOrder}
                         </Button>
                     </AlertDialogAction>
                 </AlertDialogFooter>

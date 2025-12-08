@@ -893,9 +893,12 @@ export default function CashierPage() {
                         </div>
                         <AlertDialog>
                             <AlertDialogTrigger asChild>
-                                <button className="w-full bg-[#101010] hover:bg-[#505055] text-white font-semibold py-2 rounded-xl transition">
+                                <Button
+                                    className="w-full"
+                                    disabled={curOrders.length === 0}
+                                >
                                     Checkout
-                                </button>
+                                </Button>
                             </AlertDialogTrigger>
 
                             <AlertDialogContent>

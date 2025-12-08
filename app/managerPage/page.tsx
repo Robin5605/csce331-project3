@@ -1,13 +1,38 @@
+// app/managerPage/page.tsx
+import dynamic from "next/dynamic";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-
-import EmployeesPage from "@/app/employees/page";
-import IngredientManagementPage from "@/app/ingredientManagementPage/page";
-import MenuManagementPage from "@/app/menuManagementPage/page";
-import ReportsPage from "@/app/ReportsPage/page";
-import XZReports from "@/app/x_and_z_reports/page";
-import KitchenPage from "@/app//KitchenPage/page";
 import TopNav from "@/components/TopNav";
 import LogoutButton from "@/components/LogoutButton";
+
+const EmployeesPage = dynamic(() => import("@/app/employees/page"), {
+    loading: () => <p>Loading employees…</p>,
+});
+
+const IngredientManagementPage = dynamic(
+    () => import("@/app/ingredientManagementPage/page"),
+    {
+        loading: () => <p>Loading ingredients…</p>,
+    },
+);
+
+const MenuManagementPage = dynamic(
+    () => import("@/app/menuManagementPage/page"),
+    {
+        loading: () => <p>Loading menu…</p>,
+    },
+);
+
+const ReportsPage = dynamic(() => import("@/app/ReportsPage/page"), {
+    loading: () => <p>Loading reports…</p>,
+});
+
+const XZReports = dynamic(() => import("@/app/x_and_z_reports/page"), {
+    loading: () => <p>Loading X/Z reports…</p>,
+});
+
+const KitchenPage = dynamic(() => import("@/app/KitchenPage/page"), {
+    loading: () => <p>Loading kitchen…</p>,
+});
 
 export default function ManagerPage() {
     return (
@@ -16,20 +41,15 @@ export default function ManagerPage() {
 
             <h1 className="text-3xl font-bold mb-6">Manager Dashboard</h1>
 
-            <Tabs defaultValue="cashier" className="w-full">
-                {/* ───── TAB HEADERS ───── */}
+            <Tabs defaultValue="employees" className="w-full">
                 <TabsList className="grid grid-cols-6 w-full">
                     <TabsTrigger value="employees">Employees</TabsTrigger>
                     <TabsTrigger value="ingredients">Ingredients</TabsTrigger>
                     <TabsTrigger value="menu">Menu</TabsTrigger>
                     <TabsTrigger value="reports">Reports</TabsTrigger>
-                    <TabsTrigger value="xz_reports">
-                        X and Z Reports
-                    </TabsTrigger>
+                    <TabsTrigger value="xz_reports">X and Z Reports</TabsTrigger>
                     <TabsTrigger value="kitchenpage">Kitchen Page</TabsTrigger>
                 </TabsList>
-
-                {/* ───── TAB CONTENTS ───── */}
 
                 <TabsContent value="employees" className="pt-5">
                     <EmployeesPage />
@@ -55,6 +75,7 @@ export default function ManagerPage() {
                     <KitchenPage />
                 </TabsContent>
             </Tabs>
+
             <LogoutButton />
         </div>
     );

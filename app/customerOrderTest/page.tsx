@@ -321,20 +321,26 @@ function ToppingCard({
     onUnselect,
 }: InventoryItemCardProps) {
     const { isHighContrast } = useAccessibility();
-    let selected = isSelected;
+    const outOfStock = item.stock <= 0;
+
     return (
         <div
-            className={`flex-col items-center justify-center border rounded p-4 cursor-pointer ${
-                isHighContrast
-                    ? selected
-                        ? "text-blue-400"
-                        : ""
-                    : selected
-                      ? "bg-black text-white"
-                      : ""
-            }`}
+            className={`
+                flex-col items-center justify-center border rounded p-4
+                ${outOfStock ? "opacity-40 cursor-not-allowed" : "cursor-pointer"}
+                ${
+                    isHighContrast
+                        ? isSelected && !outOfStock
+                            ? "text-blue-400"
+                            : ""
+                        : isSelected && !outOfStock
+                          ? "bg-black text-white"
+                          : ""
+                }
+            `}
             onClick={() => {
-                if (selected) {
+                if (outOfStock) return; // 🚫 do nothing
+                if (isSelected) {
                     onUnselect();
                 } else {
                     onSelect();
@@ -343,9 +349,15 @@ function ToppingCard({
         >
             <p className="text-center select-none">{item.name}</p>
             <p className="text-center select-none">(${item.cost})</p>
+            {outOfStock && (
+                <p className="mt-1 text-xs text-red-500 text-center">
+                    Out of stock
+                </p>
+            )}
         </div>
     );
 }
+
 
 interface ToppingSelectorProps {
     onToppingSelect: (list: Ingredient[], id: string) => void;
@@ -420,6 +432,8 @@ function MenuItemCard({
 }: MenuItemCardProps) {
     const { isHighContrast, textMultipler } = useAccessibility();
 
+    const outOfStock =
+        typeof item.stock === "number" && item.stock <= 0;
     const [open, setOpen] = useState(false);
 
     const [ice, setIce] = useState(4);
@@ -465,8 +479,37 @@ function MenuItemCard({
         }
     };
 
+    if (outOfStock) {
+        return (
+            <div
+                className={`
+                    relative flex flex-col gap-2 items-center p-2 rounded border
+                    opacity-40 cursor-not-allowed
+                    ${isHighContrast ? "bg-black text-white" : "bg-gray-100 text-black"}
+                `}
+            >
+                {item.image_url ? (
+                    <img
+                        src={item.image_url}
+                        alt={"drink image"}
+                        className="w-40 h-40 object-cover"
+                    />
+                ) : (
+                    <CupSoda width={120} height={120} />
+                )}
+                <span className="font-semibold text-center">{item.name}</span>
+                <span className="text-sm font-medium">
+                    ${item.cost.toFixed(2)}
+                </span>
+                <span className="mt-1 text-xs font-semibold text-red-500">
+                    Out of stock
+                </span>
+            </div>
+        );
+    }
+
     return (
-        <Dialog open={open} onOpenChange={handleOpenChange}>
+       <Dialog open={open} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>
                 <div
                     className={`relative flex flex-col gap-2 items-center 
@@ -485,7 +528,7 @@ function MenuItemCard({
                         🔊
                     </button>
 
-                    {item.image_url !== "" && item.image_url !== null ? (
+                    {item.image_url ? (
                         <img
                             src={item.image_url}
                             alt={"drink image"}

@@ -365,25 +365,55 @@ export async function remove_employee(id: number): Promise<Employee | null> {
 /**
  * Update an employee by id and return the updated row (or null).
  */
-export async function updateEmployee(
-    id: number,
-    newName: string,
-    newHoursWorked: number,
-    newPin: number,
-): Promise<Employee | null> {
-    await ensureConnected();
-    const { rows } = await client.query<Employee>(
-        `
-    UPDATE employees
-       SET name = $2,
-           hours_worked = $3,
-           pin = $4
-     WHERE id = $1
-     RETURNING *
-    `,
-        [id, newName, newHoursWorked, newPin],
+export async function updateEmployee(args: {
+    id: number;
+    name: string;
+    hours_worked: number;
+    pin: number;
+    is_manager: boolean;
+}): Promise<Employee> {
+    const { id, name, hours_worked, pin, is_manager } = args;
+
+    const result = await client.query<Employee>(
+        `UPDATE employees
+         SET name = $1,
+             hours_worked = $2,
+             pin = $3,
+             is_manager = $4
+         WHERE id = $5
+         RETURNING id, name, hours_worked, pin, is_manager`,
+        [name, hours_worked, pin, is_manager, id],
     );
-    return rows.length === 0 ? null : rows[0];
+
+    return result.rows[0];
+}
+
+export async function createEmployee(args: {
+    name: string;
+    hours_worked: number;
+    pin: number;
+    is_manager: boolean;
+}): Promise<Employee> {
+    const { name, hours_worked, pin, is_manager } = args;
+
+    const result = await client.query<Employee>(
+        `INSERT INTO employees (name, hours_worked, pin, is_manager)
+         VALUES ($1, $2, $3, $4)
+         RETURNING id, name, hours_worked, pin, is_manager`,
+        [name, hours_worked, pin, is_manager],
+    );
+
+    return result.rows[0];
+}
+
+export async function deleteEmployee(id: number) {
+    await client.query(
+        `
+        DELETE FROM employees
+        WHERE id = $1
+        `,
+        [id],
+    );
 }
 
 export async function fetch_categories(): Promise<Category[]> {
@@ -762,6 +792,23 @@ export async function createOrder({
             }
         }
 
+        let finalUserId: number | null = null;
+
+        if (userId != null) {
+            const checkUser = (await client.query(
+                `SELECT id FROM users WHERE id = $1`,
+                [userId],
+            )) as any;
+
+            if (checkUser.rowCount > 0) {
+                finalUserId = userId;
+            } else {
+                console.warn(
+                    `createOrder: user_id=${userId} not found in users, inserting NULL for guest order`,
+                );
+            }
+        }
+
         // Tax + final total, after discount
         const tax = subtotal * TAX_RATE;
         const total = subtotal + tax;
@@ -771,7 +818,7 @@ export async function createOrder({
                 `INSERT INTO orders (cost, employee_id, payment_method, user_id) 
                  VALUES ($1, $2, $3, $4) 
                  RETURNING id`,
-                [total, employeeId, paymentMethod, userId ?? null],
+                [total, employeeId, paymentMethod, finalUserId],
             )
         ).rows[0].id as number;
 
@@ -838,6 +885,31 @@ export async function createOrder({
         await client.query("ROLLBACK");
         throw e;
     }
+}
+
+export async function getFavoriteDrinkForUser(
+    userId: number,
+): Promise<number | null> {
+    await ensureConnected();
+
+    const res = await client.query(
+        `
+        SELECT d.menu_id, COUNT(*) AS times
+        FROM drinks_orders d
+        JOIN orders o ON o.id = d.order_id
+        WHERE o.user_id = $1
+        GROUP BY d.menu_id
+        ORDER BY times DESC
+        LIMIT 1
+        `,
+        [userId],
+    );
+
+    if (res.rows.length === 0) {
+        return null;
+    }
+
+    return Number(res.rows[0].menu_id);
 }
 
 export async function getMenuItemById(drinkId: number): Promise<MenuItem> {

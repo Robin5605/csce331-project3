@@ -582,9 +582,11 @@ function MenuItemCard({
                                                 <div
                                                     key={`${sItem.id}${servings}`}
                                                     className={`cursor-pointer duration-300 border rounded-full p-4 text-xl ${
-                                                        isSelected
-                                                            ? "bg-black text-white"
-                                                            : ""
+                                                        isSelected 
+                                                            ? isHighContrast 
+                                                                ? "bg-black text-blue-500"
+                                                                : "bg-black text-white"
+                                                                : ""
                                                     }`}
                                                     onClick={() => {
                                                         setScalarServings(
@@ -875,7 +877,7 @@ function CartItemCard({
                         variant="outline"
                         size="icon"
                         className={
-                            isHighContrast ? "border-red-400 text-red-400" : ""
+                            isHighContrast ? "border-red-400 border-4 text-black" : ""
                         }
                         onClick={onDecrease}
                     >
@@ -884,7 +886,9 @@ function CartItemCard({
                     <span className="min-w-[2rem] text-center">
                         {item.quantity}
                     </span>
-                    <Button variant="outline" size="icon" onClick={onIncrease}>
+                    <Button variant="outline" size="icon"                         className={
+                            isHighContrast ? "border-green-400 border-4 text-black" : ""
+                        } onClick={onIncrease}>
                         +
                     </Button>
                 </div>
@@ -1065,79 +1069,38 @@ function ReceiptSelector({
                                             </FieldContent>
                                         </Field>
                                     </FieldLabel>
-
-                                    <FieldLabel
-                                        htmlFor="txtmsg-receipt-selector"
-                                        className={`border ${
-                                            isHighContrast
-                                                ? "border-primary"
-                                                : "border-secondary"
-                                        } ${
-                                            isHighContrast
-                                                ? "has-data-[state=checked]:border-secondary"
-                                                : "has-data-[state=checked]:border-primary"
-                                        }`}
-                                    >
-                                        <Field orientation="horizontal">
-                                            <RadioGroupItem
-                                                value="text"
-                                                id="txtmsg-receipt-selector"
-                                                className={
-                                                    isHighContrast
-                                                        ? "data-[state=checked]:bg-white"
-                                                        : ""
-                                                }
-                                            />
-                                            <FieldContent>
-                                                <FieldTitle>
-                                                    Text Message
-                                                </FieldTitle>
-                                                <FieldDescription>
-                                                    <Input
-                                                        type="tel"
-                                                        onFocus={() =>
-                                                            setSelected("text")
-                                                        }
-                                                        value={phoneNumber}
-                                                        onChange={(e) =>
-                                                            setPhoneNumber(
-                                                                e.target.value,
-                                                            )
-                                                        }
-                                                    />
-                                                </FieldDescription>
-                                            </FieldContent>
-                                        </Field>
-                                    </FieldLabel>
                                 </RadioGroup>
                             </FieldSet>
                         </FieldGroup>
                     </div>
                 </div>
 
-                <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+               <AlertDialogFooter className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+                    <AlertDialogCancel className="w-full sm:w-auto">
+                        Cancel
+                    </AlertDialogCancel>
+
                     <AlertDialogAction
                         asChild
-                        className={`w-full ${
-                            isHighContrast ? "border-4 border-green-400" : ""
+                        className={`w-full sm:w-auto ${
+                        isHighContrast ? "border-4 border-green-400" : ""
                         }`}
                         onClick={() => {
-                            switch (selected) {
-                                case "none":
-                                    onSubmit({ kind: "none" });
-                                    break;
-                                case "email":
-                                    onSubmit({ kind: "email", email });
-                                    break;
-                                case "text":
-                                    onSubmit({ kind: "text", phoneNumber });
-                                    break;
-                            }
+                        switch (selected) {
+                            case "none":
+                            onSubmit({ kind: "none" });
+                            break;
+                            case "email":
+                            onSubmit({ kind: "email", email });
+                            break;
+                            case "text":
+                            onSubmit({ kind: "text", phoneNumber });
+                            break;
+                        }
                         }}
                     >
-                        <Button variant="default" className="w-full">
-                            {EN_LABELS.yesPlaceOrder}
+                        <Button variant="default" className="w-full sm:w-auto">
+                        {EN_LABELS.yesPlaceOrder}
                         </Button>
                     </AlertDialogAction>
                 </AlertDialogFooter>
@@ -1264,9 +1227,9 @@ function Cart({
             >
                 <div className="space-y-4">
                     {items.length === 0 ? (
-                        <p className="text-center text-sm text-gray-500">
+                        <p className={`text-center text-sm ${isHighContrast ? "text-white": "text-gray-500"}`}>
                             Your cart is empty
-                        </p>
+                        </p>    
                     ) : (
                         items.map((i, idx) => (
                             <CartItemCard
@@ -1307,13 +1270,12 @@ function Cart({
                     )}
                 </div>
             </ScrollArea>
-
             <div
                 className={`p-4 border rounded space-y-2 ${
                     textMultipler >= 1.75 ? "text-sm" : "text-md"
                 } ${
                     isHighContrast
-                        ? "bg-black text-white border-4 border-blue-500"
+                        ? "bg-black text-white border-4 border-blue-500 [&_*]:text-white [&_option]:text-white"
                         : "bg-white text-black border"
                 }`}
             >
@@ -1344,7 +1306,7 @@ function Cart({
                         <div
                             className={`mt-2 p-2 rounded border text-sm ${
                                 isHighContrast
-                                    ? "bg-black text-white border-blue-400"
+                                    ? "bg-black text-white border-blue-400 [&_*]:text-white"
                                     : "bg-gray-50 text-black border-gray-300"
                             }`}
                         >
@@ -1357,11 +1319,10 @@ function Cart({
 
                             <Button
                                 variant={useLoyalty ? "default" : "outline"}
-                                className={`mt-2 w-full ${
-                                    isHighContrast && useLoyalty
-                                        ? "border-4 border-green-400"
-                                        : ""
-                                }`}
+                                className={`mt-2 w-full
+                                    ${isHighContrast ? "text-black disabled:opacity-100 disabled:text-gray-700" : ""}
+                                    ${isHighContrast && useLoyalty ? "border-4 border-green-400" : ""}
+                                `}
                                 disabled={
                                     !items.length ||
                                     loyaltyPoints < LOYALTY_POINTS_THRESHOLD
@@ -1377,8 +1338,11 @@ function Cart({
                                             loyaltyPoints
                                         } more points to redeem`}
                             </Button>
-
-                            <p className="mt-1 text-xs opacity-80">
+                            <p
+                            className={`mt-1 text-xs ${
+                                isHighContrast ? "text-white opacity-100" : "opacity-80"
+                            }`}
+                            >
                                 Loyalty will be applied at checkout.
                             </p>
                         </div>
@@ -1394,8 +1358,8 @@ function Cart({
                     <select
                         className={`rounded border px-2 py-1 text-sm w-full ${
                             isHighContrast
-                                ? "bg-black text-white border-white"
-                                : "bg-white text-black border-gray-300"
+                            ? "bg-black text-white border-white [&_option]:bg-black [&_option]:text-white"
+                            : "bg-white text-black border-gray-300"
                         }`}
                         value={currency}
                         onChange={(e) =>

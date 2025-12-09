@@ -463,12 +463,6 @@ function MenuItemCard({
                     amount: 0,
                 })),
             );
-        }
-    }, [open]);
-
-    const handleOpenChange = (isOpen: boolean) => {
-        setOpen(isOpen);
-        if (isOpen) {
             setIce(4);
             setSize("medium");
 
@@ -480,6 +474,10 @@ function MenuItemCard({
 
             setToppingsForType(blackTea ? [blackTea] : [], "Tea");
         }
+    }, [open]);
+
+    const handleOpenChange = (isOpen: boolean) => {
+        setOpen(isOpen);
     };
 
     if (outOfStock) {
@@ -784,6 +782,317 @@ function MenuItemCard({
     );
 }
 
+interface EditCartItemDialogProps {
+    item: CartItem;
+    open: boolean;
+    onClose: () => void;
+    onSave: (updated: CartItem) => void;
+}
+
+function EditCartItemDialog({
+    item,
+    open,
+    onClose,
+    onSave,
+}: EditCartItemDialogProps) {
+    const { isHighContrast } = useAccessibility();
+
+    const [ice, setIce] = useState(item.ice);
+    const [size, setSize] = useState<DrinkSize>(getCartItemSize(item));
+
+    type ScalarServing = {
+        item: { name: string; id: number };
+        amount: number;
+    };
+
+    // Initialize scalarServings - merge item.scalars with all scaleItems
+    const initialScalarMap = new Map(
+        item.scalars.map((s) => [s.item.id, s.amount])
+    );
+    const [scalarServings, setScalarServings] = useState<ScalarServing[]>(
+        scaleItems.map((sItem) => ({
+            item: sItem,
+            amount: initialScalarMap.get(sItem.id) ?? 0,
+        })),
+    );
+
+    // Initialize toppings from item.customizations
+    const [selectedToppings, setSelectedToppings] = useState<
+        Map<string, Ingredient[]>
+    >(new Map());
+
+    useEffect(() => {
+        if (open) {
+            // Reset to item's values when dialog opens
+            setIce(item.ice);
+            setSize(getCartItemSize(item));
+            
+            // Initialize scalarServings - merge item.scalars with all scaleItems
+            const scalarMap = new Map(
+                item.scalars.map((s) => [s.item.id, s.amount])
+            );
+            setScalarServings(
+                scaleItems.map((sItem) => ({
+                    item: sItem,
+                    amount: scalarMap.get(sItem.id) ?? 0,
+                })),
+            );
+
+            // Rebuild toppings map from item.customizations
+            const map = new Map<string, Ingredient[]>();
+            for (const top of item.customizations) {
+                // Skip size customizations (they're handled separately)
+                if (top.id === 22 || top.id === 23 || top.id === 24) continue;
+
+                const inv = inventory.find((i) => i.id === top.id);
+                if (!inv) continue;
+
+                const group = inv.ingredient_group;
+                if (!map.has(group)) map.set(group, []);
+                map.get(group)!.push(inv);
+            }
+            setSelectedToppings(map);
+        }
+    }, [open, item]);
+
+    function setToppingsForType(list: Ingredient[], id: string) {
+        setSelectedToppings((prev) => {
+            const newMap = new Map(prev);
+            newMap.set(id, list);
+            return newMap;
+        });
+    }
+
+    const handleSave = () => {
+        let allCustomizations = Array.from(selectedToppings.values()).flatMap(
+            (topArr) =>
+                topArr.map((t) => ({
+                    id: t.id,
+                    name: t.name,
+                    cost: t.cost,
+                    amount: 1,
+                })),
+        );
+
+        // Add size customization
+        switch (size) {
+            case "small":
+                const smallCup = inventory.find((i) => i.id === 23)!;
+                allCustomizations.push({
+                    id: smallCup.id,
+                    name: smallCup.name,
+                    cost: smallCup.cost,
+                    amount: 1,
+                });
+                break;
+            case "medium":
+                const mediumCup = inventory.find((i) => i.id === 24)!;
+                allCustomizations.push({
+                    id: mediumCup.id,
+                    name: mediumCup.name,
+                    cost: mediumCup.cost,
+                    amount: 1,
+                });
+                break;
+            case "large":
+                const largeCup = inventory.find((i) => i.id === 22)!;
+                allCustomizations.push({
+                    id: largeCup.id,
+                    name: largeCup.name,
+                    cost: largeCup.cost,
+                    amount: 1,
+                });
+                break;
+        }
+
+        const updated: CartItem = {
+            ...item,
+            ice,
+            scalars: scalarServings,
+            customizations: allCustomizations,
+            // Keep quantity the same
+        };
+
+        onSave(updated);
+        onClose();
+    };
+
+    return (
+        <Dialog
+            open={open}
+            onOpenChange={(isOpen) => {
+                if (!isOpen) onClose();
+            }}
+        >
+            <DialogContent
+                className={`max-h-9/10 overflow-y-scroll
+                    ${isHighContrast ? "text-white" : "text-black"}
+                    ${isHighContrast ? "bg-black" : "bg-gray-100"}
+                `}
+                onInteractOutside={(e) => {
+                    e.preventDefault();
+                }}
+            >
+                <DialogHeader>
+                    <DialogTitle>Edit {item.name}</DialogTitle>
+                </DialogHeader>
+                <div className="flex flex-col space-y-4">
+                    <div>
+                        {scaleItems.map((sItem, index) => {
+                            return (
+                                <div key={index}>
+                                    <p className="text-2xl">{sItem.name}</p>
+                                    <div className="flex space-x-4">
+                                        {[0, 1, 2, 3, 4].map((servings) => {
+                                            const isSelected =
+                                                scalarServings[index] != null &&
+                                                scalarServings[index]
+                                                    ?.amount === servings;
+                                            return (
+                                                <div
+                                                    key={`${sItem.id}${servings}`}
+                                                    className={`cursor-pointer duration-300 border rounded-full p-4 text-xl ${
+                                                        isSelected
+                                                            ? isHighContrast
+                                                                ? "bg-black text-blue-500"
+                                                                : "bg-black text-white"
+                                                            : ""
+                                                    }`}
+                                                    onClick={() => {
+                                                        setScalarServings(
+                                                            (prev) => {
+                                                                const copy = [
+                                                                    ...prev,
+                                                                ];
+                                                                if (!copy[index]) {
+                                                                    copy[index] =
+                                                                        {
+                                                                            item: sItem,
+                                                                            amount: servings,
+                                                                        };
+                                                                } else {
+                                                                    copy[index] =
+                                                                        {
+                                                                            ...copy[
+                                                                                index
+                                                                            ],
+                                                                            amount: servings,
+                                                                        };
+                                                                }
+                                                                return copy;
+                                                            },
+                                                        );
+                                                    }}
+                                                >
+                                                    {iceToPercentage(servings)}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+
+                    <div className="flex flex-col space-y-4">
+                        {Array.from(globalToppingsGroups.keys()).map((key) => {
+                            if (key === "Size") {
+                                return (
+                                    <div key={key}>
+                                        <p className="text-2xl">Size</p>
+                                        <div className="flex space-x-4">
+                                            <div
+                                                className={`cursor-pointer duration-300 border rounded-full p-4 text-xl 
+                                                ${
+                                                    isHighContrast
+                                                        ? size === "small"
+                                                            ? "bg-black text-blue-500"
+                                                            : ""
+                                                        : size === "small"
+                                                          ? "bg-black text-white"
+                                                          : ""
+                                                }`}
+                                                onClick={() => setSize("small")}
+                                            >
+                                                S
+                                            </div>
+                                            <div
+                                                className={`cursor-pointer duration-300 border rounded-full p-4 text-xl 
+                                                 ${
+                                                     isHighContrast
+                                                         ? size === "medium"
+                                                             ? "bg-black text-blue-500"
+                                                             : ""
+                                                         : size === "medium"
+                                                           ? "bg-black text-white"
+                                                           : ""
+                                                 }`}
+                                                onClick={() =>
+                                                    setSize("medium")
+                                                }
+                                            >
+                                                M
+                                            </div>
+                                            <div
+                                                className={`cursor-pointer duration-300 border rounded-full p-4 text-xl  ${
+                                                    isHighContrast
+                                                        ? size === "large"
+                                                            ? "bg-black text-blue-500"
+                                                            : ""
+                                                        : size === "large"
+                                                          ? "bg-black text-white"
+                                                          : ""
+                                                }`}
+                                                onClick={() => setSize("large")}
+                                            >
+                                                L
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            }
+                            if (!(key === "Tea" || key === "Temperature")) {
+                                return (
+                                    <div key={key}>
+                                        <p className="text-2xl mb-3">{key}</p>
+                                        <ToppingSelector
+                                            globalToppings={selectedToppings}
+                                            onToppingSelect={setToppingsForType}
+                                            ingredientType={key}
+                                            multiSelect={true}
+                                        />
+                                    </div>
+                                );
+                            }
+                            return (
+                                <div key={key}>
+                                    <p className="text-2xl mb-3">{key}</p>
+                                    <ToppingSelector
+                                        globalToppings={selectedToppings}
+                                        onToppingSelect={setToppingsForType}
+                                        ingredientType={key}
+                                        multiSelect={false}
+                                    />
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+                <DialogFooter>
+                    <DialogClose asChild>
+                        <Button variant="outline" onClick={onClose}>
+                            Cancel
+                        </Button>
+                    </DialogClose>
+                    <Button variant="default" className="w-full" onClick={handleSave}>
+                        Save Changes
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
 interface MenuItemsInterface {
     menuData: MenuData;
     selectedCategory: string;
@@ -838,11 +1147,13 @@ function CartItemCard({
     onRemove,
     onIncrease,
     onDecrease,
+    onEdit,
 }: {
     item: CartItem;
     onRemove: () => void;
     onIncrease: () => void;
     onDecrease: () => void;
+    onEdit: () => void;
 }) {
     const { isHighContrast } = useAccessibility();
 
@@ -906,16 +1217,28 @@ function CartItemCard({
                     <p className="text-sm text-gray-500">
                         ${calculateSubtotal([item]).toFixed(2)}
                     </p>
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        className={
-                            isHighContrast ? "border-red-400 text-red-400" : ""
-                        }
-                        onClick={onRemove}
-                    >
-                        Remove
-                    </Button>
+                    <div className="flex justify-end gap-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={onEdit}
+                            className={
+                                isHighContrast ? "border-blue-400 text-blue-400" : ""
+                            }
+                        >
+                            Edit
+                        </Button>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className={
+                                isHighContrast ? "border-red-400 text-red-400" : ""
+                            }
+                            onClick={onRemove}
+                        >
+                            Remove
+                        </Button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1132,6 +1455,7 @@ function Cart({
     setLoyaltyPoints,
     paymentMethod,
     setPaymentMethod,
+    onEditItem,
 }: {
     items: CartItem[];
     setItems: React.Dispatch<React.SetStateAction<CartItem[]>>;
@@ -1145,6 +1469,7 @@ function Cart({
     setLoyaltyPoints: React.Dispatch<React.SetStateAction<number>>;
     paymentMethod: "CARD" | "CASH";
     setPaymentMethod: React.Dispatch<React.SetStateAction<"CARD" | "CASH">>;
+    onEditItem: (index: number, item: CartItem) => void;
 }) {
     const { isHighContrast, textMultipler } = useAccessibility();
 
@@ -1277,6 +1602,7 @@ function Cart({
                                         }),
                                     )
                                 }
+                                onEdit={() => onEditItem(idx, i)}
                             />
                         ))
                     )}
@@ -1563,6 +1889,13 @@ function CashierContent() {
         [currency, rates],
     );
 
+    // Tracks whether an edit is happening
+    const [editingIndex, setEditingIndex] = useState<number | null>(null);
+
+    // The item data currently being edited
+    const [editingItem, setEditingItem] = useState<CartItem | null>(null);
+
+
     return (
         <div className="min-h-screen bg-[#ffddd233] font-sans dark:bg-black flex flex-col text-white">
             <TopNav subtitle={labels.kioskTitle} variant="kiosk" />
@@ -1634,6 +1967,10 @@ function CashierContent() {
                             setLoyaltyPoints={setLoyaltyPoints}
                             paymentMethod={paymentMethod}
                             setPaymentMethod={setPaymentMethod}
+                            onEditItem={(index, item) => {
+                                setEditingIndex(index);
+                                setEditingItem(item);
+                            }}
                         />
                     </div>
                 ) : (
@@ -1663,8 +2000,31 @@ function CashierContent() {
                             setLoyaltyPoints={setLoyaltyPoints}
                             paymentMethod={paymentMethod}
                             setPaymentMethod={setPaymentMethod}
+                            onEditItem={(index, item) => {
+                                setEditingIndex(index);
+                                setEditingItem(item);
+                            }}
                         />
                     </div>
+                )}
+                {editingItem && editingIndex !== null && (
+                    <EditCartItemDialog
+                        item={editingItem}
+                        open={true}
+                        onClose={() => {
+                            setEditingItem(null);
+                            setEditingIndex(null);
+                        }}
+                        onSave={(updated) => {
+                            setCartItems((prev) =>
+                                prev.map((it, idx) =>
+                                    idx === editingIndex ? updated : it
+                                )
+                            );
+                            setEditingItem(null);
+                            setEditingIndex(null);
+                        }}
+                    />
                 )}
                 <LogoutButton />
             </div>

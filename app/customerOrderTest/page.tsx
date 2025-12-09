@@ -876,11 +876,12 @@ function CartItemCard({
                     <Button
                         variant="outline"
                         size="icon"
-                        className={
-                            isHighContrast
-                                ? "border-red-400 border-4 text-black"
-                                : ""
-                        }
+                        disabled={item.quantity <= 1}
+                        className={`
+                            ${isHighContrast ? "border-red-400 border-4 text-black" : ""}
+                            disabled:opacity-50 disabled:cursor-not-allowed
+                        `}
+                        
                         onClick={onDecrease}
                     >
                         -

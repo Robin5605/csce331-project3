@@ -85,6 +85,7 @@ export default function CashierPage() {
     const defaultCustomizations = {
         Size: "Medium Cups",
         Ice: "100%",
+        Sugar: "100%",
         Boba: "None",
         Jelly: "None",
         Tea: "Black Tea",
@@ -465,6 +466,7 @@ export default function CashierPage() {
         toFilterBy: string;
         category: string;
     }) => {
+        console.log(category);
         const itemsToIgnore = ["napkins", "straws", "seal", "bag"];
 
         interface OptionItem {
@@ -516,35 +518,53 @@ export default function CashierPage() {
 
         return (
             <div className="flex flex-wrap gap-8">
-                {options.map((item) => {
-                    const isSelected: boolean = allowsMultipleSelections
-                        ? selectedCustomizationOptions[category].includes(
-                              item.name,
-                          )
-                        : item.name === selectedCustomizationOptions[category];
-                    return (
-                        <CustomizationCard
-                            key={`customizationcard-${category}-${item.name}`}
-                            itemName={item.name}
-                            isDisabled={item.is_disabled}
-                            isSelected={isSelected}
-                            whenClicked={
-                                allowsMultipleSelections
-                                    ? () =>
-                                          customizationCardClickedMultipleSelections(
-                                              item.name,
-                                              category,
-                                              isSelected,
-                                          )
-                                    : () =>
-                                          customizationCardClicked(
-                                              item.name,
-                                              category,
-                                          )
-                            }
-                        />
-                    );
-                })}
+                {options
+                    .slice() // to avoid mutating the original array
+                    .sort((a, b) => {
+                        if (category === "Size") {
+                            const sizeOrder = [
+                                "Small Cups",
+                                "Medium Cups",
+                                "Large Cups",
+                            ];
+                            return (
+                                sizeOrder.indexOf(a.name) -
+                                sizeOrder.indexOf(b.name)
+                            );
+                        }
+                        return 0; // No sorting for other categories
+                    })
+                    .map((item) => {
+                        const isSelected: boolean = allowsMultipleSelections
+                            ? selectedCustomizationOptions[category].includes(
+                                  item.name,
+                              )
+                            : item.name ===
+                              selectedCustomizationOptions[category];
+
+                        return (
+                            <CustomizationCard
+                                key={`customizationcard-${category}-${item.name}`}
+                                itemName={item.name}
+                                isDisabled={item.is_disabled}
+                                isSelected={isSelected}
+                                whenClicked={
+                                    allowsMultipleSelections
+                                        ? () =>
+                                              customizationCardClickedMultipleSelections(
+                                                  item.name,
+                                                  category,
+                                                  isSelected,
+                                              )
+                                        : () =>
+                                              customizationCardClicked(
+                                                  item.name,
+                                                  category,
+                                              )
+                                }
+                            />
+                        );
+                    })}
             </div>
         );
     };
@@ -613,7 +633,7 @@ export default function CashierPage() {
                                 isOneItem={false}
                                 toFilterBy="boba"
                                 category="Boba"
-                                allowsMultipleSelections={false}
+                                allowsMultipleSelections={true}
                             />
                         </CustomizationCategory>
 
@@ -622,7 +642,7 @@ export default function CashierPage() {
                                 isOneItem={false}
                                 toFilterBy="jelly"
                                 category="Jelly"
-                                allowsMultipleSelections={false}
+                                allowsMultipleSelections={true}
                             />
                         </CustomizationCategory>
 
@@ -695,7 +715,7 @@ export default function CashierPage() {
                 </main>
 
                 {/* Right: Checkout */}
-                <aside className="w-[300px] h-full bg-[#ffffff00] border-0 border-[#a4a4b1ff] flex flex-col justify-between p-4 rounded-xl">
+                <aside className="w-[330px] h-full bg-[#ffffff00] border-0 border-[#a4a4b1ff] flex flex-col justify-between p-4 rounded-xl">
                     <div>
                         <h2 className="font-semibold text-3xl text-center mt-3 mb-4">
                             Checkout

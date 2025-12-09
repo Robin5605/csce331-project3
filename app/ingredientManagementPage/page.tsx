@@ -305,7 +305,6 @@ export default function MenuManagerPage() {
             setEditError("Cost must be a non-negative number.");
             return;
         }
-        
 
         const groupStr = editForm.groupName;
 
@@ -489,7 +488,7 @@ export default function MenuManagerPage() {
                             <input
                                 value={form.cost}
                                 onChange={(e) =>
-                                    setForm({ ...form, cost: e.target.value, })
+                                    setForm({ ...form, cost: e.target.value })
                                 }
                                 className="w-full rounded-md border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-neutral-300"
                                 placeholder="e.g., 4.50"
@@ -505,7 +504,7 @@ export default function MenuManagerPage() {
                         <input
                             value={form.groupName}
                             onChange={(e) =>
-                                setForm({ ...form, groupName: e.target.value, })
+                                setForm({ ...form, groupName: e.target.value })
                             }
                             className="w-full rounded-md border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-neutral-300"
                             placeholder="e.g., 4.50"
@@ -589,7 +588,7 @@ export default function MenuManagerPage() {
                     </div>
                 </form>
             </Dialog>
-            
+
             {/* EDIT ITEM DIALOG PANE */}
             <Dialog
                 open={editOpen}

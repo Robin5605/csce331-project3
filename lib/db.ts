@@ -243,6 +243,7 @@ export async function insert_into_drinks_ingredients_table(
 
 /**
  * Decrement ingredient stock safely (parameterized).
+ * Throws an error if stock is insufficient.
  */
 export async function update_ingredient_inventory(
     amount: number,
@@ -250,16 +251,22 @@ export async function update_ingredient_inventory(
 ): Promise<void> {
     console.log(`id: ${ingredient_id} : num: ${amount}`);
     await ensureConnected();
-    await client.query(
+
+    const result = await client.query(
         `
-    UPDATE ingredients
-    SET stock = stock - $1
-    WHERE id = $2
-    `,
+        UPDATE ingredients
+        SET stock = stock - $1
+        WHERE id = $2 AND stock >= $1
+        `,
         [amount, ingredient_id],
     );
-}
 
+    if (result.rowCount === 0) {
+        throw new Error(
+            `Insufficient stock for ingredient ID ${ingredient_id}. Requested: ${amount}`,
+        );
+    }
+}
 /**
  * Delete an ingredient by id and return the deleted id.
  */
@@ -447,25 +454,24 @@ export async function fetch_x_report(): Promise<XReportRow[]> {
     await ensureConnected();
 
     const query = `
-    SELECT
-        EXTRACT(HOUR FROM placed_at AT TIME ZONE 'America/Chicago') AS sale_hour,
-        COUNT(*) AS number_of_sales,
-        COALESCE(SUM(cost), 0) AS total_sales
-    FROM orders
-    WHERE
-        (placed_at AT TIME ZONE 'America/Chicago')::date =
-            (NOW() AT TIME ZONE 'America/Chicago')::date
-
-        AND EXTRACT(HOUR FROM placed_at AT TIME ZONE 'America/Chicago') <
-            EXTRACT(HOUR FROM NOW() AT TIME ZONE 'America/Chicago')
-    GROUP BY 1
-    ORDER BY 1;
+        SELECT
+            EXTRACT(HOUR FROM placed_at AT TIME ZONE 'America/Chicago') AS sale_hour,
+            COUNT(*) AS number_of_sales,
+            COALESCE(SUM(cost), 0) AS total_sales
+        FROM orders
+        WHERE 
+            placed_at >= date_trunc('day', NOW() AT TIME ZONE 'America/Chicago')
+            AND placed_at < date_trunc('hour', NOW() AT TIME ZONE 'America/Chicago')
+        GROUP BY 1
+        ORDER BY 1;
     `;
 
     const { rows } = await client.query(query);
 
     return rows.map((r: any) => ({
-        hour: `${String(r.sale_hour).padStart(2, "0")}:00 - ${String(r.sale_hour).padStart(2, "0")}:59`,
+        hour: `${String(r.sale_hour).padStart(2, "0")}:00 - ${String(
+            r.sale_hour,
+        ).padStart(2, "0")}:59`,
         number_of_sales: Number(r.number_of_sales),
         total_sales: Number(r.total_sales),
     }));
@@ -478,69 +484,63 @@ export async function fetch_x_report(): Promise<XReportRow[]> {
 export async function fetch_z_report(): Promise<ZReportRow[]> {
     await ensureConnected();
 
-    const totalSales = (
-        await client.query<{ total: number }>(`
-        SELECT COALESCE(SUM(cost), 0)::float8 AS total
+    // Define yesterday bounds once, use everywhere
+    const yesterdayStart = `
+        date_trunc('day', CURRENT_DATE - INTERVAL '1 day')
+    `;
+    const yesterdayEnd = `
+        date_trunc('day', CURRENT_DATE)
+    `;
+
+    // Combined totals (cash, card, mobile, total)
+    const totalsQuery = `
+        SELECT
+            COALESCE(SUM(cost), 0)::float8 AS total_sales,
+            COALESCE(SUM(cost) FILTER (WHERE payment_method = 'CASH'), 0)::float8 AS cash,
+            COALESCE(SUM(cost) FILTER (WHERE payment_method = 'CARD'), 0)::float8 AS card,
+            COALESCE(SUM(cost) FILTER (WHERE payment_method = 'MOBILE'), 0)::float8 AS mobile
         FROM orders
-        WHERE placed_at::date = (CURRENT_DATE - INTERVAL '1 day')
-    `)
-    ).rows[0].total;
+        WHERE placed_at >= ${yesterdayStart}
+          AND placed_at < ${yesterdayEnd};
+    `;
+
+    const totals = (await client.query(totalsQuery)).rows[0];
+
+    const totalSales = totals.total_sales;
+    const cash = totals.cash;
+    const card = totals.card;
+    const mobile = totals.mobile;
 
     const salesTax = totalSales * 0.0825;
-
-    const cash = (
-        await client.query<{ total: number }>(`
-        SELECT COALESCE(SUM(cost), 0)::float8 AS total
-        FROM orders
-        WHERE placed_at::date = (CURRENT_DATE - INTERVAL '1 day')
-        AND payment_method = 'CASH'
-    `)
-    ).rows[0].total;
-
-    const card = (
-        await client.query<{ total: number }>(`
-        SELECT COALESCE(SUM(cost), 0)::float8 AS total
-        FROM orders
-        WHERE placed_at::date = (CURRENT_DATE - INTERVAL '1 day')
-        AND payment_method = 'CARD'
-    `)
-    ).rows[0].total;
-
-    const mobile = (
-        await client.query<{ total: number }>(`
-        SELECT COALESCE(SUM(cost), 0)::float8 AS total
-        FROM orders
-        WHERE placed_at::date = (CURRENT_DATE - INTERVAL '1 day')
-        AND payment_method = 'MOBILE'
-    `)
-    ).rows[0].total;
-
     const cardFees = card * 0.02;
     const revenue = totalSales - salesTax - cardFees;
 
-    const openingEmployee =
-        (
-            await client.query<{ name: string }>(`
+    // Opening employee and closing employee queries
+    const openingEmployeeQuery = `
         SELECT e.name
         FROM employees e
         JOIN orders o ON e.id = o.employee_id
-        WHERE o.placed_at::date = (CURRENT_DATE - INTERVAL '1 day')
-        ORDER BY o.placed_at ASC, e.id ASC
-        LIMIT 1
-    `)
-        ).rows[0]?.name ?? "N/A";
+        WHERE o.placed_at >= ${yesterdayStart}
+          AND o.placed_at < ${yesterdayEnd}
+        ORDER BY o.placed_at ASC
+        LIMIT 1;
+    `;
+
+    const closingEmployeeQuery = `
+        SELECT e.name
+        FROM employees e
+        JOIN orders o ON e.id = o.employee_id
+        WHERE o.placed_at >= ${yesterdayStart}
+          AND o.placed_at < ${yesterdayEnd}
+        ORDER BY o.placed_at DESC
+        LIMIT 1;
+    `;
+
+    const openingEmployee =
+        (await client.query(openingEmployeeQuery)).rows[0]?.name ?? "N/A";
 
     const closingEmployee =
-        (
-            await client.query<{ name: string }>(`
-        SELECT e.name
-        FROM employees e
-        JOIN orders o ON e.id = o.employee_id
-        WHERE o.placed_at::date = (CURRENT_DATE - INTERVAL '1 day')
-        ORDER BY o.placed_at DESC, e.id ASC
-        LIMIT 1
-    `)
-        ).rows[0]?.name ?? "N/A";
+        (await client.query(closingEmployeeQuery)).rows[0]?.name ?? "N/A";
 
     const toMoney = (n: number) => `$${n.toFixed(2)}`;
 

@@ -44,7 +44,7 @@ export async function ensureConnected() {
  */
 export async function fetch_all_menu_items(): Promise<MenuItem[]> {
     await ensureConnected();
-    const result = await client.query<MenuItem>("SELECT * FROM menu");
+    const result = await client.query<MenuItem>("SELECT * FROM menu WHERE is_active=TRUE");
     return result.rows;
 }
 
@@ -76,7 +76,7 @@ export async function populate_menu_management_table(): Promise<MenuItem[]> {
     const { rows } = await client.query<MenuItem>(
         `
     SELECT id, name, category_id, stock, cost::float8 AS cost
-    FROM menu
+    FROM menu WHERE is_active=TRUE
     ORDER BY id
     `,
     );
@@ -133,7 +133,7 @@ export async function delete_from_menu_management_table(
     await ensureConnected();
     const { rows, rowCount } = await client.query<{ id: number }>(
         `
-    DELETE FROM menu
+    UPDATE menu SET is_active=False
     WHERE id = $1
     RETURNING id
     `,
@@ -156,7 +156,7 @@ export async function populate_ingredient_management_table(): Promise<
     const { rows } = await client.query<Ingredient>(
         `
     SELECT id, name, stock, cost::float8 AS cost, ingredient_type, ingredient_group
-    FROM ingredients
+    FROM ingredients WHERE is_active=TRUE
     ORDER BY id
     `,
     );
@@ -269,7 +269,7 @@ export async function delete_from_ingredient_management_table(
     await ensureConnected();
     const { rows, rowCount } = await client.query<{ id: number }>(
         `
-    DELETE FROM ingredients
+    UPDATE ingredients SET is_active=FALSE
     WHERE id = $1
     RETURNING id
     `,
@@ -432,7 +432,7 @@ export async function fetch_menu_by_category(
 ): Promise<MenuItem[]> {
     await ensureConnected();
     const { rows } = await client.query<MenuItem>(
-        `SELECT id, name, category_id, stock, cost::float8 AS cost, image_url FROM menu WHERE category_id = $1 ORDER BY id`,
+        `SELECT id, name, category_id, stock, cost::float8 AS cost, image_url FROM menu WHERE category_id = $1 AND is_active = TRUE ORDER BY id`,
         [categoryId],
     );
     return rows;

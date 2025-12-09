@@ -807,7 +807,7 @@ function EditCartItemDialog({
 
     // Initialize scalarServings - merge item.scalars with all scaleItems
     const initialScalarMap = new Map(
-        item.scalars.map((s) => [s.item.id, s.amount])
+        item.scalars.map((s) => [s.item.id, s.amount]),
     );
     const [scalarServings, setScalarServings] = useState<ScalarServing[]>(
         scaleItems.map((sItem) => ({
@@ -826,10 +826,10 @@ function EditCartItemDialog({
             // Reset to item's values when dialog opens
             setIce(item.ice);
             setSize(getCartItemSize(item));
-            
+
             // Initialize scalarServings - merge item.scalars with all scaleItems
             const scalarMap = new Map(
-                item.scalars.map((s) => [s.item.id, s.amount])
+                item.scalars.map((s) => [s.item.id, s.amount]),
             );
             setScalarServings(
                 scaleItems.map((sItem) => ({
@@ -964,20 +964,24 @@ function EditCartItemDialog({
                                                                 const copy = [
                                                                     ...prev,
                                                                 ];
-                                                                if (!copy[index]) {
-                                                                    copy[index] =
-                                                                        {
-                                                                            item: sItem,
-                                                                            amount: servings,
-                                                                        };
+                                                                if (
+                                                                    !copy[index]
+                                                                ) {
+                                                                    copy[
+                                                                        index
+                                                                    ] = {
+                                                                        item: sItem,
+                                                                        amount: servings,
+                                                                    };
                                                                 } else {
-                                                                    copy[index] =
-                                                                        {
-                                                                            ...copy[
-                                                                                index
-                                                                            ],
-                                                                            amount: servings,
-                                                                        };
+                                                                    copy[
+                                                                        index
+                                                                    ] = {
+                                                                        ...copy[
+                                                                            index
+                                                                        ],
+                                                                        amount: servings,
+                                                                    };
                                                                 }
                                                                 return copy;
                                                             },
@@ -1084,7 +1088,11 @@ function EditCartItemDialog({
                             Cancel
                         </Button>
                     </DialogClose>
-                    <Button variant="default" className="w-full" onClick={handleSave}>
+                    <Button
+                        variant="default"
+                        className="w-full"
+                        onClick={handleSave}
+                    >
                         Save Changes
                     </Button>
                 </DialogFooter>
@@ -1192,7 +1200,6 @@ function CartItemCard({
                             ${isHighContrast ? "border-red-400 border-4 text-black" : ""}
                             disabled:opacity-50 disabled:cursor-not-allowed
                         `}
-                        
                         onClick={onDecrease}
                     >
                         -
@@ -1223,7 +1230,9 @@ function CartItemCard({
                             size="sm"
                             onClick={onEdit}
                             className={
-                                isHighContrast ? "border-blue-400 text-blue-400" : ""
+                                isHighContrast
+                                    ? "border-blue-400 text-blue-400"
+                                    : ""
                             }
                         >
                             Edit
@@ -1232,7 +1241,9 @@ function CartItemCard({
                             variant="outline"
                             size="sm"
                             className={
-                                isHighContrast ? "border-red-400 text-red-400" : ""
+                                isHighContrast
+                                    ? "border-red-400 text-red-400"
+                                    : ""
                             }
                             onClick={onRemove}
                         >
@@ -1895,7 +1906,6 @@ function CashierContent() {
     // The item data currently being edited
     const [editingItem, setEditingItem] = useState<CartItem | null>(null);
 
-
     return (
         <div className="min-h-screen bg-[#ffddd233] font-sans dark:bg-black flex flex-col text-white">
             <TopNav subtitle={labels.kioskTitle} variant="kiosk" />
@@ -2018,8 +2028,8 @@ function CashierContent() {
                         onSave={(updated) => {
                             setCartItems((prev) =>
                                 prev.map((it, idx) =>
-                                    idx === editingIndex ? updated : it
-                                )
+                                    idx === editingIndex ? updated : it,
+                                ),
                             );
                             setEditingItem(null);
                             setEditingIndex(null);

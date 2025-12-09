@@ -284,47 +284,64 @@ export default function CashierPage() {
     const checkoutOrder = async (method: "CARD" | "CASH") => {
 
         //Helper funciton that checks if the order vioaltes stocks
-        function checkStockViolations(
-            inventory: Ingredient[],
-            orderIngredients: Record<number, number>, // key -> id, value -> amount
-        ) 
-        {
-            let isViolating: boolean = false;
-            const byId: Record<number, Ingredient> = {};
-            for (const ing of inventory) byId[ing.id] = ing;
+       function checkStockViolations(
+        inventory: Ingredient[],
+        ingredientsToCheck: Record<string, number>,
+        menuData: MenuItem[],
+        drinksToCheck: Record<string, number>,
+        ): boolean {
+            const flatMenuData = Object.values(menuData).flat();
+            const invById: Record<number, Ingredient> = {};
+            for (const ing of inventory) invById[ing.id] = ing;
 
-            const violatingIds: number[] = [];
-            const violatingNames: string[] = [];
+            const menuById: Record<number, MenuItem> = {};
+            for (const item of flatMenuData) menuById[item.id] = item;
 
-            for (const [idStr, needed] of Object.entries(orderIngredients)) {
+            const violatingIngredientNames: string[] = [];
+            for (const [idStr, needed] of Object.entries(ingredientsToCheck)) {
                 const id = Number(idStr);
-                const ing = byId[id];
-
-                // If id is missing from inventory, treat as violation
+                const ing = invById[id];
                 if (!ing) {
-                violatingIds.push(id);
-                violatingNames.push(`(unknown ingredient id ${id})`);
-                isViolating = true;
+                violatingIngredientNames.push(`(unknown ingredient id ${id})`);
                 continue;
                 }
+                if (ing.stock - needed < 0) violatingIngredientNames.push(ing.name);
+            }
 
-                const remaining = ing.stock - needed;
-
-                if (remaining < 0) {
-                violatingIds.push(id);
-                violatingNames.push(ing.name);
-                isViolating = true;
+            const violatingDrinkNames: string[] = [];
+            for (const [idStr, needed] of Object.entries(drinksToCheck)) {
+                const id = Number(idStr);
+                const item = menuById[id];
+                if (!item) {
+                violatingDrinkNames.push(`(unknown drink id ${id})`);
+                continue;
                 }
+                if (item.stock - needed < 0) violatingDrinkNames.push(item.name);
             }
 
-            if (violatingNames.length > 0) {
-                console.log("Ingredients that violate stock:", violatingNames);
-            } else {
-                console.log("No stock violations.");
+            if (violatingIngredientNames.length > 0 || violatingDrinkNames.length > 0) {
+                const lines: string[] = [
+                "Order cannot be processed due to stock violations.",
+                "",
+                "Drinks:",
+                ...(violatingDrinkNames.length > 0
+                    ? violatingDrinkNames.map((n) => `- ${n}`)
+                    : ["- None"]),
+                ];
+
+                if (violatingIngredientNames.length > 0) {
+                lines.push(
+                    "",
+                    "Ingredients:",
+                    ...violatingIngredientNames.map((n) => `- ${n}`),
+                );
+                }
+
+                alert(lines.join("\n"));
+                return false;
             }
 
-            //return { isViolating, violatingIds, violatingNames };
-            return isViolating;
+            return true;
         }
 
         try {
@@ -454,16 +471,17 @@ export default function CashierPage() {
                         }
 
                     }
-                // }
-                // console.log(ingredientsMapToCheck)
-                // console.log(drinksMapToCheck)
-                // await loadMenuData;
-                // console.log("AGAIN???? MR KRABS???")
+                }
+                console.log(ingredientsMapToCheck)
+                console.log(drinksMapToCheck)
+                await loadMenuData;
+                console.log("AGAIN???? MR KRABS???")
 
                 //Will not process order if stock violation
-                if(!checkStockViolations(inventory, ingredientsMapToCheck)){
-                    return
+                if (!checkStockViolations(inventory, ingredientsMapToCheck, menuData, drinksMapToCheck)) {
+                    return;
                 }
+
 
                 
 

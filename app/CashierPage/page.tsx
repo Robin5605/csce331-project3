@@ -158,7 +158,7 @@ export default function CashierPage() {
             menuTempData = { ...menuTempData, [cat.name]: items };
         }
         setMenuData(menuTempData);
-        console.log("loading ingredients");
+        //console.log("loading ingredients");
         const ingrRes = await fetch("api/ingredient", {
             method: "GET",
             headers: { "Content-Type": "application/json" },
@@ -166,6 +166,9 @@ export default function CashierPage() {
         const ingr: Ingredient[] = await ingrRes.json();
         setInventory(ingr);
         setMenuDataReady(true);
+        console.log("INGREDIENTS")
+        console.log(ingr)
+        console.log("MENU DATA")
     };
 
     useEffect(() => {
@@ -279,7 +282,51 @@ export default function CashierPage() {
 
     //handles current order and sends completed order to database
     const checkoutOrder = async (method: "CARD" | "CASH") => {
-        //console.log("checking out");
+
+        //Helper funciton that checks if the order vioaltes stocks
+        function checkStockViolations(
+            inventory: Ingredient[],
+            orderIngredients: Record<number, number>, // key -> id, value -> amount
+        ) 
+        {
+            let isViolating: boolean = false;
+            const byId: Record<number, Ingredient> = {};
+            for (const ing of inventory) byId[ing.id] = ing;
+
+            const violatingIds: number[] = [];
+            const violatingNames: string[] = [];
+
+            for (const [idStr, needed] of Object.entries(orderIngredients)) {
+                const id = Number(idStr);
+                const ing = byId[id];
+
+                // If id is missing from inventory, treat as violation
+                if (!ing) {
+                violatingIds.push(id);
+                violatingNames.push(`(unknown ingredient id ${id})`);
+                isViolating = true;
+                continue;
+                }
+
+                const remaining = ing.stock - needed;
+
+                if (remaining < 0) {
+                violatingIds.push(id);
+                violatingNames.push(ing.name);
+                isViolating = true;
+                }
+            }
+
+            if (violatingNames.length > 0) {
+                console.log("Ingredients that violate stock:", violatingNames);
+            } else {
+                console.log("No stock violations.");
+            }
+
+            //return { isViolating, violatingIds, violatingNames };
+            return isViolating;
+        }
+
         try {
             let tempCost = 0;
             curOrders.forEach((cOrder) => {
@@ -302,6 +349,124 @@ export default function CashierPage() {
             let { id } = await orderRes.json();
             const orderId = id;
             //console.log(`= order id: ${orderId}`);
+
+            //Checks if it would exceed stock
+
+            //Creates two maps for this purpose. ID is the key, amount is the value
+            const drinksMapToCheck: Record<string, number> = {};
+            const ingredientsMapToCheck: Record<string, number> = {};
+
+            for (const [orderIndex, order] of curOrders.entries()) {
+                console.log(order)
+                const quantity = (order.quantity as number) || 1;
+                    //For each individual property in the order
+                    for (let index = 0; index < Object.entries(order).length; ++index) {
+                        let [key, value] = Object.entries(order)[index];
+                        //Checks if value none
+                        if (
+                            value === "None" ||
+                            value === null ||
+                            (Array.isArray(value) && value.length === 0)
+                        ) {
+                            continue;
+                        }
+                        if (key.toLowerCase() === "drink") {
+                            const drinkOrderBody = {
+                                menuId: (value as MenuItem).id,
+                                amount: quantity
+                            };
+                            //console.log("DRINK BODY")
+                            if(drinkOrderBody.menuId in drinksMapToCheck){
+                                drinksMapToCheck[drinkOrderBody.menuId] += drinkOrderBody.amount
+                            } else {
+                                drinksMapToCheck[drinkOrderBody.menuId] = drinkOrderBody.amount
+                            }
+                        } else {
+                            let ingredientAmmount = 0;
+                            let ingredientTemp: Ingredient | any = inventory[0];
+                            if (key === "Ice" || key === "Sugar") {
+                                if (value === "100%") {
+                                    ingredientAmmount = 4;
+                                } else if (value === "75%") {
+                                    ingredientAmmount = 3;
+                                } else if (value === "50%") {
+                                    ingredientAmmount = 2;
+                                } else if (value === "25%") {
+                                    ingredientAmmount = 1;
+                                } else {
+                                    continue;
+                                }
+                                ingredientTemp = { id: 28, name: "Ice" };
+                            } else if (key === "Size") {
+                                continue;
+                            //Handles mutliple
+                            } else if (Array.isArray(value)) {
+                                ingredientAmmount = 1;
+                                value.forEach(async (ingredientName) => {
+                                    ingredientTemp = inventory.find((cItem) => {
+                                        if (cItem.name == ingredientName) {
+                                            return cItem;
+                                        }
+                                    });
+
+                                    if (ingredientTemp == null) {
+                                        console.log("==bad ingredient name==");
+                                        return;
+                                    }
+
+                                    const drinkIngredientBody = {
+                                        ingredient_id: ingredientTemp.id,
+                                        amount: quantity * ingredientAmmount
+                                    };
+                                    // console.log("INGREDIENT DATA MULTI")
+                                    if(drinkIngredientBody.ingredient_id in ingredientsMapToCheck){
+                                        ingredientsMapToCheck[drinkIngredientBody.ingredient_id] += drinkIngredientBody.amount
+                                    } else {
+                                        ingredientsMapToCheck[drinkIngredientBody.ingredient_id] = drinkIngredientBody.amount
+                                    }
+                                    
+                                });
+                                continue;
+                            } else {
+                                ingredientAmmount = 1;
+                                ingredientTemp = inventory.find((cItem) => {
+                                    if (cItem.name == value) {
+                                        return cItem;
+                                    }
+                                });
+                            }
+
+                            if (ingredientTemp == null) {
+                                console.log("\t\t==bad ingredient name==");
+                                continue;
+                            }
+
+                            const drinkIngredientBody = {
+                                ingredient_id: ingredientTemp.id,
+                                amount: quantity * ingredientAmmount
+                                };
+                                // console.log("INGREDIENT DATA SINGLE")
+                                if(drinkIngredientBody.ingredient_id in ingredientsMapToCheck){
+                                    ingredientsMapToCheck[drinkIngredientBody.ingredient_id] += drinkIngredientBody.amount
+                                } else {
+                                    ingredientsMapToCheck[drinkIngredientBody.ingredient_id] = drinkIngredientBody.amount
+                                }      
+                        }
+
+                    }
+                // }
+                // console.log(ingredientsMapToCheck)
+                // console.log(drinksMapToCheck)
+                // await loadMenuData;
+                // console.log("AGAIN???? MR KRABS???")
+
+                //Will not process order if stock violation
+                if(!checkStockViolations(inventory, ingredientsMapToCheck)){
+                    return
+                }
+
+                
+
             // Process all orders sequentially to avoid race conditions
             for (const [orderIndex, order] of curOrders.entries()) {
                 const quantity = (order.quantity as number) || 1;
@@ -466,7 +631,7 @@ export default function CashierPage() {
         toFilterBy: string;
         category: string;
     }) => {
-        console.log(category);
+        //console.log(category);
         const itemsToIgnore = ["napkins", "straws", "seal", "bag"];
 
         interface OptionItem {

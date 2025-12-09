@@ -12,3 +12,4 @@ export async function POST(req: Request) {
     await update_menu_inventory(1, menuId);
     return NextResponse.json(rows[0], { status: 201 });
 }
+

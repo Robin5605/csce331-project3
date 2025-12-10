@@ -315,6 +315,7 @@ interface InventoryItemCardProps {
     isSelected: boolean;
     onSelect: () => void;
     onUnselect: () => void;
+    isDisabled?: boolean;
 }
 
 function ToppingCard({
@@ -322,27 +323,29 @@ function ToppingCard({
     isSelected,
     onSelect,
     onUnselect,
+    isDisabled = false,
 }: InventoryItemCardProps) {
     const { isHighContrast } = useAccessibility();
     const outOfStock = item.stock <= 0;
+    const disabled = isDisabled || outOfStock;
 
     return (
         <div
             className={`
                 flex-col items-center justify-center border rounded p-4
-                ${outOfStock ? "opacity-40 cursor-not-allowed" : "cursor-pointer"}
+                ${disabled ? "opacity-40 cursor-not-allowed" : "cursor-pointer"}
                 ${
                     isHighContrast
-                        ? isSelected && !outOfStock
+                        ? isSelected && !disabled
                             ? "text-blue-400"
                             : ""
-                        : isSelected && !outOfStock
+                        : isSelected && !disabled
                           ? "bg-black text-white"
                           : ""
                 }
             `}
             onClick={() => {
-                if (outOfStock) return; // 🚫 do nothing
+                if (disabled) return; // 🚫 do nothing
                 if (isSelected) {
                     onUnselect();
                 } else {
@@ -352,9 +355,9 @@ function ToppingCard({
         >
             <p className="text-center select-none">{item.name}</p>
             <p className="text-center select-none">(${item.cost})</p>
-            {outOfStock && (
+            {disabled && (
                 <p className="mt-1 text-xs text-red-500 text-center">
-                    Out of stock
+                    {outOfStock ? "Out of stock" : "Not available"}
                 </p>
             )}
         </div>
@@ -366,6 +369,7 @@ interface ToppingSelectorProps {
     ingredientType: string;
     multiSelect: boolean;
     globalToppings: Map<string, Ingredient[]>;
+    selectedCategory?: string;
 }
 
 function ToppingSelector({
@@ -373,6 +377,7 @@ function ToppingSelector({
     ingredientType,
     multiSelect,
     globalToppings,
+    selectedCategory,
 }: ToppingSelectorProps) {
     const [selected, setSelected] = useState<Ingredient[]>([]);
 
@@ -385,25 +390,37 @@ function ToppingSelector({
         <div className={`grid grid-cols-4 gap-2`}>
             {inventory
                 .filter((i) => i.ingredient_group === ingredientType)
-                .map((i) => (
-                    <ToppingCard
-                        key={i.id}
-                        item={i}
-                        isSelected={selected.includes(i)}
-                        onSelect={() => {
-                            let localArr = multiSelect ? [...selected, i] : [i];
-                            setSelected(localArr);
-                            onToppingSelect(localArr, ingredientType);
-                        }}
-                        onUnselect={() => {
-                            const localArr = selected.filter(
-                                (item) => item.id !== i.id,
-                            );
-                            setSelected(localArr);
-                            onToppingSelect(localArr, ingredientType);
-                        }}
-                    />
-                ))}
+                .map((i) => {
+                    // Disable "Hot" option for "Ice Blended" category
+                    const shouldDisableHot = 
+                        ingredientType === "Temperature" && 
+                        selectedCategory === "Ice Blended" && 
+                        i.name === "Hot";
+                    const isDisabled = i.stock <= 0 || shouldDisableHot;
+                    
+                    return (
+                        <ToppingCard
+                            key={i.id}
+                            item={i}
+                            isSelected={selected.includes(i)}
+                            onSelect={() => {
+                                if (isDisabled) return;
+                                let localArr = multiSelect ? [...selected, i] : [i];
+                                setSelected(localArr);
+                                onToppingSelect(localArr, ingredientType);
+                            }}
+                            onUnselect={() => {
+                                if (isDisabled) return;
+                                const localArr = selected.filter(
+                                    (item) => item.id !== i.id,
+                                );
+                                setSelected(localArr);
+                                onToppingSelect(localArr, ingredientType);
+                            }}
+                            isDisabled={isDisabled}
+                        />
+                    );
+                })}
         </div>
     );
 }
@@ -414,6 +431,7 @@ interface MenuItemCardProps {
     addToOrderLabel: string;
     speak: (text: string) => void;
     isFavorite: boolean;
+    selectedCategory?: string;
 }
 
 const iceToPercentage = (servings: number): string => {
@@ -433,6 +451,7 @@ function MenuItemCard({
     addToOrderLabel,
     speak,
     isFavorite,
+    selectedCategory,
 }: MenuItemCardProps) {
     const { isHighContrast, textMultipler } = useAccessibility();
 
@@ -692,6 +711,7 @@ function MenuItemCard({
                                             onToppingSelect={setToppingsForType}
                                             ingredientType={key}
                                             multiSelect={true}
+                                            selectedCategory={selectedCategory}
                                         />
                                     </div>
                                 );
@@ -704,6 +724,7 @@ function MenuItemCard({
                                         onToppingSelect={setToppingsForType}
                                         ingredientType={key}
                                         multiSelect={false}
+                                        selectedCategory={selectedCategory}
                                     />
                                 </div>
                             );
@@ -787,6 +808,7 @@ interface EditCartItemDialogProps {
     open: boolean;
     onClose: () => void;
     onSave: (updated: CartItem) => void;
+    selectedCategory?: string;
 }
 
 function EditCartItemDialog({
@@ -794,6 +816,7 @@ function EditCartItemDialog({
     open,
     onClose,
     onSave,
+    selectedCategory,
 }: EditCartItemDialogProps) {
     const { isHighContrast } = useAccessibility();
 
@@ -1064,6 +1087,7 @@ function EditCartItemDialog({
                                             onToppingSelect={setToppingsForType}
                                             ingredientType={key}
                                             multiSelect={true}
+                                            selectedCategory={selectedCategory}
                                         />
                                     </div>
                                 );
@@ -1076,6 +1100,7 @@ function EditCartItemDialog({
                                         onToppingSelect={setToppingsForType}
                                         ingredientType={key}
                                         multiSelect={false}
+                                        selectedCategory={selectedCategory}
                                     />
                                 </div>
                             );
@@ -1142,6 +1167,7 @@ function MenuItems({
                                 addToOrderLabel={addToOrderLabel}
                                 speak={speak}
                                 isFavorite={favoriteMenuId === item.id}
+                                selectedCategory={selectedCategory}
                             />
                         )),
                     )}
@@ -2114,6 +2140,7 @@ function CashierContent() {
                             setEditingItem(null);
                             setEditingIndex(null);
                         }}
+                        selectedCategory={selectedCategory}
                     />
                 )}
                 <LogoutButton />

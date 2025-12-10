@@ -706,9 +706,15 @@ export default function CashierPage() {
                 ) : (inventory.filter( (item) => {
                     return (item.ingredient_group === category)
                 }).map( (item) => { 
+                    // Disable "Hot" option for "Ice Blended" category
+                    const shouldDisableHot = 
+                        category === "Temperature" && 
+                        selectedCategory === "Ice Blended" && 
+                        item.name === "Hot";
+                    
                     return ({
                         name: item.name,
-                        is_disabled: item.stock < 1});
+                        is_disabled: item.stock < 1 || shouldDisableHot});
                 })
             );
 
@@ -745,18 +751,20 @@ export default function CashierPage() {
                                 isDisabled={item.is_disabled}
                                 isSelected={isSelected}
                                 whenClicked={
-                                    allowsMultipleSelections
-                                        ? () =>
-                                              customizationCardClickedMultipleSelections(
-                                                  item.name,
-                                                  category,
-                                                  isSelected,
-                                              )
-                                        : () =>
-                                              customizationCardClicked(
-                                                  item.name,
-                                                  category,
-                                              )
+                                    item.is_disabled
+                                        ? undefined
+                                        : allowsMultipleSelections
+                                          ? () =>
+                                                customizationCardClickedMultipleSelections(
+                                                    item.name,
+                                                    category,
+                                                    isSelected,
+                                                )
+                                          : () =>
+                                                customizationCardClicked(
+                                                    item.name,
+                                                    category,
+                                                )
                                 }
                             />
                         );

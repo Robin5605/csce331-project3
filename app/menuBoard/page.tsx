@@ -12,11 +12,11 @@ interface MenuData {
 const emptyMenuData: MenuData = {};
 
 const CATEGORY_ORDER = [
+    "Classic Tea",
     "Fruit Tea",
-    "Ice Blended",
     "Milky",
-    "Non Caffenated",
-    "Fall Seasonals",
+    "Ice Blended",
+    "Seasonals",
     "Uncategorized",
 ] as const;
 

@@ -287,7 +287,7 @@ export default function CashierPage() {
        function checkStockViolations(
         inventory: Ingredient[],
         ingredientsToCheck: Record<string, number>,
-        menuData: MenuItem[],
+        menuData: MenuData,
         drinksToCheck: Record<string, number>,
         ): boolean {
             const flatMenuData = Object.values(menuData).flat();

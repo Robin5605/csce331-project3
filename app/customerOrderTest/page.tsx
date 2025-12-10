@@ -1467,6 +1467,7 @@ function Cart({
     paymentMethod,
     setPaymentMethod,
     onEditItem,
+    menuData,
 }: {
     items: CartItem[];
     setItems: React.Dispatch<React.SetStateAction<CartItem[]>>;
@@ -1481,6 +1482,7 @@ function Cart({
     paymentMethod: "CARD" | "CASH";
     setPaymentMethod: React.Dispatch<React.SetStateAction<"CARD" | "CASH">>;
     onEditItem: (index: number, item: CartItem) => void;
+    menuData: MenuData
 }) {
     const { isHighContrast, textMultipler } = useAccessibility();
 
@@ -1506,11 +1508,86 @@ function Cart({
     const total = subtotal + tax;
 
     const handleRemoveCartItem = (index: number) => {
-        setItems((prev) => prev.filter((_, i) => i !== index));
-    };
+        setItems((prev) => prev.filter((_, i) => i !== index));     
+    }
+    function checkStockOverflow() {
+        const drinkTotals = new Map<number, number>();
+        const ingredientTotals = new Map<number, number>();
+
+        for (const item of items) {
+            const q = item.quantity ?? 1;
+
+            drinkTotals.set(item.id, (drinkTotals.get(item.id) ?? 0) + q);
+
+            for (const c of item.customizations ?? []) {
+                const used = (c.amount ?? 1) * q; // multiply by quantity
+                ingredientTotals.set(c.id, (ingredientTotals.get(c.id) ?? 0) + used);
+            }
+        }
+
+        console.log("drinkTotals:", [...drinkTotals.entries()]);
+        console.log("ingredientTotals:", [...ingredientTotals.entries()]);
+
+        const flatMenuData = Object.values(menuData).flat();
+
+        const invById: Record<number, Ingredient> = {};
+        for (const ing of inventory) invById[ing.id] = ing;
+
+        const menuById: Record<number, MenuItem> = {};
+        for (const item of flatMenuData) menuById[item.id] = item;
+
+        const violatingIngredientNames: string[] = [];
+
+        for (const [id, needed] of ingredientTotals.entries()) {
+            const ing = invById[id];
+            if (!ing) {
+                violatingIngredientNames.push(`(unknown ingredient id ${id})`);
+                continue;
+            }
+            if (ing.stock - needed < 0) violatingIngredientNames.push(ing.name);
+        }
+
+        const violatingDrinkNames: string[] = [];
+
+        for (const [id, needed] of drinkTotals.entries()) {
+            const item = menuById[id];
+            if (!item) {
+                violatingDrinkNames.push(`(unknown drink id ${id})`);
+                continue;
+            }
+            if (item.stock - needed < 0) violatingDrinkNames.push(item.name);
+        }
+
+        if (violatingIngredientNames.length > 0 || violatingDrinkNames.length > 0) {
+            const lines: string[] = [
+                "Order cannot be processed due to limitations in stocks for following items:.",
+                "",
+                "Drinks:",
+                ...(violatingDrinkNames.length > 0
+                    ? violatingDrinkNames.map((n) => `- ${n}`)
+                    : ["- None"]),
+            ];
+
+            if (violatingIngredientNames.length > 0) {
+                lines.push(
+                    "",
+                    "Ingredients:",
+                    ...violatingIngredientNames.map((n) => `- ${n}`),
+                );
+            }
+
+            alert(lines.join("\n"));
+            return false;
+        }
+        return true;
+    }
+
 
     async function handleCheckout(receiptType: ReceiptType) {
-        const res = await fetch("/api/customer/order", {
+        if(!checkStockOverflow()) {
+            return;
+        } else {
+            const res = await fetch("/api/customer/order", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -1544,6 +1621,7 @@ function Cart({
 
         setItems([]);
         setUseLoyalty(false);
+        }
     }
 
     return (
@@ -1981,6 +2059,7 @@ function CashierContent() {
                                 setEditingIndex(index);
                                 setEditingItem(item);
                             }}
+                            menuData={menuData}
                         />
                     </div>
                 ) : (
@@ -2014,6 +2093,7 @@ function CashierContent() {
                                 setEditingIndex(index);
                                 setEditingItem(item);
                             }}
+                            menuData={menuData}
                         />
                     </div>
                 )}

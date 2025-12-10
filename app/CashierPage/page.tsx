@@ -295,7 +295,7 @@ export default function CashierPage() {
     const checkoutOrder = async (method: "CARD" | "CASH") => {
 
         //Helper funciton that checks if the order vioaltes stocks
-       function checkStockViolations(
+       function checkStockOverflow(
         inventory: Ingredient[],
         ingredientsToCheck: Record<string, number>,
         menuData: MenuData,
@@ -332,7 +332,7 @@ export default function CashierPage() {
 
             if (violatingIngredientNames.length > 0 || violatingDrinkNames.length > 0) {
                 const lines: string[] = [
-                "Order cannot be processed due to stock violations.",
+                "Order cannot be processed due to limitations in stocks for following items:.",
                 "",
                 "Drinks:",
                 ...(violatingDrinkNames.length > 0
@@ -483,13 +483,10 @@ export default function CashierPage() {
 
                     }
                 }
-                console.log(ingredientsMapToCheck)
-                console.log(drinksMapToCheck)
                 await loadMenuData;
-                console.log("AGAIN???? MR KRABS???")
 
                 //Will not process order if stock violation
-                if (!checkStockViolations(inventory, ingredientsMapToCheck, menuData, drinksMapToCheck)) {
+                if (!checkStockOverflow(inventory, ingredientsMapToCheck, menuData, drinksMapToCheck)) {
                     return;
                 }
 

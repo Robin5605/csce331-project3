@@ -166,9 +166,6 @@ export default function CashierPage() {
         const ingr: Ingredient[] = await ingrRes.json();
         setInventory(ingr);
         setMenuDataReady(true);
-        console.log("INGREDIENTS")
-        console.log(ingr)
-        console.log("MENU DATA")
     };
 
     useEffect(() => {
@@ -385,7 +382,6 @@ export default function CashierPage() {
             const ingredientsMapToCheck: Record<string, number> = {};
 
             for (const [orderIndex, order] of curOrders.entries()) {
-                console.log(order)
                 const quantity = (order.quantity as number) || 1;
                     //For each individual property in the order
                     for (let index = 0; index < Object.entries(order).length; ++index) {

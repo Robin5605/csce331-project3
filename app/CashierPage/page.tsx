@@ -37,6 +37,12 @@ interface MenuData {
 
 const emptyMenuData: MenuData = {};
 const emptyInventory: Ingredient[] = [];
+//let globalToppingsGroups: Map<string, Ingredient[]> = new Map<
+//    string,
+//    Ingredient[]
+//>();
+let toppingGroups: string[] = [];  
+let scaleItems: Ingredient[] = [];
 
 // configurable tax rate for UI display (8.25% default)
 const TAX_RATE = parseFloat(process.env.NEXT_PUBLIC_TAX_RATE ?? "0.0825");
@@ -82,15 +88,6 @@ const getOrderPrice = (order: Record<string, any>, inventory: Ingredient[]) => {
 
 export default function CashierPage() {
     //Sets default selection for customization options
-    const defaultCustomizations = {
-        Size: "Medium Cups",
-        Ice: "100%",
-        Sugar: "100%",
-        Boba: [],
-        Jelly: [],
-        Tea: "Black Tea",
-        Toppings: [],
-    };
     const [inventory, setInventory] = useState<Ingredient[]>(emptyInventory);
 
     //Serves as the state used for showing the Customization page
@@ -100,7 +97,7 @@ export default function CashierPage() {
         useState<string>("Fruit Tea");
     const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
     const [selectedCustomizationOptions, setSelectedCustomizationOptions] =
-        useState<Record<string, string | string[]>>(defaultCustomizations);
+        useState<Record<string, string | string[]>>({});
     const [editingIndex, setEditingIndex] = useState<number | null>(null);
     const [curOrders, setCurOrders] = useState<
         (Record<string, string | string[] | MenuItem | null | number> & {
@@ -126,6 +123,8 @@ export default function CashierPage() {
     // for changing payment method
     const [paymentMethod, setPaymentMethod] = useState<"CARD" | "CASH">("CARD");
 
+    const [defaultCustomizations, setDefaultCustomizations] = useState<Record<string, string[] | string>>({});
+
     const loadMenuData = async () => {
         setMenuDataReady(false);
         setMenuData({});
@@ -138,13 +137,9 @@ export default function CashierPage() {
         if (!catRes.ok) {
             throw new Error(`GET /api/cashier/categories ${catRes.status}`);
         }
-        //console.log("hey");
         const cats: Category[] = await catRes.json();
-        //console.log(`cats length: ${cats.length}`);
         for (let cat_idx = 0; cat_idx < cats.length; cat_idx++) {
-            //console.log(`c idx:${cat_idx}`);
             const cat = cats[cat_idx];
-            //console.log(cat);
             const queryBody = {
                 id: cat.id,
             };
@@ -154,18 +149,54 @@ export default function CashierPage() {
                 body: JSON.stringify(queryBody),
             });
             const items: MenuItem[] = await queryRes.json();
-            //console.log(cat.name);
             menuTempData = { ...menuTempData, [cat.name]: items };
         }
         setMenuData(menuTempData);
+
         console.log("loading ingredients");
         const ingrRes = await fetch("api/ingredient", {
             method: "GET",
             headers: { "Content-Type": "application/json" },
         });
-        const ingr: Ingredient[] = await ingrRes.json();
+        const ingr: Ingredient[] = await ingrRes.json()
+        
+        scaleItems = [];
+        for (let i: number = 0; i < ingr.length; ++i) {
+            console.log(`n: ${ingr[i].name} g: ${ingr[i].ingredient_group}`)
+            const group = ingr[i].ingredient_group;
+            if (group === "Scale" && !toppingGroups.includes(ingr[i].name)) {
+                const iName:string = ingr[i].name;
+                //defaultCustomizations.set(iName, "100%");
+                defaultCustomizations[iName] = "100%";
+                scaleItems.push(ingr[i]);
+                toppingGroups.push(ingr[i].name);
+                continue;
+            }
+            if (group === "Default") {
+                continue;
+            }
+            if (toppingGroups.includes(group)) {
+                continue;
+            }
+            if(group === "Tea") {
+                defaultCustomizations[group] = "Black Tea";
+                //defaultCustomizations.set("Tea", "Black Tea");
+            }
+            if(group === "Temperature") {
+                defaultCustomizations[group] = "Cold";
+            }
+            else {
+                defaultCustomizations[group] = [ingr[i].name];
+                //defaultCustomizations.set(group, [ingr[i].name]);
+            }
+            
+            toppingGroups.push(group);
+        }
+
+        setSelectedCustomizationOptions(defaultCustomizations);
         setInventory(ingr);
         setMenuDataReady(true);
+        console.log("done");
     };
 
     useEffect(() => {
@@ -378,7 +409,7 @@ export default function CashierPage() {
                                     });
 
                                     if (ingredientTemp == null) {
-                                        console.log("==bad ingredient name==");
+                                        console.log(`X bad ingredient name: ${ingredientName}`);
                                         return;
                                     }
 
@@ -489,43 +520,19 @@ export default function CashierPage() {
             //Checks if the category is for one item (ex: Ice) or multiple items (ex: Boba)
             //When the API is implemented, we can associate each item with a category and remove all this
             isOneItem
-                ? ["0%", "25%", "50%", "75%", "100%"].map((label) => ({
+                ? (["0%", "25%", "50%", "75%", "100%"].map((label) => ({
                       //If it is just one item, we just have the customization be the amount of said item
                       name: label,
                       is_disabled: false,
                   }))
-                : category === "Toppings" //The toppings category has every item that is not tea, boba, jelly, or ice/sugar
-                  ? inventory
-                        .filter((i) => {
-                            const n = i.name.trim().toLowerCase();
-                            return (
-                                ![
-                                    "cups",
-                                    "tea",
-                                    "boba",
-                                    "jelly",
-                                    "ice",
-                                    "sugar",
-                                ].some((s) => n.endsWith(s)) &&
-                                !itemsToIgnore.includes(n) //Performs the exclusion of the specific item types
-                            );
-                        })
-                        .map((i) => ({
-                            name: i.name,
-                            is_disabled: i.stock < 1,
-                        }))
-                  : inventory //Here we assume it's a normal category otherwise (tea, boba, jelly, ice/sugar)
-                        .filter(
-                            (i) =>
-                                i.name
-                                    .trim()
-                                    .toLowerCase()
-                                    .endsWith(toFilterBy.trim().toLowerCase()), //Identifies the item type by the last word in its string (ex: Popping Boba -> Boba)
-                        )
-                        .map((i) => ({
-                            name: i.name,
-                            is_disabled: i.stock < 1,
-                        }));
+                ) : (inventory.filter( (item) => {
+                    return (item.ingredient_group === category)
+                }).map( (item) => { 
+                    return ({
+                        name: item.name,
+                        is_disabled: item.stock < 1});
+                })
+            );
 
         return (
             <div className="flex flex-wrap gap-8">
@@ -601,8 +608,47 @@ export default function CashierPage() {
                     <AlertDialogTitle className="font-semibold text-3xl">
                         Customize Order
                     </AlertDialogTitle>
-
                     <div className="max-h-[800px] overflow-y-auto pr-2">
+                        {scaleItems.map( (sItem, index) => {return(
+                            <CustomizationCategory name={sItem.name} key={index}>
+                                <CustomizationData
+                                    isOneItem={true}
+                                    toFilterBy={sItem.name}
+                                    category={sItem.name}
+                                    allowsMultipleSelections={false}
+                                >
+                                </CustomizationData>
+                            </CustomizationCategory>
+                        );})}
+                        {
+                            toppingGroups.map( (group, index) => {
+                                if(group === "Tea" || group === "Size" || group === "Temperature"){
+                                    return (
+                                        <CustomizationCategory name={group} key={index}>
+                                            <CustomizationData
+                                                isOneItem={false}
+                                                toFilterBy={group}
+                                                category={group}
+                                                allowsMultipleSelections={false}
+                                            />
+                                        </CustomizationCategory>
+                                    );
+                                }
+                                return (
+                                    <CustomizationCategory name={group} key={index}>
+                                        <CustomizationData
+                                            isOneItem={false}
+                                            toFilterBy={group}
+                                            category={group}
+                                            allowsMultipleSelections={true}
+                                        />
+                                    </CustomizationCategory>
+                                );
+                            })
+                        }
+                    </div>
+                    
+                    {/*<div className="max-h-[800px] overflow-y-auto pr-2">
                         <CustomizationCategory name="Size">
                             <CustomizationData
                                 isOneItem={false}
@@ -665,7 +711,7 @@ export default function CashierPage() {
                                 allowsMultipleSelections={true}
                             />
                         </CustomizationCategory>
-                    </div>
+                    </div> */}
 
                     <AlertDialogFooter>
                         <AlertDialogCancel

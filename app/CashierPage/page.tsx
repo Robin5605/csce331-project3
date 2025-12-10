@@ -86,8 +86,8 @@ export default function CashierPage() {
         Size: "Medium Cups",
         Ice: "100%",
         Sugar: "100%",
-        Boba: "None",
-        Jelly: "None",
+        Boba: [],
+        Jelly: [],
         Tea: "Black Tea",
         Toppings: [],
     };
@@ -188,6 +188,7 @@ export default function CashierPage() {
             ...selectedCustomizationOptions,
             [category]: name,
         });
+        
     };
 
     //Handles whenever a CustomizationCard is clicked in order to select it for categories with multi-select
@@ -196,16 +197,26 @@ export default function CashierPage() {
         category: string,
         isSelected: boolean,
     ) => {
-        setSelectedCustomizationOptions((prev) => {
+            setSelectedCustomizationOptions((prev) => {
             const currentValue = prev[category] as string[];
 
-            return {
+            if (name === "None") {
+                return {
+                    ...prev,
+                    [category]: ["None"], // Set category to "None" only
+                };
+            }
+
+            const newOptions = {
                 ...prev,
                 [category]: isSelected
-                    ? currentValue.filter((item) => item !== name) // remove
-                    : [...currentValue, name], // add
+                    ? currentValue.filter((item) => item !== name) 
+                    : [...currentValue, name],
             };
-        });
+
+            return newOptions;
+         });
+
     };
 
     // Handles whenever an order is finalized on the customization side

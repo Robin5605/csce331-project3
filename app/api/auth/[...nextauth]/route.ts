@@ -33,10 +33,13 @@ export const authOptions: AuthOptions = {
     // TODO: implement this properly so it logs user out after closing tabs
     cookies: {
         sessionToken: {
+            // for deployed
             name:
                 process.env.NODE_ENV === "production"
                     ? "__Secure-next-auth.session-token"
                     : "next-auth.session-token",
+            // for local
+            // name: "next-auth.session-token",
             options: {
                 httpOnly: true,
                 sameSite: "lax",

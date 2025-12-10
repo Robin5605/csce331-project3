@@ -162,14 +162,13 @@ export default function CashierPage() {
         
         scaleItems = [];
         for (let i: number = 0; i < ingr.length; ++i) {
-            console.log(`n: ${ingr[i].name} g: ${ingr[i].ingredient_group}`)
+            //console.log(`n: ${ingr[i].name} g: ${ingr[i].ingredient_group}`)
             const group = ingr[i].ingredient_group;
             if (group === "Scale" && !toppingGroups.includes(ingr[i].name)) {
                 const iName:string = ingr[i].name;
-                //defaultCustomizations.set(iName, "100%");
                 defaultCustomizations[iName] = "100%";
                 scaleItems.push(ingr[i]);
-                toppingGroups.push(ingr[i].name);
+                //toppingGroups.push(ingr[i].name);
                 continue;
             }
             if (group === "Default") {
@@ -180,14 +179,15 @@ export default function CashierPage() {
             }
             if(group === "Tea") {
                 defaultCustomizations[group] = "Black Tea";
-                //defaultCustomizations.set("Tea", "Black Tea");
             }
             if(group === "Temperature") {
                 defaultCustomizations[group] = "Cold";
             }
+            if(group === "Size") {
+                defaultCustomizations[group] = ingr[i].name;
+            }
             else {
                 defaultCustomizations[group] = [ingr[i].name];
-                //defaultCustomizations.set(group, [ingr[i].name]);
             }
             
             toppingGroups.push(group);
@@ -356,7 +356,8 @@ export default function CashierPage() {
                         ++index
                     ) {
                         let [key, value] = Object.entries(order)[index];
-                        //console.log(`\t= k: ${key}\tv: ${value}\tdo id: ${drinkOrderId}`);
+                        if(key === "quantity") continue;
+                        console.log(`\t= k: ${key}\tv: ${value}\tdo id: ${drinkOrderId}`);
                         if (
                             value === "None" ||
                             value === null ||
@@ -369,6 +370,7 @@ export default function CashierPage() {
                                 menuId: (value as MenuItem).id,
                                 orderId: orderId,
                             };
+                            //console.log(`key: ${key} menuId: ${drinkOrderBody.menuId}`);
                             const drinkOrderRes = await fetch(
                                 "api/cashier/drinks_order",
                                 {
@@ -379,6 +381,7 @@ export default function CashierPage() {
                                     body: JSON.stringify(drinkOrderBody),
                                 },
                             );
+                            //console.log(drinkOrderRes);
                             let { id } = await drinkOrderRes.json();
                             drinkOrderId = id;
                         } else {
@@ -443,7 +446,7 @@ export default function CashierPage() {
                             }
 
                             if (ingredientTemp == null) {
-                                console.log("\t\t==bad ingredient name==");
+                                console.log(`X bad ingredient name: ${value}`);
                                 continue;
                             }
 
@@ -541,9 +544,9 @@ export default function CashierPage() {
                     .sort((a, b) => {
                         if (category === "Size") {
                             const sizeOrder = [
-                                "Small Cups",
-                                "Medium Cups",
-                                "Large Cups",
+                                "Small Cup",
+                                "Medium Cup",
+                                "Large Cup",
                             ];
                             return (
                                 sizeOrder.indexOf(a.name) -
@@ -557,7 +560,7 @@ export default function CashierPage() {
                             ? selectedCustomizationOptions[category].includes(
                                   item.name,
                               )
-                            : item.name ===
+                            : item.name ==
                               selectedCustomizationOptions[category];
 
                         return (
@@ -647,71 +650,6 @@ export default function CashierPage() {
                             })
                         }
                     </div>
-                    
-                    {/*<div className="max-h-[800px] overflow-y-auto pr-2">
-                        <CustomizationCategory name="Size">
-                            <CustomizationData
-                                isOneItem={false}
-                                toFilterBy="cups"
-                                category="Size"
-                                allowsMultipleSelections={false}
-                            />
-                        </CustomizationCategory>
-
-                        <CustomizationCategory name="Ice">
-                            <CustomizationData
-                                isOneItem={true}
-                                toFilterBy="ice"
-                                category="Ice"
-                                allowsMultipleSelections={false}
-                            />
-                        </CustomizationCategory>
-
-                        <CustomizationCategory name="Sugar">
-                            <CustomizationData
-                                isOneItem={true}
-                                toFilterBy="sugar"
-                                category="Sugar"
-                                allowsMultipleSelections={false}
-                            />
-                        </CustomizationCategory>
-
-                        <CustomizationCategory name="Tea">
-                            <CustomizationData
-                                isOneItem={false}
-                                toFilterBy="tea"
-                                category="Tea"
-                                allowsMultipleSelections={false}
-                            />
-                        </CustomizationCategory>
-
-                        <CustomizationCategory name="Boba">
-                            <CustomizationData
-                                isOneItem={false}
-                                toFilterBy="boba"
-                                category="Boba"
-                                allowsMultipleSelections={true}
-                            />
-                        </CustomizationCategory>
-
-                        <CustomizationCategory name="Jelly">
-                            <CustomizationData
-                                isOneItem={false}
-                                toFilterBy="jelly"
-                                category="Jelly"
-                                allowsMultipleSelections={true}
-                            />
-                        </CustomizationCategory>
-
-                        <CustomizationCategory name="Toppings">
-                            <CustomizationData
-                                isOneItem={false}
-                                toFilterBy="topping"
-                                category="Toppings"
-                                allowsMultipleSelections={true}
-                            />
-                        </CustomizationCategory>
-                    </div> */}
 
                     <AlertDialogFooter>
                         <AlertDialogCancel
